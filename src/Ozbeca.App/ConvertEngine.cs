@@ -115,7 +115,9 @@ internal sealed class ConvertEngine
 
         // Office kabi ilovalar clipboard'ni kechroq o'qiydi — shuning uchun darhol tiklanmaydi.
         Thread.Sleep(RestoreDelayMs);
-        if (ClipboardSwap.Sequence == ours) _clip.Restore(snapshot);
+        // Explorer kabi ba'zilari paste'dan keyin o'sha matnni clipboard'ga qayta yozadi (sequence o'zgaradi).
+        // Matn hamon biznikiga teng bo'lsa — bu userning yangi ma'lumoti emas, tiklash xavfsiz.
+        if (ClipboardSwap.Sequence == ours || _clip.ReadText() == converted) _clip.Restore(snapshot);
         else Log.Write("Clipboard'ni boshqa dastur o'zgartirdi — tiklanmadi");
 
         Say("Özbeça ✓"); // muvaffaqiyat xabari (user qarori, 2026-11-10)
