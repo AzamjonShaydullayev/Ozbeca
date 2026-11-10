@@ -19,6 +19,9 @@ public partial class SettingsWindow : Window
         ToastBox.IsChecked = app.Settings.ShowToast;
         AutostartBox.IsChecked = Autostart.IsEnabled;
         DelayBox.Text = app.Settings.RestoreDelayMs.ToString();
+
+        // "−" bosilganda vazifalar paneliga emas, soat yonidagi Ö belgisiga yashirinadi (user so'rovi).
+        StateChanged += (_, _) => { if (WindowState == WindowState.Minimized) Close(); };
     }
 
     internal void ShowStatus(string? error)
