@@ -8,7 +8,10 @@ public partial class App : Application
     internal const string AltGrWarning =
         "Saqlandi. Diqqat: Ctrl+Alt+harf ba'zi klaviatura tartiblarida AltGr bo'lib, harf yozib yuborishi mumkin.";
 
+    private const string ShowSettingsEvent = @"Local\Ozbeca.ShowSettings";
+
     private Mutex? _mutex;
+    private EventWaitHandle? _showEvent;
     private HotkeyService _hotkey = null!;
     private ConvertEngine _engine = null!;
     private WinForms.NotifyIcon _tray = null!;
@@ -25,9 +28,17 @@ public partial class App : Application
         _mutex = new Mutex(true, @"Local\Ozbeca.SingleInstance", out bool created);
         if (!created)
         {
-            Log.Write("Dastur allaqachon ishlayapti — ikkinchi nusxa yopildi");
-            MessageBox.Show("Özbeça allaqachon ishlab turibdi.\n\nU ekranning pastki o'ng burchagidagi (soat yonidagi) Ö belgisida. " +
-                "Sozlamalarni ochish uchun o'sha belgini bosing.", "Özbeça", MessageBoxButton.OK, MessageBoxImage.Information);
+            // Ikkinchi nusxa (masalan, ish stolidagi yorliq bosildi): ishlab turgan nusxaga "sozlamalarni och" deymiz.
+            Log.Write("Dastur allaqachon ishlayapti — sozlamalar ishlayotgan nusxada ochiladi");
+            if (EventWaitHandle.TryOpenExisting(ShowSettingsEvent, out var ev))
+            {
+                Native.AllowSetForegroundWindow(-1); // ASFW_ANY — u oynani oldinga chiqara olsin
+                ev.Set();
+                ev.Dispose();
+            }
+            else
+                MessageBox.Show("Özbeça allaqachon ishlab turibdi.\n\nU ekranning pastki o'ng burchagidagi (soat yonidagi) Ö belgisida.",
+                    "Özbeça", MessageBoxButton.OK, MessageBoxImage.Information);
             _mutex.Dispose();
             _mutex = null;
             Shutdown();
@@ -36,6 +47,11 @@ public partial class App : Application
 
         Settings = Settings.Load();
         if (e.Args.Length > 0) Settings.Hotkey = e.Args[0]; // sinov uchun: Ozbeca.exe Ctrl+Alt+F10
+
+        if (Settings.FirstRun && e.Args.Length == 0 && RunFirstTimeSetup()) return; // o'rnatilgan nusxa ishga tushirildi
+
+        _showEvent = new EventWaitHandle(false, EventResetMode.AutoReset, ShowSettingsEvent);
+        ThreadPool.RegisterWaitForSingleObject(_showEvent, (_, _) => Dispatcher.BeginInvoke(() => ShowSettings()), null, -1, false);
 
         _hotkey = new HotkeyService();
         _engine = new ConvertEngine(_hotkey.Handle);
@@ -58,9 +74,48 @@ public partial class App : Application
     {
         if (_tray != null) { _tray.Visible = false; _tray.Dispose(); }
         _hotkey?.Dispose();
+        _showEvent?.Dispose();
         _mutex?.ReleaseMutex();
         _mutex?.Dispose();
         base.OnExit(e);
+    }
+
+    /// <summary>
+    /// O'rnatish oynasi. true — dastur doimiy papkaga ko'chirildi va o'sha nusxa ishga tushirildi (bu nusxa yopiladi).
+    /// </summary>
+    private bool RunFirstTimeSetup()
+    {
+        var w = new WelcomeWindow(Settings.Hotkey);
+        bool ok = w.ShowDialog() == true;
+        Settings.Save(); // X bosilsa ham — keyingi safar qayta so'ramaymiz
+        if (!ok) { Log.Write("O'rnatish oynasi yopildi — hech narsa o'zgartirilmadi"); return false; }
+
+        string target = Environment.ProcessPath!;
+        try
+        {
+            if (w.DoInstall) { Install.CopySelf(); target = Install.Exe; }
+            if (w.DoDesktop) Install.CreateShortcut(Install.DesktopLink, target);
+            if (w.DoStartMenu) Install.CreateShortcut(Install.StartMenuLink, target);
+            Autostart.Set(w.DoAutostart, target);
+            Log.Write($"O'rnatildi: {target}; yorliq={w.DoDesktop}, start={w.DoStartMenu}, autostart={w.DoAutostart}");
+        }
+        catch (Exception ex)
+        {
+            Log.Write("O'rnatishda xato: " + ex);
+            MessageBox.Show("O'rnatishda xato bo'ldi: " + ex.Message + "\n\nDastur shu joyidan ishlashda davom etadi.",
+                "Özbeça", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return false;
+        }
+
+        if (string.Equals(target, Environment.ProcessPath, StringComparison.OrdinalIgnoreCase)) return false;
+
+        // Yangi joydagi nusxani ishga tushiramiz; u mutex'ni olishi uchun avval o'zimiznikini bo'shatamiz.
+        _mutex!.ReleaseMutex();
+        _mutex.Dispose();
+        _mutex = null;
+        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(target) { UseShellExecute = true });
+        Shutdown();
+        return true;
     }
 
     // ---- hotkey ----

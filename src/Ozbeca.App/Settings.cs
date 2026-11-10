@@ -1,5 +1,6 @@
-using System.IO;
+﻿using System.IO;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Microsoft.Win32;
 
 namespace Ozbeca.App;
@@ -11,6 +12,9 @@ internal sealed class Settings
     public bool Enabled { get; set; } = true;
     public bool ShowToast { get; set; } = true;
     public int RestoreDelayMs { get; set; } = 400;
+
+    /// <summary>settings.json hali yo'q — birinchi ishga tushirish (o'rnatish oynasi ko'rsatiladi).</summary>
+    [JsonIgnore] public bool FirstRun { get; private set; }
 
     private static readonly string FilePath = Path.Combine(Log.Dir, "settings.json");
     private static readonly JsonSerializerOptions Json = new() { WriteIndented = true };
@@ -30,7 +34,7 @@ internal sealed class Settings
         {
             Log.Write("settings.json o'qilmadi, standart sozlamalar: " + ex.Message);
         }
-        return new Settings();
+        return new Settings { FirstRun = !File.Exists(FilePath) };
     }
 
     public void Save()
@@ -52,7 +56,8 @@ internal static class Autostart
 {
     private const string RunKey = @"Software\Microsoft\Windows\CurrentVersion\Run";
     private const string Name = "Ozbeca";
-    private static string Command => $"\"{Environment.ProcessPath}\"";
+    private static string Command => Quote(Environment.ProcessPath!);
+    private static string Quote(string path) => $"\"{path}\"";
 
     public static bool IsEnabled
     {
@@ -63,10 +68,11 @@ internal static class Autostart
         }
     }
 
-    public static void Set(bool enabled)
+    /// <param name="exePath">o'rnatishda — yangi joydagi exe; aks holda joriy jarayon.</param>
+    public static void Set(bool enabled, string? exePath = null)
     {
         using var key = Registry.CurrentUser.CreateSubKey(RunKey);
-        if (enabled) key.SetValue(Name, Command);
+        if (enabled) key.SetValue(Name, exePath == null ? Command : Quote(exePath));
         else key.DeleteValue(Name, throwOnMissingValue: false);
     }
 }

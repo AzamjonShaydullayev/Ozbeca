@@ -53,19 +53,30 @@ O'rnatish shart emas. Bitta fayl, hech narsa qo'shimcha kerak emas.
 [Ozbeca-lite.exe](https://github.com/AzamjonShaydullayev/Ozbeca/releases/latest/download/Ozbeca-lite.exe) xuddi shu dastur, faqat ichiga .NET qo'shilmagan. Ishlashi uchun kompyuterda **[.NET 8 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/8.0)** o'rnatilgan bo'lishi kerak. Qaysi birini tanlashni bilmasangiz, oddiy `Ozbeca.exe` ni oling.
 </details>
 
-### 2. Qulay papkaga qo'ying
+### 2. Ishga tushiring
 
-Masalan `Hujjatlar\Ozbeca\Ozbeca.exe` ga. Yuklab olingan papkada qoldirmang. "Windows bilan birga ishga tushirish" yoqilgan bo'lsa, dastur aynan shu joydan ochiladi.
-
-### 3. Ishga tushiring
-
-Faylni ikki marta bosing.
+Yuklab olingan `Ozbeca.exe` ni ikki marta bosing.
 
 > **"Windows protected your PC" (Windows kompyuteringizni himoya qildi) degan ko'k oyna chiqdimi?**
 > Bu normal holat: dastur yangi va hali raqamli imzoga ega emas.
 > **«More info» / «Подробнее»** → **«Run anyway» / «Выполнить в любом случае»** ni bosing. Bu faqat birinchi marta so'raladi.
 
-Dastur oyna ochmaydi. U ekranning pastki o'ng burchagida, soat yonida <img src="docs/icon.png" width="16"> **Ö** belgisi bo'lib turadi. Belgi ko'rinmasa, **^** (yashirin belgilar) tugmasini bosing.
+### 3. O'rnatish oynasida «Tayyor» ni bosing
+
+Birinchi ochilganda dastur nimalarni qilish kerakligini so'raydi. Hammasi oldindan belgilangan, shunchaki **Tayyor** ni bossangiz bo'ldi:
+
+<p align="center"><img src="docs/welcome.png" width="440" alt="O'rnatish oynasi"></p>
+
+| Belgi | Nima qiladi |
+|---|---|
+| **Kompyuterga o'rnatish** | Dastur `%LocalAppData%\Programs\Ozbeca` ga ko'chiriladi. Yuklab olingan faylni keyin o'chirib tashlasangiz bo'ladi |
+| **Ish stolida yorliq** | Ish stolida **Özbeça** belgisi paydo bo'ladi |
+| **Start menyusiga qo'shish** | Start menyusida "Özbeça" deb qidirsangiz topiladi |
+| **Avtomatik ishga tushirish** | Kompyuter yonganda dastur o'zi ochiladi va jim kutib turadi |
+
+Administrator huquqi so'ralmaydi.
+
+Shundan keyin dastur oyna ochmaydi. U ekranning pastki o'ng burchagida, soat yonida <img src="docs/icon.png" width="16"> **Ö** belgisi bo'lib turadi. Belgi ko'rinmasa, **^** (yashirin belgilar) tugmasini bosing.
 
 ---
 
@@ -117,7 +128,12 @@ Qoidalar quyidagi rasmiy manbalarga asoslangan:
 
 ## ⚙️ Sozlamalar
 
-Soat yonidagi **Ö** belgisini bosing, yoki ustida o'ng tugmani bosib **Sozlamalar…** ni tanlang.
+Sozlamalarni ochishning uchta yo'li bor:
+- soat yonidagi **Ö** belgisini bosish;
+- shu belgi ustida o'ng tugmani bosib **Sozlamalar…** ni tanlash;
+- ish stolidagi **Özbeça** yorlig'ini bosish.
+
+Oynani **−** bilan kichraytirsangiz, u yana Ö belgisiga yashirinadi. Dastur esa ishlashda davom etadi.
 
 <p align="center"><img src="docs/settings.png" width="420" alt="Sozlamalar oynasi"></p>
 
@@ -169,9 +185,9 @@ Tanlangan tugmalar kombinatsiyasini boshqa dastur egallab olgan. Sozlamalar oyna
 </details>
 
 <details>
-<summary><b>"Özbeça allaqachon ishlab turibdi" chiqdi</b></summary>
+<summary><b>Dasturni qayta ochsam faqat sozlamalar chiqyapti</b></summary>
 
-Dastur allaqachon ochiq va soat yonidagi Ö belgisida turibdi. Ikkinchi marta ochish shart emas.
+Bu to'g'ri: dastur allaqachon ishlab turibdi, shuning uchun ikkinchi nusxa ochilmaydi, faqat sozlamalar ko'rsatiladi. Matnni o'girish uchun hech narsa ochish shart emas: matnni belgilab <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>O</kbd> ni bosing.
 </details>
 
 <details>
@@ -204,8 +220,9 @@ Dastur so'zning qaysi tilda ekanini bilmaydi: `shop` → `şop`, `don't` → `do
 
 1. Ö belgisi ustida o'ng tugma → **Windows bilan birga ishga tushirish** belgisini olib tashlang.
 2. Shu menyuda **Chiqish** ni bosing.
-3. `Ozbeca.exe` faylini o'chiring.
-4. Sozlamalarni ham o'chirmoqchi bo'lsangiz: <kbd>Win</kbd>+<kbd>R</kbd> → `%AppData%\Ozbeca` → papkani o'chiring.
+3. Ish stolidagi va Start menyusidagi **Özbeça** yorliqlarini o'chiring.
+4. <kbd>Win</kbd>+<kbd>R</kbd> → `%LocalAppData%\Programs\Ozbeca` → papkani o'chiring (dasturning o'zi).
+5. <kbd>Win</kbd>+<kbd>R</kbd> → `%AppData%\Ozbeca` → papkani o'chiring (sozlamalar).
 
 ---
 
