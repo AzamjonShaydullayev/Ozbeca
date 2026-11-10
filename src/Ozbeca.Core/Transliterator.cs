@@ -25,20 +25,41 @@ public static partial class Transliterator
     [GeneratedRegex(@"(?:https?://|www\.)\S+|[\w.+-]+@[\w-]+(?:\.[\w-]+)+|[@#]\w+", RegexOptions.IgnoreCase)]
     private static partial Regex ProtectedRegex();
 
-    public static string ToNewAlphabet(string input)
+    public static string ToNewAlphabet(string input) => Convert(input, null);
+
+    /// <summary>
+    /// O'giradi va pozitsiyalar xaritasini qaytaradi: map[i] — kirishdagi i-belgi chiqishda qayerdan boshlanadi,
+    /// map[input.Length] — chiqish uzunligi. Stil (qalin, emoji) oraliqlarini yangi matnga ko'chirish uchun.
+    /// Kirish NFC bo'lmasa (ajralgan belgilar) xarita null — chaqiruvchi formatsiz yo'lga o'tadi.
+    /// </summary>
+    public static string ToNewAlphabet(string input, out int[]? map)
     {
-        if (string.IsNullOrEmpty(input)) return input ?? string.Empty;
+        input ??= string.Empty;
+        if (!input.IsNormalized(NormalizationForm.FormC)) { map = null; return Convert(input, null); }
+        map = new int[input.Length + 1];
+        return Convert(input, map);
+    }
+
+    private static string Convert(string input, int[]? map)
+    {
+        if (string.IsNullOrEmpty(input))
+        {
+            if (map != null) map[0] = 0;
+            return input ?? string.Empty;
+        }
 
         string text = input.Normalize(NormalizationForm.FormC);
         var sb = new StringBuilder(text.Length);
         int pos = 0;
         foreach (Match m in ProtectedRegex().Matches(text))
         {
-            ConvertSegment(text, pos, m.Index, sb);
+            ConvertSegment(text, pos, m.Index, sb, map);
+            for (int k = 0; k < m.Length && map != null; k++) map[m.Index + k] = sb.Length + k;
             sb.Append(m.Value);
             pos = m.Index + m.Length;
         }
-        ConvertSegment(text, pos, text.Length, sb);
+        ConvertSegment(text, pos, text.Length, sb, map);
+        if (map != null) map[text.Length] = sb.Length;
         return sb.ToString();
     }
 
@@ -47,7 +68,7 @@ public static partial class Transliterator
     // ʻ (U+02BB) va ʼ (U+02BC) Unicode'da "modifier letter" — ularni harf deb hisoblamaymiz.
     private static bool IsLetter(char c) => char.IsLetter(c) && !IsA(c);
 
-    private static void ConvertSegment(string s, int start, int end, StringBuilder sb)
+    private static void ConvertSegment(string s, int start, int end, StringBuilder sb, int[]? map)
     {
         int segOut = sb.Length;
         char At(int k) => k >= start && k < end ? s[k] : '\0';
@@ -55,12 +76,17 @@ public static partial class Transliterator
         int i = start;
         while (i < end)
         {
+            // Xarita: bir necha belgi bitta belgiga aylansa (sh → ş), hammasi o'sha belgining boshiga.
+            if (map != null) map[i] = sb.Length;
+            if (map != null && i + 1 < end) map[i + 1] = sb.Length;
+
             char c = Confusable(s[i]);
             char n1 = Confusable(At(i + 1)), n2 = At(i + 2);
 
             // Tutuqsiz Ishoq/ashob — sh qoidasidan oldin, faqat so'z boshida.
             if ((c == 'i' || c == 'I' || c == 'a' || c == 'A') && (i == start || !IsLetter(s[i - 1])) && MatchStem(s, i, end) is int len)
             {
+                for (int k = 0; k < len && map != null; k++) map[i + k] = sb.Length + (k < 2 ? k : k + 1);
                 sb.Append(s, i, 2).Append(Tutuq).Append(s, i + 2, len - 2);
                 i += len;
                 continue;

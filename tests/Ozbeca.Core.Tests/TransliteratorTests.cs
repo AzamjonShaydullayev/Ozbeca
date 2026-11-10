@@ -159,12 +159,51 @@ public class TransliteratorTests
             string once = T(input);
 
             Assert.Equal(once, T(once));
+            Assert.Equal(once, Transliterator.ToNewAlphabet(input, out var map));
+            Assert.Equal(once.Length, map![input.Length]);
+            for (int k = 1; k <= input.Length; k++) Assert.True(map[k] >= map[k - 1], "xarita kamaymasligi kerak");
             Assert.Equal(Count(input, "\r\n"), Count(once, "\r\n"));
             Assert.Equal(Count(input, "\n"), Count(once, "\n"));
             foreach (var tok in protectedTokens)
                 if (input.Contains(" " + tok + " "))
                     Assert.Contains(" " + tok + " ", once);
         }
+    }
+
+    // ---- Pozitsiyalar xaritasi (stil oraliqlarini ko'chirish uchun) ----
+
+    [Fact]
+    public void MapDigraph()
+    {
+        string o = Transliterator.ToNewAlphabet("a sh b", out var map);
+        Assert.Equal("a ş b", o);
+        Assert.Equal(new[] { 0, 1, 2, 2, 3, 4, 5 }, map);
+    }
+
+    [Fact]
+    public void MapStemInsertsTutuq()
+    {
+        string o = Transliterator.ToNewAlphabet("Ishoq", out var map);
+        Assert.Equal("Isʼhoq", o);
+        Assert.Equal(new[] { 0, 1, 3, 4, 5, 6 }, map);
+    }
+
+    [Theory]
+    [InlineData("Salom o'zbek do'stlar", 6, 12, "özbek")]          // "o'zbek" qalin bo'lsa
+    [InlineData("Choyxonada shirin choy", 11, 17, "şirin")]
+    [InlineData("https://shop.uz va shahar", 19, 25, "şahar")]     // himoyalangan qismdan keyin
+    [InlineData("Bog'da g'isht", 7, 13, "ğişt")]
+    public void MapMovesStyleRange(string input, int from, int to, string expected)
+    {
+        string o = Transliterator.ToNewAlphabet(input, out var map);
+        Assert.Equal(expected, o[map![from]..map[to]]);
+    }
+
+    [Fact]
+    public void MapNullWhenNotNfc()
+    {
+        Assert.Equal("Özbek", Transliterator.ToNewAlphabet("Özbek", out var map));
+        Assert.Null(map);
     }
 
     private static int Count(string s, string sub)
