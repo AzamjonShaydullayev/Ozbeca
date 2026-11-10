@@ -55,7 +55,7 @@ internal sealed class HotkeyService : IDisposable
     {
         modifiers = 0;
         vk = 0;
-        foreach (var raw in text.Split('+', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries))
+        foreach (var raw in text.Split('+').Select(p => p.Trim()).Where(p => p.Length > 0))
         {
             switch (raw.ToLowerInvariant())
             {

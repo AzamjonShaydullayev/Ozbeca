@@ -1,4 +1,6 @@
-using System.Buffers.Binary;
+using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Text;
 
 namespace Ozbeca.Core;
@@ -40,24 +42,18 @@ public static class TelegramTags
     public static bool TryParse(byte[] data, int textLength, out List<Tag> tags)
     {
         tags = new List<Tag>();
-        var s = data.AsSpan();
-        if (s.Length < 4) return false;
-        int count = BinaryPrimitives.ReadInt32BigEndian(s);
-        s = s[4..];
-        if (count <= 0 || count > textLength) return false;
+        int pos = 0;
+        if (!ReadI32(data, ref pos, out int count) || count <= 0 || count > textLength) return false;
         for (int i = 0; i < count; i++)
         {
-            if (s.Length < 12) return false;
-            int offset = BinaryPrimitives.ReadInt32BigEndian(s);
-            int length = BinaryPrimitives.ReadInt32BigEndian(s[4..]);
-            uint bytes = BinaryPrimitives.ReadUInt32BigEndian(s[8..]);
-            s = s[12..];
+            if (!ReadI32(data, ref pos, out int offset) || !ReadI32(data, ref pos, out int length) ||
+                !ReadI32(data, ref pos, out int bytes)) return false;
             string? id = null;
-            if (bytes != 0xFFFFFFFF) // null QString
+            if (bytes != -1) // 0xFFFFFFFF — null QString
             {
-                if (bytes > s.Length || bytes % 2 != 0) return false;
-                id = Encoding.BigEndianUnicode.GetString(s[..(int)bytes]);
-                s = s[(int)bytes..];
+                if (bytes < 0 || bytes > data.Length - pos || bytes % 2 != 0) return false;
+                id = Encoding.BigEndianUnicode.GetString(data, pos, bytes);
+                pos += bytes;
             }
             if (offset < 0 || length <= 0 || offset + length > textLength) return false;
             tags.Add(new Tag(offset, length, id));
@@ -69,18 +65,26 @@ public static class TelegramTags
     {
         if (tags.Count == 0) return Array.Empty<byte>();
         var ms = new MemoryStream();
-        var b4 = new byte[4];
-        void I32(int v) { BinaryPrimitives.WriteInt32BigEndian(b4, v); ms.Write(b4); }
+        void I32(int v) => ms.Write(new[] { (byte)(v >> 24), (byte)(v >> 16), (byte)(v >> 8), (byte)v }, 0, 4);
         I32(tags.Count);
         foreach (var t in tags)
         {
             I32(t.Offset);
             I32(t.Length);
-            if (t.Id == null) { BinaryPrimitives.WriteUInt32BigEndian(b4, 0xFFFFFFFF); ms.Write(b4); continue; }
+            if (t.Id == null) { I32(-1); continue; }
             var id = Encoding.BigEndianUnicode.GetBytes(t.Id);
             I32(id.Length);
-            ms.Write(id);
+            ms.Write(id, 0, id.Length);
         }
         return ms.ToArray();
+    }
+
+    private static bool ReadI32(byte[] d, ref int pos, out int value)
+    {
+        value = 0;
+        if (d.Length - pos < 4) return false;
+        value = (d[pos] << 24) | (d[pos + 1] << 16) | (d[pos + 2] << 8) | d[pos + 3];
+        pos += 4;
+        return true;
     }
 }

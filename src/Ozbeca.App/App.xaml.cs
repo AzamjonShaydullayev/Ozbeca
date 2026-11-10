@@ -90,7 +90,7 @@ public partial class App : Application
         Settings.Save(); // X bosilsa ham — keyingi safar qayta so'ramaymiz
         if (!ok) { Log.Write("O'rnatish oynasi yopildi — hech narsa o'zgartirilmadi"); return false; }
 
-        string target = Environment.ProcessPath!;
+        string target = Compat.ProcessPath!;
         try
         {
             if (w.DoInstall) { Install.CopySelf(); target = Install.Exe; }
@@ -107,7 +107,7 @@ public partial class App : Application
             return false;
         }
 
-        if (string.Equals(target, Environment.ProcessPath, StringComparison.OrdinalIgnoreCase)) return false;
+        if (string.Equals(target, Compat.ProcessPath, StringComparison.OrdinalIgnoreCase)) return false;
 
         // Yangi joydagi nusxani ishga tushiramiz; u mutex'ni olishi uchun avval o'zimiznikini bo'shatamiz.
         _mutex!.ReleaseMutex();

@@ -80,7 +80,7 @@ internal sealed class ClipboardSwap
             if (bytes == null) return;
             text = Encoding.Unicode.GetString(bytes);
             int nul = text.IndexOf('\0');
-            if (nul >= 0) text = text[..nul];
+            if (nul >= 0) text = text.Substring(0, nul);
         });
         return text;
     }

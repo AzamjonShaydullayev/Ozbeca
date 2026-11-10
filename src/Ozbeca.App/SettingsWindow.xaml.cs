@@ -77,7 +77,7 @@ public partial class SettingsWindow : Window
     {
         if (int.TryParse(DelayBox.Text, out int ms))
         {
-            _app.Settings.RestoreDelayMs = Math.Clamp(ms, 0, 5000);
+            _app.Settings.RestoreDelayMs = Compat.Clamp(ms, 0, 5000);
             _app.ApplyDelay();
             _app.Settings.Save();
         }

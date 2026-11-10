@@ -1,32 +1,36 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+  <!--
+    .NET Framework 4.8 — Windows 10/11 ichida allaqachon bor: foydalanuvchi hech narsa o'rnatmaydi,
+    exe esa ~0.3 MB (self-contained .NET 8 da 68 MB edi).
+  -->
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net8.0-windows</TargetFramework>
+    <TargetFramework>net48</TargetFramework>
+    <LangVersion>latest</LangVersion>
     <UseWPF>true</UseWPF>
     <UseWindowsForms>true</UseWindowsForms> <!-- faqat tray NotifyIcon uchun -->
     <Nullable>enable</Nullable>
-    <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>Ozbeca</AssemblyName>
     <RootNamespace>Ozbeca.App</RootNamespace>
     <ApplicationIcon>Assets\ozbeca.ico</ApplicationIcon>
     <Product>Özbeça</Product>
-    <Version>1.0.0</Version>
+    <Version>1.1.0</Version>
     <Copyright>AzamjonShaydullayev</Copyright>
+    <GenerateSupportedRuntime>false</GenerateSupportedRuntime>
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- WinForms va WPF nomlari to'qnashmasligi uchun -->
-    <Using Remove="System.Windows.Forms" />
-    <Using Remove="System.Drawing" />
+    <!-- Core kodi exe ichiga kiradi — alohida DLL bo'lmasin (bitta fayl). -->
+    <Compile Include="..\Ozbeca.Core\*.cs" Link="Core\%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="System.Runtime.Serialization" />
   </ItemGroup>
 
   <ItemGroup>
     <Resource Include="Assets\ozbeca.ico" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\Ozbeca.Core\Ozbeca.Core.csproj" />
   </ItemGroup>
 
 </Project>

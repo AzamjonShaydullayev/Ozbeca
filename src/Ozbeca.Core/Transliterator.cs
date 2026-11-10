@@ -1,10 +1,11 @@
+﻿using System;
 using System.Text;
 using System.Text.RegularExpressions;
 
 namespace Ozbeca.Core;
 
 /// <summary>Eski/aralash o'zbek lotin matnini 2026-yilgi yangi alifboga o'giradi (HANDOFF 4-bo'lim).</summary>
-public static partial class Transliterator
+public static class Transliterator
 {
     /// <summary>Rasmiy tutuq belgisi U+02BC — O'RQ-1184 (21.10.2026) 1-modda jadvalidan tasdiqlangan (lex.uz/docs/8548754).</summary>
     public const char Tutuq = 'ʼ';
@@ -22,8 +23,8 @@ public static partial class Transliterator
     private static readonly string[] SHStems = { "ishoq", "ashob" };
 
     // Tegilmaydigan qismlar: URL, email, @username, #hashtag. Email @username'dan oldin turishi shart.
-    [GeneratedRegex(@"(?:https?://|www\.)\S+|[\w.+-]+@[\w-]+(?:\.[\w-]+)+|[@#]\w+", RegexOptions.IgnoreCase)]
-    private static partial Regex ProtectedRegex();
+    private static readonly Regex Protected = new(
+        @"(?:https?://|www\.)\S+|[\w.+-]+@[\w-]+(?:\.[\w-]+)+|[@#]\w+", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
     public static string ToNewAlphabet(string input) => Convert(input, null);
 
@@ -51,7 +52,7 @@ public static partial class Transliterator
         string text = input.Normalize(NormalizationForm.FormC);
         var sb = new StringBuilder(text.Length);
         int pos = 0;
-        foreach (Match m in ProtectedRegex().Matches(text))
+        foreach (Match m in Protected.Matches(text))
         {
             ConvertSegment(text, pos, m.Index, sb, map);
             for (int k = 0; k < m.Length && map != null; k++) map[m.Index + k] = sb.Length + k;
@@ -118,7 +119,7 @@ public static partial class Transliterator
             }
 
             // 4. Harf + A + harf → rasmiy tutuq. Chap tomon chiqishdan olinadi (ö/ğ dan keyin ham ishlaydi).
-            if (IsA(c) && sb.Length > segOut && IsLetter(sb[^1]) && IsLetter(n1))
+            if (IsA(c) && sb.Length > segOut && IsLetter(sb[sb.Length - 1]) && IsLetter(n1))
             {
                 sb.Append(Tutuq);
                 i++;

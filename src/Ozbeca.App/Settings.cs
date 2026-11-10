@@ -1,23 +1,35 @@
 ﻿using System.IO;
-using System.Text.Json;
-using System.Text.Json.Serialization;
+using System.Runtime.Serialization;
+using System.Runtime.Serialization.Json;
+using System.Text;
 using Microsoft.Win32;
 
 namespace Ozbeca.App;
 
 /// <summary>%AppData%\Ozbeca\settings.json</summary>
+[DataContract]
 internal sealed class Settings
 {
-    public string Hotkey { get; set; } = "Ctrl+Alt+O"; // Ctrl+Alt+Space ishlab chiquvchi kompyuterida band chiqdi (2026-11-10 user qarori)
-    public bool Enabled { get; set; } = true;
-    public bool ShowToast { get; set; } = true;
-    public int RestoreDelayMs { get; set; } = 400;
+    [DataMember] public string Hotkey { get; set; } = "Ctrl+Alt+O"; // Ctrl+Alt+Space ishlab chiquvchi kompyuterida band chiqdi (2026-11-10 user qarori)
+    [DataMember] public bool Enabled { get; set; } = true;
+    [DataMember] public bool ShowToast { get; set; } = true;
+    [DataMember] public int RestoreDelayMs { get; set; } = 400;
+
+    // DataContract konstruktorni chaqirmaydi — faylda yo'q maydonlar standart qiymatda qolsin.
+    [OnDeserializing]
+    private void SetDefaults(StreamingContext _)
+    {
+        Hotkey = "Ctrl+Alt+O";
+        Enabled = true;
+        ShowToast = true;
+        RestoreDelayMs = 400;
+    }
 
     /// <summary>settings.json hali yo'q — birinchi ishga tushirish (o'rnatish oynasi ko'rsatiladi).</summary>
-    [JsonIgnore] public bool FirstRun { get; private set; }
+    public bool FirstRun { get; private set; }
 
     private static readonly string FilePath = Path.Combine(Log.Dir, "settings.json");
-    private static readonly JsonSerializerOptions Json = new() { WriteIndented = true };
+    private static readonly DataContractJsonSerializer Json = new(typeof(Settings));
 
     public static Settings Load()
     {
@@ -25,12 +37,14 @@ internal sealed class Settings
         {
             if (File.Exists(FilePath))
             {
-                var s = JsonSerializer.Deserialize<Settings>(File.ReadAllText(FilePath)) ?? new Settings();
-                s.RestoreDelayMs = Math.Clamp(s.RestoreDelayMs, 0, 5000);
+                using var f = File.OpenRead(FilePath);
+                var s = (Settings?)Json.ReadObject(f) ?? new Settings();
+                s.Hotkey ??= "Ctrl+Alt+O";
+                s.RestoreDelayMs = Math.Max(0, Math.Min(5000, s.RestoreDelayMs));
                 return s;
             }
         }
-        catch (Exception ex) when (ex is IOException or JsonException or UnauthorizedAccessException)
+        catch (Exception ex) when (ex is IOException or SerializationException or UnauthorizedAccessException)
         {
             Log.Write("settings.json o'qilmadi, standart sozlamalar: " + ex.Message);
         }
@@ -42,7 +56,9 @@ internal sealed class Settings
         try
         {
             Directory.CreateDirectory(Log.Dir);
-            File.WriteAllText(FilePath, JsonSerializer.Serialize(this, Json));
+            using var f = File.Create(FilePath);
+            using var w = JsonReaderWriterFactory.CreateJsonWriter(f, Encoding.UTF8, ownsStream: false, indent: true);
+            Json.WriteObject(w, this);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
@@ -56,7 +72,7 @@ internal static class Autostart
 {
     private const string RunKey = @"Software\Microsoft\Windows\CurrentVersion\Run";
     private const string Name = "Ozbeca";
-    private static string Command => Quote(Environment.ProcessPath!);
+    private static string Command => Quote(Compat.ProcessPath!);
     private static string Quote(string path) => $"\"{path}\"";
 
     public static bool IsEnabled

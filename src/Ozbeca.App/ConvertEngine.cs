@@ -66,7 +66,7 @@ internal sealed class ConvertEngine
         bool terminal = TerminalClasses.Contains(cls);
         Log.Write($"Hotkey: oyna 0x{hwnd:X} class={cls} terminal={terminal}");
 
-        if (!Environment.IsPrivilegedProcess && IsElevated(hwnd))
+        if (!Compat.IsElevatedSelf && IsElevated(hwnd))
         {
             Say("Administrator huquqidagi oynada ishlamaydi");
             return;
@@ -91,7 +91,7 @@ internal sealed class ConvertEngine
         if (!copied && !terminal) copied = Copy(VK_CONTROL, VK_INSERT, seq); // zaxira yo'l
 
         string? text = copied ? _clip.ReadText() : null;
-        if (string.IsNullOrEmpty(text))
+        if (text == null || text.Length == 0)
         {
             _clip.Restore(snapshot);
             Say(office ? "Matn belgilanmagan yoki tahrirlashga ruxsat yo'q" : "Matn belgilanmagan");
@@ -175,7 +175,7 @@ internal sealed class ConvertEngine
         var sb = new StringBuilder(512);
         GetWindowText(hwnd, sb, sb.Capacity);
         string title = sb.ToString();
-        return ReadOnlyTitleMarkers.Any(m => title.Contains(m, StringComparison.OrdinalIgnoreCase));
+        return ReadOnlyTitleMarkers.Any(m => title.IndexOf(m, StringComparison.OrdinalIgnoreCase) >= 0);
     }
 
     private static string ClassName(IntPtr hwnd)

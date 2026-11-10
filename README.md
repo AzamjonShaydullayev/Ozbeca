@@ -43,23 +43,36 @@ Matn o'sha joyning o'zida yangi alifboga o'tadi.
 
 ### 1. Yuklab oling
 
-👉 **[Ozbeca.exe ni yuklab olish](https://github.com/AzamjonShaydullayev/Ozbeca/releases/latest/download/Ozbeca.exe)** (~68 MB)
+👉 **[Ozbeca.exe ni yuklab olish](https://github.com/AzamjonShaydullayev/Ozbeca/releases/latest/download/Ozbeca.exe)** (atigi ~0.1 MB)
 
-O'rnatish shart emas. Bitta fayl, hech narsa qo'shimcha kerak emas.
-
-<details>
-<summary>Kichik versiya kerakmi? (0.3 MB)</summary>
-
-[Ozbeca-lite.exe](https://github.com/AzamjonShaydullayev/Ozbeca/releases/latest/download/Ozbeca-lite.exe) xuddi shu dastur, faqat ichiga .NET qo'shilmagan. Ishlashi uchun kompyuterda **[.NET 8 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/8.0)** o'rnatilgan bo'lishi kerak. Qaysi birini tanlashni bilmasangiz, oddiy `Ozbeca.exe` ni oling.
-</details>
+Bitta kichik fayl, qo'shimcha hech narsa o'rnatish shart emas. Windows 10 va 11 da kerakli hamma narsa allaqachon bor.
 
 ### 2. Ishga tushiring
 
 Yuklab olingan `Ozbeca.exe` ni ikki marta bosing.
 
-> **"Windows protected your PC" (Windows kompyuteringizni himoya qildi) degan ko'k oyna chiqdimi?**
-> Bu normal holat: dastur yangi va hali raqamli imzoga ega emas.
-> **«More info» / «Подробнее»** → **«Run anyway» / «Выполнить в любом случае»** ni bosing. Bu faqat birinchi marta so'raladi.
+> [!NOTE]
+> **Ko'k "Windows protected your PC" ("Windows kompyuteringizni himoya qildi") oynasi chiqadi — bu normal holat.**
+>
+> Ochish uchun **«More info» / «Подробнее»** → **«Run anyway» / «Выполнить в любом случае»** ni bosing. Bu faqat bir marta so'raladi.
+>
+> <details>
+> <summary>Bu oyna nega chiqadi? Xavfsizmi?</summary>
+>
+> Bu Windows'ning **SmartScreen** himoyasi. U internetdan yuklangan va ikkita belgisi bo'lgan har qanday dasturda chiqadi:
+> - **raqamli imzo yo'q** — imzo uchun har yili pullik sertifikat kerak bo'ladi;
+> - **hali kam odam yuklab olgan.**
+>
+> Oyna dasturda virus borligini anglatmaydi. U faqat Windows bu dasturni hali "tanimasligini" bildiradi.
+>
+> Özbeça xavfsiz:
+> - **kodi to'liq ochiq**, bu sahifada istalgan kishi ko'rib chiqishi mumkin;
+> - **internetga ulanmaydi**, hech qanday ma'lumot yubormaydi;
+> - **administrator huquqi so'ramaydi**;
+> - **klaviaturani kuzatmaydi**: Windows'ning oddiy `RegisterHotKey` funksiyasi ishlatiladi, keylogger usuli emas.
+>
+> Xohlasangiz, faylni [VirusTotal](https://www.virustotal.com/) saytida 70 dan ortiq antivirus bilan tekshirib ko'rishingiz mumkin.
+> </details>
 
 ### 3. O'rnatish oynasida «Tayyor» ni bosing
 
@@ -228,12 +241,12 @@ Dastur so'zning qaysi tilda ekanini bilmaydi: `shop` → `şop`, `don't` → `do
 
 ## 🛠️ Dasturchilar uchun
 
-C# / .NET 8, WPF. O'girish mantig'i alohida, Windows'ga bog'liq bo'lmagan kutubxonada joylashgan va 300 dan ortiq test bilan himoyalangan.
+C#, WPF, **.NET Framework 4.8**. U Windows 10/11 tarkibida bor, shuning uchun exe ~0.1 MB va foydalanuvchi hech narsa o'rnatmaydi. O'girish mantig'i alohida, Windows'ga bog'liq bo'lmagan `netstandard2.0` kutubxonada joylashgan va 300 dan ortiq test bilan himoyalangan. Bu kod exe ichiga kompilyatsiya qilinadi, natijada bitta fayl chiqadi.
 
 ```
 src/Ozbeca.Core/         o'girish qoidalari (Transliterator), Telegram stillari (TelegramTags)
-src/Ozbeca.App/          tray, hotkey (RegisterHotKey), clipboard, sozlamalar, toast
-tests/Ozbeca.Core.Tests/ xUnit testlar
+src/Ozbeca.App/          tray, hotkey (RegisterHotKey), clipboard, sozlamalar, toast, o'rnatish oynasi
+tests/Ozbeca.Core.Tests/ xUnit testlar (.NET 8)
 tools/                   ikonka va README rasmlarini yasash
 ```
 
@@ -241,8 +254,10 @@ tools/                   ikonka va README rasmlarini yasash
 dotnet test
 ```
 
+Exe'ni yasash (natija `src/Ozbeca.App/bin/Release/net48/Ozbeca.exe` da chiqadi):
+
 ```bash
-dotnet publish src/Ozbeca.App -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o publish
+dotnet build src/Ozbeca.App -c Release
 ```
 
 Qanday ishlaydi: hotkey bosilganda dastur clipboard'ni saqlab qo'yadi. Keyin belgilangan matnni nusxalaydi (Ctrl+C), uni o'giradi va qayta qo'yadi (Ctrl+V). Oxirida asl clipboard'ni tiklaydi. Klaviatura hook'i ishlatilmaydi, faqat `RegisterHotKey`.

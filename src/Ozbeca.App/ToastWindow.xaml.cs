@@ -41,9 +41,9 @@ public partial class ToastWindow : Window
         var mi = new MONITORINFO { cbSize = System.Runtime.InteropServices.Marshal.SizeOf<MONITORINFO>() };
         GetMonitorInfo(MonitorFromPoint(p, MONITOR_DEFAULTTONEAREST), ref mi);
         var work = mi.rcWork;
-        int x = Math.Clamp(p.X + 16, work.Left, Math.Max(work.Left, work.Right - w));
+        int x = Compat.Clamp(p.X + 16, work.Left, Math.Max(work.Left, work.Right - w));
         int y = p.Y + 20 + h <= work.Bottom ? p.Y + 20 : p.Y - h - 8;
-        y = Math.Clamp(y, work.Top, Math.Max(work.Top, work.Bottom - h));
+        y = Compat.Clamp(y, work.Top, Math.Max(work.Top, work.Bottom - h));
         SetWindowPos(_hwnd, IntPtr.Zero, x, y, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
     }
 
