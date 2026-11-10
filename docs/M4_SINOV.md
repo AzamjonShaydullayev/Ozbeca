@@ -20,7 +20,7 @@ Sinovlar avtomatik skript bilan o'tkazildi. Har sinovda noyob matn ishlatildi (`
 | Chrome — input | ✓ | ✓ | ✓ | ✓ | |
 | Chrome — textarea | ✓ | ✓ | ✓ | ✓ | |
 | Google Docs | — | — | — | — | Sinalmadi: Google akkauntiga kirish kerak |
-| Telegram Desktop | user sinadi | | | | Natijasi so'raldi |
+| Telegram Desktop | ✓ | | | | User sinadi. Qalin, chiziqli va premium emoji stillari saqlanadi |
 | VS Code — tanlov bor | ✓ | ✓ | ✓ | ✓ | |
 | VS Code — tanlov yo'q | ✓ | ✓ | ✓ | — | Butun qator nusxasi aniqlanadi, qator ikki marta qo'yilmaydi |
 | Windows Terminal | ✓ | ✓ | ✓ | — | Terminalda undo yo'q |
@@ -35,6 +35,8 @@ Sinovlar avtomatik skript bilan o'tkazildi. Har sinovda noyob matn ishlatildi (`
    - Endi Office oynasi sarlavhasida "Protected View", "Защищенный просмотр", "Read-Only" kabi belgi bo'lsa, clipboard'ga tegilmaydi va "Tahrirlashga ruxsat yo'q — avval «Tahrirlashni yoqish»ni bosing" degan xabar chiqadi.
    - Office'da nusxa olinmasa, xabar "Matn belgilanmagan yoki tahrirlashga ruxsat yo'q" bo'ladi.
 2. **Explorer — clipboard tiklanmas edi.** Explorer paste'dan keyin o'sha matnni clipboard'ga qayta yozadi, shuning uchun dastur "boshqa dastur o'zgartirdi" deb hisoblardi. Endi clipboard'da hamon bizning matn tursa, asl nusxa tiklanadi.
+
+3. **Telegram — stillar yo'qolar edi.** Bu xatoni ham user topdi. Qalin, chiziqli matn va premium emoji o'girilgandan keyin oddiy matnga aylanib qolardi. Endi Telegram'ning `application/x-td-field-text` va `application/x-td-field-tags` formatlari o'qiladi. Stillarning o'rni pozitsiyalar xaritasi bo'yicha yangi matnga suriladi va paste'da qaytariladi (`Ozbeca.Core/TelegramTags.cs`).
 
 ## Ma'lum cheklovlar
 
