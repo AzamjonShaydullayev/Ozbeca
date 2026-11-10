@@ -13,6 +13,20 @@ internal sealed class ConvertEngine
         "ConsoleWindowClass", "CASCADIA_HOSTING_WINDOW_CLASS", "mintty", "PuTTY",
     };
 
+    // Office: Word/Excel/PowerPoint/Outlook oynalari.
+    private static readonly HashSet<string> OfficeClasses = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "OpusApp", "XLMAIN", "PPTFrameClass", "rctrl_renwnd32",
+    };
+
+    // Sarlavhadagi "himoyalangan ko'rinish" / "faqat o'qish" belgilari (Office UI tiliga qarab).
+    // Himoyalangan ko'rinishda Ctrl+C umuman ishlamaydi; faqat o'qishda paste ishlamaydi.
+    private static readonly string[] ReadOnlyTitleMarkers =
+    {
+        "Protected View", "Read-Only", "Защищенный просмотр", "Защищённый просмотр", "Только для чтения",
+        "Himoyalangan", "Faqat o'qish", "Faqat oʻqish",
+    };
+
     private const int CopyTimeoutMs = 600;
 
     private readonly ClipboardSwap _clip;
@@ -58,6 +72,13 @@ internal sealed class ConvertEngine
             return;
         }
 
+        bool office = OfficeClasses.Contains(cls);
+        if (office && IsReadOnlyTitle(hwnd))
+        {
+            Say("Tahrirlashga ruxsat yo'q — avval «Tahrirlashni yoqish»ni bosing");
+            return;
+        }
+
         if (InputSender.IsDown(VK_MENU)) InputSender.SendMask();
         InputSender.WaitKeysReleased(HotkeyVk);
         if (!Same(hwnd)) return;
@@ -73,7 +94,7 @@ internal sealed class ConvertEngine
         if (string.IsNullOrEmpty(text))
         {
             _clip.Restore(snapshot);
-            Say("Matn belgilanmagan");
+            Say(office ? "Matn belgilanmagan yoki tahrirlashga ruxsat yo'q" : "Matn belgilanmagan");
             return;
         }
         if (!Same(hwnd)) { _clip.Restore(snapshot); return; }
@@ -118,6 +139,14 @@ internal sealed class ConvertEngine
     {
         Log.Write(message);
         Notify?.Invoke(message);
+    }
+
+    private static bool IsReadOnlyTitle(IntPtr hwnd)
+    {
+        var sb = new StringBuilder(512);
+        GetWindowText(hwnd, sb, sb.Capacity);
+        string title = sb.ToString();
+        return ReadOnlyTitleMarkers.Any(m => title.Contains(m, StringComparison.OrdinalIgnoreCase));
     }
 
     private static string ClassName(IntPtr hwnd)
