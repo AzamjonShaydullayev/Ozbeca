@@ -99,7 +99,18 @@ internal sealed class ConvertEngine
         }
         if (!Same(hwnd)) { _clip.Restore(snapshot); return; }
 
-        string converted = Transliterator.ToNewAlphabet(text);
+        // Telegram: stillar (qalin, chiziqli, premium emoji) alohida formatda — ularni ham surib qaytaramiz.
+        List<(string, byte[])>? extras = null;
+        string converted;
+        if (TryTelegram(out var tgOld, out var tgNew, out var tgTags))
+        {
+            text = tgOld;
+            converted = tgNew;
+            extras = new() { (TelegramTags.TextFormat, Encoding.UTF8.GetBytes(tgNew)), (TelegramTags.TagsFormat, tgTags) };
+            Log.Write("Telegram stillari saqlanadi");
+        }
+        else converted = Transliterator.ToNewAlphabet(text);
+
         if (converted == text)
         {
             _clip.Restore(snapshot);
@@ -107,7 +118,7 @@ internal sealed class ConvertEngine
             return;
         }
 
-        uint ours = _clip.SetText(converted);
+        uint ours = _clip.SetText(converted, extras);
         if (ours == 0 || !Same(hwnd)) { _clip.Restore(snapshot); return; }
 
         bool sent = terminal ? InputSender.Chord(VK_SHIFT, VK_INSERT) : InputSender.Chord(VK_CONTROL, VK_V);
@@ -121,6 +132,22 @@ internal sealed class ConvertEngine
         else Log.Write("Clipboard'ni boshqa dastur o'zgartirdi — tiklanmadi");
 
         Say("Özbeça ✓"); // muvaffaqiyat xabari (user qarori, 2026-11-10)
+    }
+
+    private bool TryTelegram(out string oldText, out string newText, out byte[] newTags)
+    {
+        oldText = newText = "";
+        newTags = Array.Empty<byte>();
+        var tdText = _clip.ReadNamed(TelegramTags.TextFormat);
+        var tdTags = _clip.ReadNamed(TelegramTags.TagsFormat);
+        if (tdText == null || tdTags == null) return false;
+        if (!TelegramTags.TryConvert(tdText, tdTags, out newText, out newTags))
+        {
+            Log.Write("Telegram formati o'qilmadi — oddiy matn sifatida");
+            return false;
+        }
+        oldText = Encoding.UTF8.GetString(tdText);
+        return true;
     }
 
     private static bool Copy(int modifierVk, int keyVk, uint seq)

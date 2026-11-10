@@ -85,13 +85,26 @@ internal sealed class ClipboardSwap
         return text;
     }
 
-    /// <summary>Matnni tarixga yozmaydigan qilib qo'yadi; qo'yilgandan keyingi sequence'ni qaytaradi (0 — xato).</summary>
-    public uint SetText(string text)
+    /// <summary>Nomli formatni (masalan Telegram'ning "application/x-td-field-tags") o'qiydi.</summary>
+    public byte[]? ReadNamed(string formatName)
+    {
+        byte[]? data = null;
+        Use(() => data = ReadBytes(RegisterClipboardFormat(formatName)));
+        return data;
+    }
+
+    /// <summary>
+    /// Matnni (va ixtiyoriy nomli formatlarni) tarixga yozmaydigan qilib qo'yadi;
+    /// qo'yilgandan keyingi sequence'ni qaytaradi (0 — xato).
+    /// </summary>
+    public uint SetText(string text, IReadOnlyList<(string Format, byte[] Data)>? extras = null)
     {
         bool ok = Use(() =>
         {
             EmptyClipboard();
             SetBytes(CF_UNICODETEXT, Encoding.Unicode.GetBytes(text + "\0"));
+            foreach (var (format, data) in extras ?? Array.Empty<(string, byte[])>())
+                SetBytes(RegisterClipboardFormat(format), data);
             MarkNoHistory();
         });
         return ok ? Sequence : 0;
