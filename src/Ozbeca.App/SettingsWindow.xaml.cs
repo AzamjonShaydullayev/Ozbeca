@@ -34,8 +34,9 @@ public partial class SettingsWindow : Window
 
     private void HotkeyBox_PreviewKeyDown(object sender, KeyEventArgs e)
     {
-        e.Handled = true;
         Key key = e.Key == Key.System ? e.SystemKey : e.Key;
+        if (key == Key.Tab && Keyboard.Modifiers is ModifierKeys.None or ModifierKeys.Shift) return; // fokus keyingi elementga o'tsin
+        e.Handled = true;
         if (key is Key.LeftCtrl or Key.RightCtrl or Key.LeftAlt or Key.RightAlt or Key.LeftShift or Key.RightShift
             or Key.LWin or Key.RWin or Key.ImeProcessed or Key.DeadCharProcessed)
             return; // faqat modifier — kombinatsiya hali tugamagan

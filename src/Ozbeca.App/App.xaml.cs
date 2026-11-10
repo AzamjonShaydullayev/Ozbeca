@@ -26,6 +26,8 @@ public partial class App : Application
         if (!created)
         {
             Log.Write("Dastur allaqachon ishlayapti — ikkinchi nusxa yopildi");
+            MessageBox.Show("Özbeça allaqachon ishlab turibdi.\n\nU ekranning pastki o'ng burchagidagi (soat yonidagi) Ö belgisida. " +
+                "Sozlamalarni ochish uchun o'sha belgini bosing.", "Özbeça", MessageBoxButton.OK, MessageBoxImage.Information);
             _mutex.Dispose();
             _mutex = null;
             Shutdown();

@@ -11,6 +11,8 @@
     <RootNamespace>Ozbeca.App</RootNamespace>
     <ApplicationIcon>Assets\ozbeca.ico</ApplicationIcon>
     <Product>Özbeça</Product>
+    <Version>1.0.0</Version>
+    <Copyright>AzamjonShaydullayev</Copyright>
   </PropertyGroup>
 
   <ItemGroup>
