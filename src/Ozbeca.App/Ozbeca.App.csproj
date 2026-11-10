@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms> <!-- faqat tray NotifyIcon uchun -->
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>Ozbeca</AssemblyName>
+    <RootNamespace>Ozbeca.App</RootNamespace>
+    <ApplicationIcon>Assets\ozbeca.ico</ApplicationIcon>
+    <Product>Özbeça</Product>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- WinForms va WPF nomlari to'qnashmasligi uchun -->
+    <Using Remove="System.Windows.Forms" />
+    <Using Remove="System.Drawing" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Assets\ozbeca.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Ozbeca.Core\Ozbeca.Core.csproj" />
+  </ItemGroup>
+
+</Project>

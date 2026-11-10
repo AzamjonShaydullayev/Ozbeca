@@ -1,0 +1,143 @@
+using System.Text;
+using Ozbeca.Core;
+using static Ozbeca.App.Native;
+
+namespace Ozbeca.App;
+
+/// <summary>Hotkey bosilgandagi to'liq oqim (HANDOFF 5-bo'lim). Ish alohida STA thread'da.</summary>
+internal sealed class ConvertEngine
+{
+    // Terminalda Ctrl+C jarayonni to'xtatadi — Ctrl+Insert / Shift+Insert ishlatiladi.
+    private static readonly HashSet<string> TerminalClasses = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "ConsoleWindowClass", "CASCADIA_HOSTING_WINDOW_CLASS", "mintty", "PuTTY",
+    };
+
+    private const int CopyTimeoutMs = 600;
+
+    private readonly ClipboardSwap _clip;
+    private int _busy;
+
+    public ConvertEngine(IntPtr clipboardOwner) => _clip = new ClipboardSwap(clipboardOwner);
+
+    /// <summary>Hotkey'ning asosiy tugmasi (modifier'lardan tashqari) — qo'yib yuborilishini kutish uchun.</summary>
+    public int HotkeyVk { get; set; } = VK_SPACE;
+    public int RestoreDelayMs { get; set; } = 400;
+
+    /// <summary>Foydalanuvchiga ko'rsatiladigan xabar (M3 da toast).</summary>
+    public event Action<string>? Notify;
+
+    public void Trigger()
+    {
+        if (Interlocked.CompareExchange(ref _busy, 1, 0) != 0)
+        {
+            Log.Write("Oldingi o'girish tugamagan — e'tiborsiz");
+            return;
+        }
+        var t = new Thread(() =>
+        {
+            try { Run(); }
+            catch (Exception ex) { Log.Write("Xato: " + ex); }
+            finally { Volatile.Write(ref _busy, 0); }
+        }) { IsBackground = true, Name = "OzbecaConvert" };
+        t.SetApartmentState(ApartmentState.STA);
+        t.Start();
+    }
+
+    private void Run()
+    {
+        IntPtr hwnd = GetForegroundWindow();
+        if (hwnd == IntPtr.Zero) return;
+        string cls = ClassName(hwnd);
+        bool terminal = TerminalClasses.Contains(cls);
+        Log.Write($"Hotkey: oyna 0x{hwnd:X} class={cls} terminal={terminal}");
+
+        if (!Environment.IsPrivilegedProcess && IsElevated(hwnd))
+        {
+            Say("Administrator huquqidagi oynada ishlamaydi");
+            return;
+        }
+
+        if (InputSender.IsDown(VK_MENU)) InputSender.SendMask();
+        InputSender.WaitKeysReleased(HotkeyVk);
+        if (!Same(hwnd)) return;
+
+        var snapshot = _clip.Save();
+        uint seq = _clip.Clear();
+        if (seq == 0) { Say("Clipboard band"); return; }
+
+        bool copied = Copy(VK_CONTROL, terminal ? VK_INSERT : VK_C, seq);
+        if (!copied && !terminal) copied = Copy(VK_CONTROL, VK_INSERT, seq); // zaxira yo'l
+
+        string? text = copied ? _clip.ReadText() : null;
+        if (string.IsNullOrEmpty(text))
+        {
+            _clip.Restore(snapshot);
+            Say("Matn belgilanmagan");
+            return;
+        }
+        if (!Same(hwnd)) { _clip.Restore(snapshot); return; }
+
+        string converted = Transliterator.ToNewAlphabet(text);
+        if (converted == text)
+        {
+            _clip.Restore(snapshot);
+            Say("O'zgarish yo'q");
+            return;
+        }
+
+        uint ours = _clip.SetText(converted);
+        if (ours == 0 || !Same(hwnd)) { _clip.Restore(snapshot); return; }
+
+        bool sent = terminal ? InputSender.Chord(VK_SHIFT, VK_INSERT) : InputSender.Chord(VK_CONTROL, VK_V);
+        if (!sent) Log.Write("SendInput: paste yuborilmadi");
+
+        // Office kabi ilovalar clipboard'ni kechroq o'qiydi — shuning uchun darhol tiklanmaydi.
+        Thread.Sleep(RestoreDelayMs);
+        if (ClipboardSwap.Sequence == ours) _clip.Restore(snapshot);
+        else Log.Write("Clipboard'ni boshqa dastur o'zgartirdi — tiklanmadi");
+
+        Say("Özbeça ✓"); // muvaffaqiyat xabari (user qarori, 2026-11-10)
+    }
+
+    private static bool Copy(int modifierVk, int keyVk, uint seq)
+    {
+        if (!InputSender.Chord(modifierVk, keyVk)) Log.Write("SendInput: copy yuborilmadi");
+        return ClipboardSwap.WaitForChange(seq, CopyTimeoutMs);
+    }
+
+    /// <summary>Jarayon davomida foreground oyna o'zgarsa — bekor (matn boshqa oynaga tushmasin).</summary>
+    private static bool Same(IntPtr hwnd)
+    {
+        if (GetForegroundWindow() == hwnd) return true;
+        Log.Write("Foreground oyna o'zgardi — bekor qilindi");
+        return false;
+    }
+
+    private void Say(string message)
+    {
+        Log.Write(message);
+        Notify?.Invoke(message);
+    }
+
+    private static string ClassName(IntPtr hwnd)
+    {
+        var sb = new StringBuilder(256);
+        return GetClassName(hwnd, sb, sb.Capacity) > 0 ? sb.ToString() : "";
+    }
+
+    /// <summary>UIPI: elevated oynaga oddiy dastur SendInput yubora olmaydi. Token ochilmasa — elevated deb hisoblaymiz.</summary>
+    private static bool IsElevated(IntPtr hwnd)
+    {
+        GetWindowThreadProcessId(hwnd, out uint pid);
+        IntPtr proc = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, pid);
+        if (proc == IntPtr.Zero) return true;
+        try
+        {
+            if (!OpenProcessToken(proc, TOKEN_QUERY, out IntPtr token)) return true;
+            try { return GetTokenInformation(token, TokenElevation, out int elevated, sizeof(int), out _) && elevated != 0; }
+            finally { CloseHandle(token); }
+        }
+        finally { CloseHandle(proc); }
+    }
+}

@@ -1,0 +1,9 @@
+bin/
+obj/
+.vs/
+.vscode/
+*.user
+TestResults/
+publish/
+*.png
+!docs/**/*.png
