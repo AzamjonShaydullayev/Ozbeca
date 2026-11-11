@@ -14,6 +14,7 @@
 param(
     [int]$Delay = 90,          # oddiy tezlik (ms, harflar orasida)
     [int]$FastDelay = 35,      # tez yozuvchi
+    [int]$StressDelay = 15,    # juda tez: almashtirish paytida keyingi so'z ham ushlanadi (sekin kompyuterdagi holat)
     [string]$Exe = '',
     [switch]$DryRun,           # ilovalarni ochmasdan: jumlalar va kutilgan natijalarni ko'rsatadi
     [int]$Limit = 0,           # 0 — hammasi; aks holda faqat birinchi N jumla (tez tekshiruv uchun)
@@ -265,8 +266,8 @@ $sw = [Diagnostics.Stopwatch]::StartNew()
 try {
     foreach ($app in $Apps) {
         if ($Only -and $app.Name -notlike "*$Only*") { continue }
-        foreach ($speed in @(@{ N = 'oddiy'; D = $Delay }, @{ N = 'tez'; D = $FastDelay })) {
-            if ($speed.N -eq 'tez' -and $app.Relaxed) { continue }   # Word'da faqat oddiy tezlik
+        foreach ($speed in @(@{ N = 'oddiy'; D = $Delay }, @{ N = 'tez'; D = $FastDelay }, @{ N = 'juda tez'; D = $StressDelay })) {
+            if ($speed.N -ne 'oddiy' -and $app.Relaxed) { continue }   # Word'da faqat oddiy tezlik
             if ([E2E]::Aborted) { break }
             Write-Host ("== {0} ({1}, {2} ms)" -f $app.Name, $speed.N, $speed.D) -ForegroundColor Cyan
             & $app.Start
@@ -309,6 +310,32 @@ try {
                     if ($good) { $pass++ }
                     $note = if (-not $restored) { '   [clipboard TIKLANMADI]' } else { '' }
                     $rows.Add([pscustomobject]@{ App = $app.Name; Speed = 'Ctrl+V'; Kind = 'paste'; Ok = $good; Interfered = $interfered; Typed = $paste + $note; Expected = $exp; Got = $got; Window = $window })
+                    Write-Host -NoNewline $(if ($good) { '.' } elseif ($interfered) { '?' } else { 'X' }) -ForegroundColor $(if ($good) { 'Green' } elseif ($interfered) { 'Yellow' } else { 'Red' })
+                }
+            }
+
+            # Ctrl+V va darhol Enter, keyin darhol yozish (Telegram'da xabar yuborish kabi). Enter va keyingi
+            # tugmalar paste paytida ushlanadi — qayta yuborilganda ham o'girilishi kerak.
+            if ($speed.N -eq 'juda tez' -and $app.Enter) {
+                foreach ($pe in @(
+                    @{ Paste = "yuborishni xohlasangiz"; Then = "shunqorim choy`n" },
+                    @{ Paste = "Bugun shahar bo'ylab"; Then = "qo'shiq shirin`n" }
+                )) {
+                    if ([E2E]::EscDown()) { break }
+                    $n++
+                    [void]$ws.AppActivate($app.Title); Wait-Ms 250
+                    Clear-Field
+                    Set-Clipboard -Value $pe.Paste; Wait-Ms 300
+                    [E2E]::Chord(1, 0x56)                          # Ctrl+V
+                    $ok = [E2E]::Type("`n" + $pe.Then, $speed.D, 3); if (-not $ok) { break }
+                    Wait-Ms 1200
+                    $window = [E2E]::FgTitle()
+                    $got = Read-All
+                    $exp = (Get-PasteExpected $pe.Paste) + (Get-Expected ("`n" + $pe.Then))
+                    $good = (Normalize $got $app.Relaxed) -eq (Normalize $exp $app.Relaxed)
+                    $interfered = $window -notlike "*$($app.Title)*"
+                    if ($good) { $pass++ }
+                    $rows.Add([pscustomobject]@{ App = $app.Name; Speed = 'Ctrl+V+Enter'; Kind = 'paste'; Ok = $good; Interfered = $interfered; Typed = $pe.Paste + ' [Ctrl+V]' + $pe.Then; Expected = $exp; Got = $got; Window = $window })
                     Write-Host -NoNewline $(if ($good) { '.' } elseif ($interfered) { '?' } else { 'X' }) -ForegroundColor $(if ($good) { 'Green' } elseif ($interfered) { 'Yellow' } else { 'Red' })
                 }
             }

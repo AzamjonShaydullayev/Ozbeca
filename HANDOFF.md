@@ -237,6 +237,13 @@ dotnet build src/Ozbeca.App -c Release        # → src/Ozbeca.App/bin/Release/n
   lekin `qoldi`/`qolgan` minglab. O'zak oilasi va toza gaplar kerak. Leipzig `words.txt` ham yetarli emas, `sentences.txt` kerak.
 - Oxiridagi tutuqni olib tashlashda `bog'`/`tog'` saqlansin, chunki g' dan keyingi tutuq — harf.
 - Debug build'da yozilgan tugmalar logga yozilmasin (README va'dasi) — `[debug]` loglar olib tashlangan.
+- **Qayta yuborilgan (ushlangan) tugmalar ham o'girilishi kerak.** v1.3.0 gacha ular ichida o'girish yo'q edi, shuning uchun
+  sekin kompyuterda tez yozilgan so'z, Ctrl+V va Enter o'girilmay qolardi (Telegram skrinshoti, 2026-11-11). Endi o'giriladi;
+  partiyaning qolgani `_holdReplays` bilan qayta ushlanadi va `_held` boshiga qo'yiladi (`_reheld`), ya'ni tartib saqlanadi.
+- **Dead key (US-International) va AltGr** bilan yozilgan tutuq so'zni unutardi: `to'g'irlach` → `to'g'irlaç`.
+  `ToUnicodeEx` < 0 — dead key; birlashish `Compose` da qo'lda, chunki flag 4 holatni saqlamaydi.
+- **UIA vaqti tugashini "parol" deb eslab qolmang**: sekin kompyuterda sichqoncha bosilguncha hech narsa o'girilmasdi.
+  Endi timeout = shu so'z o'tkazib yuboriladi; tekshiruv so'zning birinchi harfida boshlanadi (`PrefetchPassword`).
 
 ---
 
@@ -261,6 +268,8 @@ dotnet build src/Ozbeca.App -c Release        # → src/Ozbeca.App/bin/Release/n
 
 ## 8. Keyingi qadamlar (takliflar — user bilan kelishiladi)
 
+0. **Tez yozish tuzatishini real sinash:** E2E `-Only Notepad`/`-Only Chrome` (yangi "juda tez" 15 ms va Ctrl+V+Enter holatlari),
+   keyin boshqa kompyuterda v1.4.0 bilan. Ishlamasa — o'sha kompyuterning `ozbeca.log` i (UIA/kutish vaqti yozuvlari).
 1. User v1.3.0 ni boshqa kompyuterda sinaydi (UAC tuzatishi u yerda tasdiqlanmagan — faqat koddan topilgan sabab;
    o'z kompyuterimizda sinov: yangilash ✅, pauza va probel ✅) → ishlamasa logni so'rab, sababni logdan aniqlash.
    Ehtimoliy boshqa sabab: sekin kompyuterda UIA parol tekshiruvi 400 ms dan oshib, maydon "parol" deb keshlanadi

@@ -102,8 +102,8 @@ internal sealed class AutoType : IDisposable
         int msg = wParam.ToInt32();
         if (nCode >= 0 && (msg == WM_LBUTTONDOWN || msg == WM_RBUTTONDOWN || msg == WM_MBUTTONDOWN))
         {
-            _word.Reset();
-            _focusPassword = null; // boshqa maydonga bosilgan bo'lishi mumkin
+            ResetWord();
+            ForgetFocus(); // boshqa maydonga bosilgan bo'lishi mumkin
         }
         return CallNextHookEx(_mouseHook, nCode, wParam, lParam);
     }
@@ -140,6 +140,7 @@ internal sealed class AutoType : IDisposable
 
             if (injected && k.dwExtraInfo == OwnInput)
             {
+                _holdReplays = false;
                 if (_pending > 0) _pending--;
                 TryFlush();
                 return CallNextHookEx(_keyHook, nCode, wParam, lParam);
@@ -149,6 +150,13 @@ internal sealed class AutoType : IDisposable
             if (replay)
             {
                 if (_pending > 0) _pending--;
+                // Qayta yuborilganlar ichida yangi almashtirish boshlangan: qolganlari undan keyin turishi kerak —
+                // yana ushlaymiz (bu paytda kelgan yangi tugmalardan oldinga) va almashtirishdan keyin qaytaramiz.
+                if (_holdReplays)
+                {
+                    _held.Insert(_reheld++, (k, up));
+                    return new IntPtr(1);
+                }
                 TryFlush(); // qayta yuborish paytida yana ushlanganlar
             }
             else if (_pending > 0 || _settling > 0 || _held.Count > 0) // navbatda kutayotganlar bo'lsa — ulardan oldin o'tmasin
@@ -157,8 +165,12 @@ internal sealed class AutoType : IDisposable
                 return new IntPtr(1); // keyinroq tartib bilan qaytariladi
             }
 
-            // Qayta yuborilayotgan tugmalar ichida yangi almashtirish qilinmaydi (tartib yana buzilmasin).
-            if (down && HandleKeyDown(k, allowReplace: !replay)) return new IntPtr(1);
+            // Qayta yuborilgan tugmalar ham o'giriladi (tez yozish, Ctrl+V va Enter almashtirishdan keyin darhol).
+            if (down && HandleKeyDown(k))
+            {
+                if (replay) _holdReplays = true;
+                return new IntPtr(1);
+            }
         }
         catch (Exception ex)
         {
@@ -167,6 +179,11 @@ internal sealed class AutoType : IDisposable
         }
         return CallNextHookEx(_keyHook, nCode, wParam, lParam);
     }
+
+    // Qayta yuborilgan tugma yangi almashtirishni boshladi — partiyaning qolgani almashtirishdan keyin ketadi.
+    // Navbat FIFO: almashtirishning birinchi tugmasi kelganda partiyadan boshqa tugma qolmagan bo'ladi.
+    private bool _holdReplays;
+    private int _reheld; // _held boshiga qaytarilgan (qayta ushlangan) tugmalar soni
 
     private void BeginPending(int count, int extraMs = 0)
     {
@@ -183,6 +200,7 @@ internal sealed class AutoType : IDisposable
                     Log.Write("AutoType: kutish vaqti tugadi, ushlangan tugmalar qaytarildi");
                     _pending = 0;
                     _settling = 0;
+                    _holdReplays = false;
                     FlushHeld();
                 }
                 if (_pending == 0 && _settling == 0 && _held.Count == 0) _guard!.Stop();
@@ -209,6 +227,8 @@ internal sealed class AutoType : IDisposable
             },
         }).ToArray();
         _held.Clear();
+        _reheld = 0;
+        _holdReplays = false; // yangi partiya: oldingi almashtirish o'tib bo'lgan (yoki yuborilmay qolgan) — qotib qolmasin
         SendDeferred(inputs, "ushlangan tugmalar");
     }
 
@@ -287,7 +307,7 @@ internal sealed class AutoType : IDisposable
     }
 
     /// <summary>true — tugma ushlab qolindi (o'rniga o'zimiz yubordik).</summary>
-    private bool HandleKeyDown(KBDLLHOOKSTRUCT k, bool allowReplace)
+    private bool HandleKeyDown(KBDLLHOOKSTRUCT k)
     {
         IntPtr fg = GetForegroundWindow();
         if (fg != _lastWindow)
@@ -295,8 +315,8 @@ internal sealed class AutoType : IDisposable
             _lastWindow = fg;
             _mode = WindowMode(fg);
             _word.CodeMode = _mode == Mode.Code;
-            _focusPassword = null;
-            _word.Reset();
+            ForgetFocus();
+            ResetWord();
         }
         if (_mode == Mode.Off) return false;
 
@@ -307,35 +327,46 @@ internal sealed class AutoType : IDisposable
             return false;
 
         // Ctrl+V: qo'yilayotgan matn (probel yoki yangi qatori bo'lsa) ham o'giriladi.
-        if (vk == VK_V && allowReplace && _mode == Mode.Prose && InputSender.IsDown(VK_CONTROL) && !InputSender.IsDown(VK_MENU) &&
+        if (vk == VK_V && _mode == Mode.Prose && InputSender.IsDown(VK_CONTROL) && !InputSender.IsDown(VK_MENU) &&
             !InputSender.IsDown(VK_LWIN) && !InputSender.IsDown(VK_RWIN) && !IsPasswordFocus(fg))
         {
-            _word.Reset();
+            ResetWord();
             BeginPending(1, 600); // haqiqiy son PasteConverted'da aniqlanadi; shu orada kelgan tugmalar ushlanadi
             _dispatcher.BeginInvoke(new Action(PasteConverted));
             return true; // V ushlandi — clipboard tayyor bo'lgach o'zimiz yuboramiz
         }
 
         // LL-hook'da asinxron holat voqealar tartibida yangilanadi (ushlangan tugmalar uni o'zgartirmaydi).
-        if (InputSender.IsDown(VK_CONTROL) || InputSender.IsDown(VK_MENU) || InputSender.IsDown(VK_LWIN) || InputSender.IsDown(VK_RWIN))
+        // AltGr (= Ctrl + o'ng Alt) bilan harf yozish mumkin — ba'zi o'zbek layoutlarida tutuq ʻ shunday yoziladi.
+        bool ctrl = InputSender.IsDown(VK_CONTROL), alt = InputSender.IsDown(VK_MENU);
+        bool altGr = ctrl && alt && InputSender.IsDown(VK_RMENU);
+        if (!altGr && (ctrl || alt) || InputSender.IsDown(VK_LWIN) || InputSender.IsDown(VK_RWIN))
         {
-            _word.Reset(); // Ctrl+V, Ctrl+Z, Alt+Tab... — matn qayerda ekanini endi bilmaymiz
+            ResetWord(); // Ctrl+V, Ctrl+Z, Alt+Tab... — matn qayerda ekanini endi bilmaymiz
+            return false;
+        }
+
+        // Dead key ('/`/^ kabi) dan keyingi probel: probel yozilmaydi, faqat o'sha belgi chiqadi — so'z davom etadi.
+        if (vk == VK_SPACE && _dead is char deadChar)
+        {
+            _dead = null;
+            _word.Add(deadChar);
             return false;
         }
 
         switch (vk)
         {
             case VK_BACK:
+                if (_dead != null) { ResetWord(); return false; } // dead key bekor qilindi — nima o'chganini bilmaymiz
                 _word.Backspace();
                 ArmPause();
                 return false;
             case VK_SPACE:
-                if (allowReplace) return CompleteWord(fg);
-                _word.Reset();
-                return false;
+                return CompleteWord(fg);
             case VK_RETURN:
+                _dead = null;
                 // "Yaxshimisan?" + Enter — oxirgi so'z ham o'girilsin. Parol maydoni bo'lsa — tegmaymiz (pastda UIA).
-                if (allowReplace && _mode == Mode.Prose && !IsPasswordFocus(fg) &&
+                if (_mode == Mode.Prose && !IsPasswordFocus(fg) &&
                     _word.TryCompleteAtEnter(out int enterDel, out string enterWord))
                 {
                     Replace(enterDel, enterWord, new[] { Key(VK_RETURN, false), Key(VK_RETURN, true) });
@@ -347,31 +378,77 @@ internal sealed class AutoType : IDisposable
                 _word.ResetNewLine(); // kursor qator boshida — kod rejimida qo'shtirnoqdan tashqari ekani aniq
                 return false;
             case VK_TAB:
-                _focusPassword = null;
-                _word.Reset();
+                ForgetFocus();
+                ResetWord();
                 return false;
             case VK_ESCAPE:
             case VK_DELETE:
             case VK_INSERT:
             case >= 0x21 and <= 0x28: // PgUp, PgDn, End, strelkalar
-                _word.Reset();
+                ResetWord();
                 return false;
         }
 
-        char? c = ToChar(fg, k);
-        if (c is char ch && !char.IsControl(ch) && !char.IsWhiteSpace(ch))
+        string? typed = ToChars(fg, k, altGr, out bool isDead);
+        if (isDead && typed?.Length == 1)
+        {
+            // Dead key: belgi keyingi tugma bilan birga chiqadi. So'zni unutmaymiz (aks holda to'g'ri → to'g'irlaç).
+            if (_dead is char prev) _word.Add(prev); // ikki dead key ketma-ket — birinchisi o'zi chiqadi
+            _dead = typed[0];
+            PrefetchPassword();
+            return false;
+        }
+        if (typed != null && _dead is char dead)
+        {
+            _dead = null;
+            typed = Compose(dead, typed);
+        }
+
+        if (typed != null && typed.All(ch => !char.IsControl(ch) && !char.IsWhiteSpace(ch)))
         {
             // Kod rejimi: qo'shtirnoq yopilyapti — oldingi so'zni o'girib, keyin " ni o'zimiz yozamiz.
-            if (ch == '"' && allowReplace && _word.TryCompleteBeforeQuote(out int del, out string word))
+            if (typed == "\"" && _word.TryCompleteBeforeQuote(out int del, out string word))
             {
                 Replace(del, word, UnicodeKeys('"'));
                 return true;
             }
-            _word.Add(ch);
+            foreach (char ch in typed) _word.Add(ch);
+            PrefetchPassword();
             ArmPause();
         }
-        else _word.Reset();
+        else ResetWord();
         return false;
+    }
+
+    // ---- Dead key (US-International va b.): ' ` ^ ~ " keyingi harf bilan birlashadi yoki o'zi chiqadi ----
+    private char? _dead;
+
+    private void ResetWord()
+    {
+        _dead = null;
+        _word.Reset();
+    }
+
+    /// <summary>
+    /// Dead key + keyingi belgi ekranda nima bo'lib chiqadi (US-International jadvali): unli bilan birlashadi
+    /// (' + o → ó), ' + c → ç, ~ + n → ñ; qolganlari — ikkalasi alohida (' + g → 'g, shuning uchun to'g'ri buzilmaydi).
+    /// </summary>
+    private static string Compose(char dead, string next)
+    {
+        if (next.Length != 1) return dead + next;
+        char c = next[0];
+        if (dead == '\'' && (c == 'c' || c == 'C')) return c == 'c' ? "ç" : "Ç";
+        char mark = dead switch
+        {
+            '\'' or '´' => '\u0301', '`' => '\u0300', '^' => '\u0302', '~' => '\u0303', '"' or '¨' => '\u0308', _ => '\0',
+        };
+        bool composes = "aeiouyAEIOUY".IndexOf(c) >= 0 || (dead == '~' && (c == 'n' || c == 'N'));
+        if (mark != '\0' && composes)
+        {
+            string composed = (next + mark).Normalize(NormalizationForm.FormC);
+            if (composed.Length == 1) return composed;
+        }
+        return dead + next;
     }
 
     // ---- Pauza: so'z yozilib, biroz kutilsa — probel/Enter'ni kutmasdan o'giriladi ----
@@ -404,7 +481,7 @@ internal sealed class AutoType : IDisposable
 
     private bool CompleteWord(IntPtr fg)
     {
-        if (IsPasswordFocus(fg)) { _word.Reset(); return false; }
+        if (IsPasswordFocus(fg)) { ResetWord(); return false; }
         if (!_word.TryComplete(out int deleteCount, out string replacement)) return false;
         Replace(deleteCount, replacement, UnicodeKeys(' '));
         return true;
@@ -435,15 +512,22 @@ internal sealed class AutoType : IDisposable
             return;
         }
 
-        BeginPending(1, 1500); // haqiqiy son tekshiruvdan keyin aniqlanadi
+        BeginPending(1, UiaTimeoutMs + 1100); // haqiqiy son tekshiruvdan keyin aniqlanadi
+        bool? cached = _focusPassword; // true — shu maydon parol ekani allaqachon ma'lum
+        var check = cached != null ? null : _uiaCheck ?? System.Threading.Tasks.Task.Run(FocusIsPasswordUia); // odatda harf yozilganda boshlangan
+        _uiaCheck = null;
         System.Threading.Tasks.Task.Run(() =>
         {
-            bool password = _focusPassword ?? FocusIsPasswordUia();
+            bool? uia = cached ?? check!.Result;
             _dispatcher.BeginInvoke(new Action(() =>
             {
-                _focusPassword = password;
+                // Javob kelmasa (sekin kompyuter) — bu so'zga tegmaymiz, lekin "parol" deb eslab qolmaymiz:
+                // aks holda sichqoncha bosilguncha shu maydonda hech narsa o'girilmasdi.
+                _focusPassword ??= uia;
+                bool password = uia ?? true;
                 var keys = password ? new List<INPUT>(trailing) : ReplacementKeys(deleteCount, replacement, trailing);
-                if (password) Log.Write("AutoType: parol maydoni — so'z o'girilmadi");
+                if (uia == null) Log.Write("AutoType: UI Automation javob bermadi — so'z o'girilmadi, keyingisida qayta tekshiriladi");
+                else if (password) Log.Write("AutoType: parol maydoni — so'z o'girilmadi");
                 _pending += keys.Count - 1;
                 _pendingSince = Environment.TickCount + keys.Count / 2 * (PaceMs + 20);
                 _settling++;
@@ -452,19 +536,36 @@ internal sealed class AutoType : IDisposable
         });
     }
 
-    /// <summary>UIA: fokusdagi element parol maydonimi. Javob 400 ms da kelmasa yoki xato — xavfsiz tomonga: "parol".</summary>
-    private static bool FocusIsPasswordUia()
+    private const int UiaTimeoutMs = 800;
+    private System.Threading.Tasks.Task<bool?>? _uiaCheck;
+
+    /// <summary>Fokus o'zgardi (sichqoncha, Tab, boshqa oyna) — parol tekshiruvi qaytadan.</summary>
+    private void ForgetFocus()
+    {
+        _focusPassword = null;
+        _uiaCheck = null;
+    }
+
+    /// <summary>
+    /// UIA tekshiruvini so'zning birinchi harfida boshlaymiz — probelgacha javob tayyor bo'ladi va tugmalar ushlanmaydi
+    /// (Qt/Telegram'da birinchi UIA so'rovi sekin: ilova accessibility daraxtini quradi).
+    /// </summary>
+    private void PrefetchPassword()
+    {
+        if (_focusPassword == null && _uiaCheck == null)
+            _uiaCheck = System.Threading.Tasks.Task.Run(FocusIsPasswordUia);
+    }
+
+    /// <summary>UIA: fokusdagi element parol maydonimi. null — javob kelmadi yoki xato (chaqiruvchi bu so'zga tegmaydi).</summary>
+    private static bool? FocusIsPasswordUia()
     {
         var t = System.Threading.Tasks.Task.Run(() =>
         {
-            try
-            {
-                var el = System.Windows.Automation.AutomationElement.FocusedElement;
-                return el == null || el.Current.IsPassword;
-            }
-            catch (Exception) { return true; }
+            var el = System.Windows.Automation.AutomationElement.FocusedElement;
+            return el == null || el.Current.IsPassword;
         });
-        return !t.Wait(400) || t.Result;
+        try { return t.Wait(UiaTimeoutMs) ? t.Result : null; }
+        catch (AggregateException) { return null; }
     }
 
     private const int PasteRestoreDelayMs = 500;
@@ -530,16 +631,20 @@ internal sealed class AutoType : IDisposable
         timer.Start();
     }
 
-    private char? ToChar(IntPtr fg, KBDLLHOOKSTRUCT k)
+    /// <summary>Tugma qaysi belgi(lar)ni yozadi. isDead — dead key (belgi keyingi tugma bilan chiqadi).</summary>
+    private string? ToChars(IntPtr fg, KBDLLHOOKSTRUCT k, bool altGr, out bool isDead)
     {
         Array.Clear(_keyState, 0, _keyState.Length);
         if (InputSender.IsDown(VK_SHIFT)) _keyState[VK_SHIFT] = 0x80;
         if ((GetKeyState(VK_CAPITAL) & 1) != 0) _keyState[VK_CAPITAL] = 0x01;
+        if (altGr) _keyState[VK_CONTROL] = _keyState[VK_MENU] = _keyState[VK_LCONTROL] = _keyState[VK_RMENU] = 0x80;
         IntPtr hkl = GetKeyboardLayout(GetWindowThreadProcessId(fg, out _));
         _chars.Clear();
-        // flag 4: klaviatura holatini o'zgartirmaslik (aks holda dead key'lar buziladi)
+        // flag 4: klaviatura holatini o'zgartirmaslik (aks holda foydalanuvchining dead key'lari buziladi)
         int n = ToUnicodeEx(k.vkCode, k.scanCode, _keyState, _chars, _chars.Capacity, 4, hkl);
-        return n == 1 ? _chars[0] : null;
+        isDead = n < 0;
+        if (n < 0) return _chars.Length > 0 ? _chars[0].ToString() : null;
+        return n > 0 ? _chars.ToString(0, Math.Min(n, _chars.Length)) : null;
     }
 
     private static Mode WindowMode(IntPtr hwnd)

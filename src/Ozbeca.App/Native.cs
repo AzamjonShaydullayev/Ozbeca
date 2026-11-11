@@ -18,7 +18,8 @@ internal static class Native
 
     // --- Klaviatura ---
     public const int VK_SHIFT = 0x10, VK_CONTROL = 0x11, VK_MENU = 0x12, VK_SPACE = 0x20, VK_INSERT = 0x2D,
-        VK_C = 0x43, VK_V = 0x56, VK_LWIN = 0x5B, VK_RWIN = 0x5C, VK_MASK = 0xE8; // 0xE8 — tayinlanmagan
+        VK_C = 0x43, VK_V = 0x56, VK_LWIN = 0x5B, VK_RWIN = 0x5C, VK_LCONTROL = 0xA2, VK_RMENU = 0xA5,
+        VK_MASK = 0xE8; // 0xE8 — tayinlanmagan
     public const uint INPUT_KEYBOARD = 1, KEYEVENTF_EXTENDEDKEY = 0x1, KEYEVENTF_KEYUP = 0x2;
 
     [StructLayout(LayoutKind.Sequential)]
