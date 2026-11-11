@@ -38,6 +38,9 @@ SLOPPY = set("bolgan bolib boladi boyicha ozbekiston ozbek kop togri bolsa boldi
              "korsatadi bolmagan".split())
 
 # --- Qo'shimchalar grammatikasi (soddalashtirilgan, tartib bilan) ---
+# Tutuqsiz shakli inglizcha so'z: yozish paytida buzilmasin (logon -> log'on). tog'a — haqiqiy so'z, qoladi.
+ENGLISH_HOMOGRAPHS = {"logon"}
+
 N_DERIV = {"li", "lik", "siz", "chi", "chilik", "cha"}
 N_PLUR = {"lar"}
 N_POSS = {"im", "ing", "i", "si", "imiz", "ingiz", "miz", "ngiz", "m", "ng", "lari"}

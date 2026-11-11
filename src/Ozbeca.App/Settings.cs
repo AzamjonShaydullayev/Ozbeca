@@ -24,6 +24,12 @@ internal sealed class Settings
     /// <summary>Avto-o'girish faqat shu dasturlarda (jarayon nomi). Bo'sh — hamma dasturlarda.</summary>
     [DataMember] public List<AllowedApp> AutoTypeApps { get; set; } = new();
 
+    /// <summary>Standart o'chiq: tugamagan so'zni o'zgartiradi (email, login buziladi).</summary>
+    [DataMember] public bool PauseConvert { get; set; }
+
+    /// <summary>Standart o'chiq: Ctrl+V da ingliz matni va ma'lumotlar jim o'zgarardi.</summary>
+    [DataMember] public bool PasteConvert { get; set; }
+
     // DataContract konstruktorni chaqirmaydi — faylda yo'q maydonlar standart qiymatda qolsin.
     [OnDeserializing]
     private void SetDefaults(StreamingContext _)

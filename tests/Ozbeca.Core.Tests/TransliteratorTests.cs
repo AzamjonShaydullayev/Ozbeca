@@ -77,6 +77,11 @@ public class TransliteratorTests
     [InlineData("\"Bog'\" bog'", "\"Boğ\" boğ")]    // qo'shtirnoq A to'plamida emas — ğ
     [InlineData("'bog'", "'bog'")]                   // ma'lum cheklov: tirnoq bilan boshlansa bog' ham saqlanadi
     [InlineData("tog' va bog'", "toğ va boğ")]
+    [InlineData("'Yaxshi tong' edi", "'Yaxşi tong' edi")]    // bir necha so'zli iqtibos
+    [InlineData("logon qiling", "logon qiling")]              // inglizcha so'z lug'atdan chiqarilgan
+    [InlineData("shahar.uz saytida choy", "shahar.uz saytida çoy")]  // sxemasiz domen
+    [InlineData("Sayt: shop.example.com/choy", "Sayt: shop.example.com/choy")]
+    [InlineData("shahar.uzoq", "şahar.uzoq")]                // TLD emas
     [InlineData("'o'zbek'", "'özbek'")]
     [InlineData("o' harfi", "ö harfi")]                  // yakka o' — harfning o'zi
     [InlineData("O‘ va G‘", "Ö va Ğ")]

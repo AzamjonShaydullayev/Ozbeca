@@ -201,6 +201,8 @@ public partial class App : Application
     /// <summary>Hook faqat ikkala sozlama yoqilganda o'rnatiladi.</summary>
     private void ApplyAutoType()
     {
+        _autoType.PauseConvert = Settings.PauseConvert;
+        _autoType.PasteConvert = Settings.PasteConvert;
         if (Settings.Enabled && Settings.AutoType) _autoType.Start();
         else _autoType.Stop();
     }
@@ -249,6 +251,11 @@ public partial class App : Application
         _autoTypeItem = new WinForms.ToolStripMenuItem("Yozish paytida o'girish") { CheckOnClick = true };
         _autoTypeItem.Click += (_, _) => SetAutoType(_autoTypeItem.Checked);
 
+        var pauseItem = new WinForms.ToolStripMenuItem("Pauzada o'girish (1 s)") { CheckOnClick = true };
+        pauseItem.Click += (_, _) => { Settings.PauseConvert = pauseItem.Checked; Settings.Save(); ApplyAutoType(); };
+        var pasteItem = new WinForms.ToolStripMenuItem("Ctrl+V da o'girish") { CheckOnClick = true };
+        pasteItem.Click += (_, _) => { Settings.PasteConvert = pasteItem.Checked; Settings.Save(); ApplyAutoType(); };
+
         _autostartItem = new WinForms.ToolStripMenuItem("Windows bilan birga ishga tushirish") { CheckOnClick = true };
         _autostartItem.Click += (_, _) => Autostart.Set(_autostartItem.Checked);
 
@@ -257,6 +264,8 @@ public partial class App : Application
         menu.Items.Add(new WinForms.ToolStripSeparator());
         menu.Items.Add(_enabledItem);
         menu.Items.Add(_autoTypeItem);
+        menu.Items.Add(pauseItem);
+        menu.Items.Add(pasteItem);
         menu.Items.Add(_autostartItem);
         menu.Items.Add(new WinForms.ToolStripSeparator());
         menu.Items.Add("Sozlamalar…", null, (_, _) => ShowSettings());
@@ -267,6 +276,9 @@ public partial class App : Application
             _enabledItem.Checked = Settings.Enabled;
             _autoTypeItem.Checked = Settings.AutoType;
             _autoTypeItem.Enabled = Settings.Enabled;
+            pauseItem.Checked = Settings.PauseConvert;
+            pasteItem.Checked = Settings.PasteConvert;
+            pauseItem.Enabled = pasteItem.Enabled = Settings.Enabled && Settings.AutoType;
             _autostartItem.Checked = Autostart.IsEnabled;
         };
 

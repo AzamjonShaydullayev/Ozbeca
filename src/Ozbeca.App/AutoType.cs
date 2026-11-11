@@ -34,9 +34,12 @@ internal sealed class AutoType : IDisposable
     internal static readonly HashSet<string> BlockedProcesses = new(StringComparer.OrdinalIgnoreCase)
     {
         // terminallar
-        "WindowsTerminal", "cmd", "powershell", "pwsh", "conhost", "putty", "mintty", "wsl",
+        "WindowsTerminal", "cmd", "powershell", "pwsh", "conhost", "putty", "mintty", "wsl", "bash",
+        "alacritty", "wezterm-gui", "kitty", "Hyper", "Tabby", "ConEmu", "ConEmu64", "ConEmuC", "ConEmuC64", "Warp", "FluentTerminal",
         // parol menejerlari, masofaviy ish stoli, virtual mashinalar
-        "KeePass", "KeePassXC", "1Password", "Bitwarden", "mstsc", "vmconnect", "VirtualBoxVM", "vmware-vmx",
+        "KeePass", "KeePassXC", "KeeWeb", "1Password", "Bitwarden", "LastPass", "Dashlane", "NordPass", "Enpass", "RoboForm", "Keeper",
+        "mstsc", "msrdc", "RDCMan", "AnyDesk", "TeamViewer", "RustDesk", "vncviewer", "wfica32", "Parsec",
+        "vmconnect", "VirtualBoxVM", "vmware-vmx",
     };
 
     /// <summary>O'zimiz yuborgan tugmalar belgisi (dwExtraInfo) — ularni qayta qayta ishlamaymiz.</summary>
@@ -51,6 +54,16 @@ internal sealed class AutoType : IDisposable
 
     // Fokusdagi maydon parolmi (UI Automation). null — hali bilmaymiz; sichqoncha, Tab, boshqa oyna — qayta tekshiriladi.
     private bool? _focusPassword;
+    // Bitta HWND ichida fokus sezdirmay o'zgaradi (Chrome tablari, sahifa skripti) — "parol emas" natijasi faqat qisqa muddat ishonchli.
+    private const int FocusCacheMs = 3000;
+    private int _focusCheckedAt;
+
+    /// <summary>1 s pauzada probelsiz o'girish. Tugamagan so'zni o'zgartiradi: "sherzod"+pauza+"@gmail.com" buziladi — standart o'chiq.</summary>
+    public bool PauseConvert { get; set; }
+
+    /// <summary>Ctrl+V da qo'yilayotgan matnni o'girish. Ingliz matni va ma'lumotlarni jim o'zgartiradi — standart o'chiq.</summary>
+    public bool PasteConvert { get; set; }
+
     private readonly byte[] _keyState = new byte[256];
     private readonly StringBuilder _chars = new(8);
 
@@ -348,13 +361,17 @@ internal sealed class AutoType : IDisposable
         // Ctrl+V: qo'yilayotgan matn (probel yoki yangi qatori bo'lsa) ham o'giriladi.
         // Tegilmaydi: parol maydoni (UIA bilan ma'lum bo'lsa ham) va Office'ga qo'yilayotgan Excel kataklari —
         // oddiy matnga aylantirilsa formulalar va jadval yo'qolardi.
-        if (vk == VK_V && _mode == Mode.Prose && InputSender.IsDown(VK_CONTROL) && !InputSender.IsDown(VK_MENU) &&
+        if (PasteConvert && vk == VK_V && _mode == Mode.Prose && InputSender.IsDown(VK_CONTROL) && !InputSender.IsDown(VK_MENU) &&
             !InputSender.IsDown(VK_LWIN) && !InputSender.IsDown(VK_RWIN) && !IsPasswordFocus(fg) && _focusPassword != true &&
             !(ConvertEngine.IsOfficeWindow(fg) && ClipboardSwap.HasSpreadsheetCells))
         {
             ResetWord();
             BeginPending(1, 600); // haqiqiy son PasteConverted'da aniqlanadi; shu orada kelgan tugmalar ushlanadi
-            _dispatcher.BeginInvoke(new Action(PasteConverted));
+            System.Threading.Tasks.Task.Run(() =>
+            {
+                bool password = FocusIsPasswordUia() ?? true; // javob kelmasa — o'girmasdan qo'yamiz. Chrome/Telegram parol maydoni — Win32 tekshiruvi ularni ko'rmaydi
+                _dispatcher.BeginInvoke(new Action(() => PasteConverted(password)));
+            });
             return true; // V ushlandi — clipboard tayyor bo'lgach o'zimiz yuboramiz
         }
 
@@ -416,6 +433,7 @@ internal sealed class AutoType : IDisposable
             case VK_INSERT:
             case >= 0x21 and <= 0x28: // PgUp, PgDn, End, strelkalar
                 ResetWord();
+                ForgetFocus(); // ro'yxat/forma ichida strelka fokusni boshqa maydonga ko'chirishi mumkin
                 return false;
         }
 
@@ -503,7 +521,7 @@ internal sealed class AutoType : IDisposable
 
     private void ConvertOnPause()
     {
-        if (!IsRunning || _mode == Mode.Off || _pending > 0 || _settling > 0 || _held.Count > 0) return;
+        if (!PauseConvert || !IsRunning || _mode == Mode.Off || _pending > 0 || _settling > 0 || _held.Count > 0) return;
         IntPtr fg = GetForegroundWindow();
         if (fg != _lastWindow) return; // boshqa oynaga o'tilgan — so'z u yerda emas
         // Ushlab turilgan modifier bilan Backspace boshqa ma'no beradi (Ctrl+Backspace — butun so'zni o'chiradi).
@@ -540,6 +558,8 @@ internal sealed class AutoType : IDisposable
     /// </summary>
     private void Replace(int deleteCount, string replacement, INPUT[] trailing)
     {
+        // Bitta HWND ichida fokus sezdirmay o'zgaradi (sahifa skripti parol maydoniga o'tkazadi) — "parol emas" eskiradi.
+        if (_focusPassword == false && Environment.TickCount - _focusCheckedAt >= FocusCacheMs) ForgetFocus();
         if (_focusPassword == false)
         {
             SendDeferred(ReplacementKeys(deleteCount, replacement, trailing).ToArray(), "almashtirish");
@@ -559,7 +579,11 @@ internal sealed class AutoType : IDisposable
                 // Javob kelmasa (sekin kompyuter) — bu so'zga tegmaymiz, lekin "parol" deb eslab qolmaymiz:
                 // aks holda sichqoncha bosilguncha shu maydonda hech narsa o'girilmasdi.
                 // Javob kutilayotganda fokus o'zgargan bo'lsa (sichqoncha, Enter) — u eski maydonniki, eslab qolmaymiz.
-                if (focus == _focusGen) _focusPassword ??= uia;
+                if (focus == _focusGen && _focusPassword == null && uia != null)
+                {
+                    _focusPassword = uia;
+                    _focusCheckedAt = Environment.TickCount;
+                }
                 bool password = uia ?? true;
                 var keys = password ? new List<INPUT>(trailing) : ReplacementKeys(deleteCount, replacement, trailing);
                 if (uia == null) Log.Write("AutoType: UI Automation javob bermadi — so'z o'girilmadi, keyingisida qayta tekshiriladi");
@@ -614,15 +638,16 @@ internal sealed class AutoType : IDisposable
     /// Faqat probel/yangi qatori bor matn: bitta so'z (masalan, nusxalangan parol "shahar123") o'zgarmasin.
     /// Nima bo'lsa ham V yuboriladi — foydalanuvchining paste'i yo'qolmasin.
     /// </summary>
-    private void PasteConverted()
+    private void PasteConverted(bool password)
     {
         ClipboardSwap.Snapshot? snapshot = null;
         uint ours = 0;
         string? converted = null;
+        bool slow = false;
         try
         {
             string? text = _clip.ReadText();
-            if (text != null && text.Any(char.IsWhiteSpace))
+            if (!password && text != null && text.Any(char.IsWhiteSpace))
             {
                 List<(string, byte[])>? extras = null;
                 string? conv = null;
@@ -637,11 +662,19 @@ internal sealed class AutoType : IDisposable
                     conv = tgNew;
                     extras = new() { (TelegramTags.TextFormat, Encoding.UTF8.GetBytes(tgNew)), (TelegramTags.TagsFormat, tgTags) };
                 }
+                else if (ClipboardSwap.HasRichContent)
+                {
+                    // Formatli nusxa (Word, brauzer) — oddiy matnga aylantirsak formatlash yo'qoladi; tegmaymiz
+                }
                 else conv = CodeGuard.ConvertProse(text); // kod parchasi bo'lsa — identifikatorlarga tegmaydi
 
                 if (conv != null && conv != text)
                 {
+                    var sw = System.Diagnostics.Stopwatch.StartNew();
                     snapshot = _clip.Save();
+                    // Hook oqimi band bo'lib qoldi (kechiktirilgan clipboard formatlari) — Windows LowLevelHooksTimeout'dan
+                    // keyin hook'ni jim olib tashlaydi. Qo'yib bo'lgach qayta o'rnatamiz.
+                    slow = sw.ElapsedMilliseconds > 250;
                     ours = _clip.SetText(conv, extras);
                     if (ours != 0) converted = conv;
                     else snapshot = null;
@@ -666,6 +699,7 @@ internal sealed class AutoType : IDisposable
             timer.Stop();
             // Boshqa dastur clipboard'ga yangi narsa yozgan bo'lsa — ustidan yozmaymiz.
             if (ClipboardSwap.Sequence == ours || _clip.ReadText() == converted) _clip.Restore(snapshot);
+            if (slow) { Log.Write("AutoType: clipboard sekin o'qildi — hook qayta o'rnatiladi"); Restart(); }
         };
         timer.Start();
     }

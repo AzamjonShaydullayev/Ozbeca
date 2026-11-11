@@ -33,6 +33,15 @@ internal sealed class ClipboardSwap
     /// <summary>Clipboard'da Excel kataklari bor (formulalar, formatlar) — oddiy matn bilan almashtirilsa ular yo'qoladi.</summary>
     public static bool HasSpreadsheetCells => IsClipboardFormatAvailable(RegisterClipboardFormat("XML Spreadsheet"));
 
+    /// <summary>
+    /// Clipboard'da formatli kontent bor (HTML, RTF, rasm, fayl) — SetText faqat oddiy matn qoldiradi,
+    /// Word/Gmail'ga qo'yilganda qalin, havola va rasmlar yo'qolardi.
+    /// </summary>
+    public static bool HasRichContent =>
+        IsClipboardFormatAvailable(RegisterClipboardFormat("HTML Format")) ||
+        IsClipboardFormatAvailable(RegisterClipboardFormat("Rich Text Format")) ||
+        IsClipboardFormatAvailable(8) /* CF_DIB */ || IsClipboardFormatAvailable(15) /* CF_HDROP */;
+
     public sealed record Snapshot(IReadOnlyList<(uint Format, byte[] Data)> Items);
 
     public Snapshot Save()

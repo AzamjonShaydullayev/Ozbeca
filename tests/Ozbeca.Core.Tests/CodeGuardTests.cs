@@ -10,6 +10,8 @@ public class CodeGuardTests
     [InlineData("print(choy)")]
     [InlineData("choy()")]
     [InlineData("shop.check")]
+    [InlineData("check")]
+    [InlineData("Should,")]
     [InlineData("shahar.uz")]
     [InlineData("std::cout")]
     [InlineData("showChart")]

@@ -27,7 +27,7 @@ public static class Transliterator
     // Email @username'dan va domendan oldin turishi shart. Domen — faqat tanish zona bilan: "tugadi.Keyin" havola emas.
     private static readonly Regex Protected = new(
         @"(?:https?://|www\.)\S+|[\w.+-]+@[\w-]+(?:\.[\w-]+)+" +
-        @"|(?<![\w.@-])(?:[\w-]+\.)+(?:uz|com|org|net|ru|me|io|info|biz|edu|gov|tv|app|dev|ai|co|kz|tj|kg|tm|tr|uk|us|de|be|ly)(?![\w-])(?:[/?#]\S*)?" +
+        @"|(?<![\w.'`’‘ʻʼ´′＇@-])(?:[\w-]+\.)+(?:uz|com|org|net|ru|me|io|info|biz|edu|gov|tv|app|dev|ai|co|kz|tj|kg|tm|tr|uk|us|de|be|ly)(?![\w-])(?:[/?#]\S*)?" +
         @"|[@#]\w+", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
     /// <summary>
@@ -127,7 +127,9 @@ public static class Transliterator
 
             // 3. g + A → ğ, so'z oxirida ham — lekin so'z ochuvchi tirnoq bilan boshlangan bo'lsa ('tong'),
             //    oxiridagi A yopuvchi tirnoq deb olinadi (user qarori, 2026-11-10).
-            if ((c == 'g' || c == 'G') && IsA(n1) && (IsLetter(n2) || !OpensWithQuote(s, start, i)))
+            // So'z oxiridagi ng' ham yopuvchi tirnoq: 'katta tong' (bir necha so'zli iqtibos).
+            if ((c == 'g' || c == 'G') && IsA(n1) &&
+                (IsLetter(n2) || (!OpensWithQuote(s, start, i) && !(i > start && s[i - 1] is 'n' or 'N'))))
             {
                 sb.Append(c == 'g' ? 'ğ' : 'Ğ');
                 i += 2;

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Text;
 
 namespace Ozbeca.Core;
@@ -15,7 +16,20 @@ public static class CodeGuard
     // So'z ichida bo'lsa — bu kod/identifikator: user_name, x=5, print(choy), a<b, $var, path\to, a*b, a&b, a|b
     private const string CodeChars = "_=(){}[]<>$\\*&|^~#@/";
 
-    /// <summary>Token kodga o'xshaydimi (identifikator, ifoda, domen, camelCase).</summary>
+    // Yozish paytida buzilmasin: check → çeck. O'zbekcha so'zlar bilan bir xillari (much, chop, chin, char) ataylab kiritilmagan.
+    private static readonly HashSet<string> EnglishWords = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "she", "shall", "should", "shape", "share", "shared", "sharp", "shell", "shift", "ship", "shipping", "shop", "shopping",
+        "short", "shortcut", "shot", "show", "showed", "showing", "shown", "shut", "chain", "chance", "change", "changed", "changes",
+        "changing", "channel", "chapter", "character", "charge", "chart", "charts", "chat", "chats", "cheap", "check", "checked",
+        "checking", "checkout", "checks", "chief", "child", "children", "choice", "choose", "chrome", "church", "cache", "schedule",
+        "scheme", "school", "which", "such", "each", "reach", "teach", "touch", "watch", "match", "catch", "march", "search",
+        "searching", "speech", "branch", "lunch", "launch", "tech", "technical", "technology", "machine", "merchant", "purchase",
+        "architecture", "english", "finish", "finished", "publish", "published", "push", "pushed", "flash", "crash", "fresh",
+        "refresh", "wish", "dish", "wash", "cash", "hash", "trash", "brush", "dash", "slash", "splash", "mesh", "fashion",
+    };
+
+    /// <summary>Token kodga o'xshaydimi (identifikator, ifoda, domen, camelCase) yoki inglizcha so'zmi.</summary>
     public static bool LooksLikeCode(string token)
     {
         if (string.IsNullOrEmpty(token)) return false;
@@ -25,6 +39,7 @@ public static class CodeGuard
         while (start < end && EdgePunctuation.IndexOf(token[start]) >= 0) start++;
         while (end > start && EdgePunctuation.IndexOf(token[end - 1]) >= 0) end--;
         if (start >= end) return false;
+        if (EnglishWords.Contains(token.Substring(start, end - start))) return true;
 
         for (int i = start; i < end; i++)
         {
