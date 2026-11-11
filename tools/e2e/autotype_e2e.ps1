@@ -18,7 +18,8 @@ param(
     [string]$Exe = '',
     [switch]$DryRun,           # ilovalarni ochmasdan: jumlalar va kutilgan natijalarni ko'rsatadi
     [int]$Limit = 0,           # 0 — hammasi; aks holda faqat birinchi N jumla (tez tekshiruv uchun)
-    [string]$Only = ''         # faqat shu ilova(lar), masalan: -Only VS   yoki   -Only Notepad
+    [int]$PwRepeat = 1,        # parol maydoni sinovi necha marta (har safar brauzer yangidan ochiladi); faqat shuni: -Only parol
+    [string]$Only = ''         # faqat shu ilova(lar), masalan: -Only VS   yoki   -Only Notepad   yoki   -Only 'Notepad,Chrome'
 )
 $ErrorActionPreference = 'Stop'
 $OutputEncoding = [Console]::OutputEncoding = [Text.Encoding]::UTF8
@@ -54,10 +55,12 @@ public static class E2E {
     K(key, false); K(key, true);
     if ((mods & 4) != 0) K(0x10, true); if ((mods & 2) != 0) K(0x12, true); if ((mods & 1) != 0) K(0x11, true);
   }
-  // Odamga o'xshash yozish. '\b' = Backspace, '\n' = Enter, '\u2190' = chap strelka, '\u2192' = o'ng strelka.
+  // Odamga o'xshash yozish. '\b' = Backspace, '\n' = Enter, '\u2190' = chap strelka, '\u2192' = o'ng strelka,
+  // '\u23f8' = pauza (yozish to'xtaydi \u2014 dastur 1 s dan keyin so'zni o'giradi).
   public static bool Type(string text, int delayMs, int jitterMs) {
     foreach (char c in text) {
       if (EscDown()) return false;
+      if (c == '\u23f8') { Thread.Sleep(1700); continue; }
       short s;
       if (c == '\n') s = 0x0D; else if (c == '\b') s = 0x08; else if (c == '\u2190') s = 0x25; else if (c == '\u2192') s = 0x27;
       else s = VkKeyScan(c);
@@ -119,7 +122,12 @@ function Get-Expected([string]$typed) {
                 if ($tb.TryComplete([ref]$del, [ref]$rep)) { [void]$out.Remove($out.Length - $del, $del); [void]$out.Append($rep) }
                 [void]$out.Append(' ')
             }
-            "`b" { $tb.Backspace(); if ($out.Length) { [void]$out.Remove($out.Length - 1, 1) } }
+            "`b" {
+                # Dastur kabi: o'girilgan so'zdan keyin darhol Backspace — qaytarish, aks holda oddiy o'chirish
+                $del = 0; $rep = ''
+                if ($tb.TryUndo([ref]$del, [ref]$rep)) { [void]$out.Remove($out.Length - $del, $del); [void]$out.Append($rep) }
+                else { $tb.Backspace(); if ($out.Length) { [void]$out.Remove($out.Length - 1, 1) } }
+            }
             "`n" {
                 $del = 0; $rep = ''
                 if ($tb.TryCompleteAtEnter([ref]$del, [ref]$rep)) { [void]$out.Remove($out.Length - $del, $del); [void]$out.Append($rep) }
@@ -127,17 +135,36 @@ function Get-Expected([string]$typed) {
             }
             ([char]0x2190) { $tb.Reset() }   # strelka: so'z unutiladi, matn o'zgarmaydi (kursor qaytadi)
             ([char]0x2192) { $tb.Reset() }
-            default { $tb.Add($c); [void]$out.Append($c) }
+            ([char]0x23F8) {                 # pauza: so'z probelsiz o'giriladi
+                $del = 0; $rep = ''
+                if ($tb.TryConvertAtPause([ref]$del, [ref]$rep)) { [void]$out.Remove($out.Length - $del, $del); [void]$out.Append($rep) }
+            }
+            default {
+                $tb.Add($c); [void]$out.Append($c)
+                # Pauzada o'girilgan so'z manzil/kodga aylandi (sherzod + @gmail.com) — yozilganidek qaytadi
+                $del = 0; $rep = ''
+                if ($tb.TryRestoreTyped([ref]$del, [ref]$rep)) { [void]$out.Remove($out.Length - $del, $del); [void]$out.Append($rep) }
+            }
         }
     }
     return $out.ToString()
 }
 
 # ---------------- Test jumlalari ----------------
-$L = [char]0x2190; $R = [char]0x2192
+$L = [char]0x2190; $R = [char]0x2192; $P = [char]0x23F8   # $P — pauza (1 s dan ko'proq kutish)
 $Cases = [System.Collections.Generic.List[string]]::new()
 @(
     "choy ", "shahar ", "O'zbekiston ", "g'isht ", "qo'shiq ",
+    # v1.6.x: pauzadan keyin manzil, tirnoq ichidagi ibora, inglizcha so'zlar, Backspace bilan qaytarish
+    ("sherzod" + $P + "@gmail.com ga yoz "),
+    ("shop" + $P + ".uz saytida choy "),
+    ("ishla" + $P + "sh kerak "),
+    ("organish" + $P + " kerak "),
+    "'Yaxshi tong' dedi bog' ",
+    "check should school chat ",
+    "chess `b",
+    "chess `b`b ",
+    "shahr `b`b`bar katta ",
     "O'zbekiston Respublikasi poytaxti Toshkent shahri ",
     "Bugun choy ichdik va shirin qo'shiq kuyladik ",
     "Chorshanba kuni bog'da shaftoli terdik ",
@@ -199,13 +226,56 @@ $PasteCases = @(
 )
 function Get-PasteExpected([string]$t) {
     if ($t -notmatch '\s') { return $t }
-    return [Ozbeca.Core.Transliterator]::ToNewAlphabet($t)
+    return [Ozbeca.Core.CodeGuard]::ConvertProse($t)   # dastur Ctrl+V da aynan shuni chaqiradi (kod va inglizcha so'zlarga tegmaydi)
+}
+
+# -Only: bitta nom yoki vergul bilan bir nechta ('Notepad,Chrome')
+function Selected([string]$name) {
+    if (-not $Only) { return $true }
+    foreach ($o in $Only.Split(',')) { if ($o.Trim() -and $name -like "*$($o.Trim())*") { return $true } }
+    return $false
 }
 
 # ---------------- Ilovalar ----------------
 function Start-Notepad { $f = Join-Path $Work "e2e_$Stamp.txt"; [IO.File]::WriteAllText($f, ''); Start-Process notepad.exe $f; Wait-Ms 2500; [void]$ws.AppActivate("e2e_$Stamp"); Wait-Ms 600 }
-function Stop-Notepad { [E2E]::Chord(1, 0x53); Wait-Ms 400; [E2E]::Chord(1, 0x57); Wait-Ms 600 }   # Ctrl+S, Ctrl+W
-$ChromeExe = 'C:\Program Files\Google\Chrome\Application\chrome.exe'
+function Stop-Notepad {
+    [E2E]::Chord(1, 0x53); Wait-Ms 400; [E2E]::Chord(1, 0x57); Wait-Ms 600   # Ctrl+S, Ctrl+W
+    # Klassik Notepad (Windows Sandbox) Ctrl+W ni bilmaydi — oynasi qolib ketmasin
+    Get-Process notepad -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowTitle -like "*e2e_$Stamp*" } | Stop-Process -ErrorAction SilentlyContinue
+}
+$HasNotepad = [bool](Get-Command notepad.exe -ErrorAction SilentlyContinue)   # Windows Sandbox'da Notepad yo'q
+
+# "Native edit": klassik Win32 EDIT maydoni (WinForms TextBox) — skriptning o'zi yig'adi, hamma joyda bor.
+# Alohida exe: powershell jarayoni dasturning istisno ro'yxatida, uning oynasida avto-yozish ishlamaydi.
+$EditExe = Join-Path $Work 'E2EEdit.exe'
+function Start-Native {
+    if (-not (Test-Path $EditExe)) {
+        Add-Type -OutputAssembly $EditExe -OutputType WindowsApplication -ReferencedAssemblies System.Windows.Forms, System.Drawing -TypeDefinition @'
+using System; using System.Drawing; using System.Windows.Forms;
+static class P {
+  [STAThread] static void Main(string[] a) {
+    var f = new Form { Text = a.Length > 0 ? a[0] : "e2e_native", Width = 1000, Height = 500, StartPosition = FormStartPosition.CenterScreen };
+    var t = new TextBox { Multiline = true, AcceptsReturn = true, Dock = DockStyle.Fill, Font = new Font("Consolas", 12), ScrollBars = ScrollBars.Vertical, MaxLength = 0 };
+    t.KeyDown += (s, e) => { if (e.Control && e.KeyCode == Keys.A) { t.SelectAll(); e.SuppressKeyPress = true; } };
+    f.Controls.Add(t);
+    Application.Run(f);
+  }
+}
+'@
+    }
+    Start-Process $EditExe -ArgumentList "e2e_native_$Stamp"; Wait-Ms 2000; [void]$ws.AppActivate("e2e_native_$Stamp"); Wait-Ms 600
+}
+function Stop-Native { Get-Process E2EEdit -ErrorAction SilentlyContinue | Stop-Process -ErrorAction SilentlyContinue; Wait-Ms 500 }
+
+# Chrome bo'lmasa (Windows Sandbox) — Edge: ikkalasi ham Chromium, bayroqlar bir xil
+$ChromeExe = @(
+    'C:\Program Files\Google\Chrome\Application\chrome.exe',
+    'C:\Program Files (x86)\Google\Chrome\Application\chrome.exe',
+    'C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe',
+    'C:\Program Files\Microsoft\Edge\Application\msedge.exe'
+) | Where-Object { Test-Path $_ } | Select-Object -First 1
+$ChromeProc = if ($ChromeExe) { Split-Path -Leaf $ChromeExe } else { 'chrome.exe' }
+$HasWord = Test-Path 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\Winword.exe'
 $ChromeProfile = Join-Path $Work 'chrome-profile'
 function Start-Chrome([string]$kind) {
     $html = Join-Path $Work "e2e_$kind.html"
@@ -214,7 +284,7 @@ function Start-Chrome([string]$kind) {
     Start-Process $ChromeExe -ArgumentList "--user-data-dir=`"$ChromeProfile`"", '--no-first-run', '--new-window', "file:///$($html -replace '\\','/')"
     Wait-Ms 4000; [void]$ws.AppActivate("e2e-$kind"); Wait-Ms 700
 }
-function Stop-Chrome { Get-CimInstance Win32_Process -Filter "Name='chrome.exe'" | Where-Object { $_.CommandLine -like '*chrome-profile*' } | ForEach-Object { Stop-Process -Id $_.ProcessId -ErrorAction SilentlyContinue }; Wait-Ms 800 }
+function Stop-Chrome { Get-CimInstance Win32_Process -Filter "Name='$ChromeProc'" | Where-Object { $_.CommandLine -like '*chrome-profile*' } | ForEach-Object { Stop-Process -Id $_.ProcessId -ErrorAction SilentlyContinue }; Wait-Ms 800 }
 function Start-Word {
     $doc = Join-Path $Work "e2e_$Stamp.docx"; python -I (Join-Path $Here 'mkdocx.py') $doc ' '
     Start-Process $doc; Wait-Ms 9000; [void]$ws.AppActivate("e2e_$Stamp"); Wait-Ms 800
@@ -222,6 +292,7 @@ function Start-Word {
 function Stop-Word { Get-Process WINWORD -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowTitle -like "*e2e_$Stamp*" } | Stop-Process; Wait-Ms 1000 }
 
 $Apps = @(
+    @{ Name = 'Native edit';     Title = "e2e_native_$Stamp"; Start = { Start-Native };       Stop = { Stop-Native };  Enter = $true;  Relaxed = $false },
     @{ Name = 'Notepad';         Title = "e2e_$Stamp";   Start = { Start-Notepad };           Stop = { Stop-Notepad }; Enter = $true;  Relaxed = $false },
     @{ Name = 'Chrome textarea'; Title = 'e2e-textarea'; Start = { Start-Chrome 'textarea' }; Stop = { Stop-Chrome };  Enter = $true;  Relaxed = $false },
     @{ Name = 'Chrome input';    Title = 'e2e-input';    Start = { Start-Chrome 'input' };    Stop = { Stop-Chrome };  Enter = $false; Relaxed = $false },
@@ -242,7 +313,7 @@ function Normalize([string]$s, [bool]$relaxed) {
 }
 
 # ---------------- Ishga tushirish ----------------
-$session = (query session 2>$null) -match '^>' | Out-String
+$session = if (Get-Command query.exe -ErrorAction SilentlyContinue) { (query session 2>$null) -match '^>' | Out-String } else { 'Active' }
 if ($session -notmatch 'Active') { Write-Host "XATO: Windows sessiyasi faol emas (masofadan uzilgan). Kompyuter oldida ishga tushiring." -ForegroundColor Red; exit 1 }
 Write-Host ""
 Write-Host "  Ozbeca avto-yozish sinovi: $($Cases.Count) jumla x $($Apps.Count) ilova (+ tez yozish)" -ForegroundColor Cyan
@@ -265,12 +336,16 @@ $rows = [System.Collections.Generic.List[object]]::new()
 $sw = [Diagnostics.Stopwatch]::StartNew()
 try {
     foreach ($app in $Apps) {
-        if ($Only -and $app.Name -notlike "*$Only*") { continue }
+        if (-not (Selected $app.Name)) { continue }
+        if ($app.Name -like 'Chrome*' -and -not $ChromeExe) { Write-Host "== $($app.Name): Chrome/Edge topilmadi - o'tkazib yuborildi" -ForegroundColor Yellow; continue }
+        if ($app.Name -eq 'Word' -and -not $HasWord) { Write-Host "== Word: o'rnatilmagan - o'tkazib yuborildi" -ForegroundColor Yellow; continue }
+        if ($app.Name -eq 'Notepad' -and -not $HasNotepad) { Write-Host "== Notepad: yo'q (Windows Sandbox) - o'tkazib yuborildi" -ForegroundColor Yellow; continue }
         foreach ($speed in @(@{ N = 'oddiy'; D = $Delay }, @{ N = 'tez'; D = $FastDelay }, @{ N = 'juda tez'; D = $StressDelay })) {
             if ($speed.N -ne 'oddiy' -and $app.Relaxed) { continue }   # Word'da faqat oddiy tezlik
             if ([E2E]::Aborted) { break }
             Write-Host ("== {0} ({1}, {2} ms)" -f $app.Name, $speed.N, $speed.D) -ForegroundColor Cyan
-            & $app.Start
+            # Bitta ilova ochilmasa — qolganlari yuraversin va hisobot chiqsin
+            try { & $app.Start } catch { Write-Host "  OCHILMADI: $_" -ForegroundColor Red; break }
             $pass = 0; $n = 0
             foreach ($typed in $Cases) {
                 if ([E2E]::EscDown()) { break }
@@ -346,7 +421,10 @@ try {
 
     # Parol maydoni: choy1990 + Enter o'zgarmasligi kerak (UIA IsPassword). Nusxa olib bo'lmaydi —
     # sahifa Enter'da qiymatni oyna sarlavhasiga chiqaradi.
-    if (-not [E2E]::Aborted -and (-not $Only -or 'Chrome' -like "*$Only*")) {
+    # Har takrorda brauzer yangidan ochiladi: Chromium maydonlar haqidagi ma'lumotni (accessibility) birinchi so'rovdan
+    # keyin quradi — yangi ochilgan brauzerdagi BIRINCHI parol eng nozik holat.
+    for ($pwRun = 1; $pwRun -le $PwRepeat; $pwRun++) {
+    if (-not [E2E]::Aborted -and $ChromeExe -and (Selected 'Chrome parol')) {
         Write-Host "== Chrome parol maydoni (o'girmasligi kerak)" -ForegroundColor Cyan
         $html = Join-Path $Work 'e2e_pw.html'
         [IO.File]::WriteAllText($html, "<!doctype html><meta charset=utf-8><title>e2e-pw</title><input id=f type=password style='font-size:18px'><script>f.focus();f.addEventListener('keydown',e=>{if(e.key==='Enter'){document.title='pw:'+f.value;e.preventDefault();}})</script>", [Text.UTF8Encoding]::new($true))
@@ -361,8 +439,18 @@ try {
             $rows.Add([pscustomobject]@{ App = 'Chrome parol maydoni'; Speed = 'oddiy'; Kind = 'parol'; Ok = $good; Interfered = ($window -notlike 'pw:*' -and $window -notlike 'e2e-pw*'); Typed = $pw; Expected = $exp; Got = $window; Window = $window })
             Write-Host -NoNewline $(if ($good) { '.' } else { 'X' }) -ForegroundColor $(if ($good) { 'Green' } else { 'Red' })
         }
+        # Parol maydoniga Ctrl+V: probelli parol ham o'zgarmasligi kerak (qo'yishdan oldin UIA tekshiruvi)
+        Clear-Field
+        Set-Clipboard -Value 'qish shamoli'; Wait-Ms 300
+        [E2E]::Chord(1, 0x56); Wait-Ms 1500
+        [void][E2E]::Type("`n", $Delay, 0); Wait-Ms 1200
+        $window = [E2E]::FgTitle()
+        $good = $window -like 'pw:qish shamoli*'
+        $rows.Add([pscustomobject]@{ App = 'Chrome parol maydoni'; Speed = 'Ctrl+V'; Kind = 'parol'; Ok = $good; Interfered = ($window -notlike 'pw:*' -and $window -notlike 'e2e-pw*'); Typed = 'qish shamoli [Ctrl+V]'; Expected = 'pw:qish shamoli'; Got = $window; Window = $window })
+        Write-Host -NoNewline $(if ($good) { '.' } else { 'X' }) -ForegroundColor $(if ($good) { 'Green' } else { 'Red' })
         Write-Host ''
         Stop-Chrome
+    }
     }
 
     # VS Code: kod rejimi — faqat "..." ichi o'giriladi; kod, izoh va kalit so'zlar o'zgarmaydi.
@@ -376,7 +464,7 @@ try {
         "`nalert(`"shirin choy`" + name);`n",
         "x = `"choy shahar`";`n"            # Enter'siz boshlanadi: holat noma'lum — o'girilmasligi kerak
     )
-    if ((Test-Path $code) -and -not [E2E]::Aborted -and (-not $Only -or 'VS Code' -like "*$Only*")) {
+    if ((Test-Path $code) -and -not [E2E]::Aborted -and (Selected 'VS Code')) {
         Write-Host "== VS Code (kod rejimi: faqat qo'shtirnoq ichi)" -ForegroundColor Cyan
         $f = Join-Path $Work "e2e_vscode_$Stamp.js"; [IO.File]::WriteAllText($f, '')
         Start-Process $code -ArgumentList '-n', "`"$f`""; Wait-Ms 8000

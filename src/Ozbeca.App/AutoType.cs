@@ -363,7 +363,7 @@ internal sealed class AutoType : IDisposable
             else
             {
                 int focus = _focusGen;
-                var check = _uiaCheck ?? System.Threading.Tasks.Task.Run(FocusIsPasswordUia);
+                var check = _uiaCheck ?? StartUiaCheck();
                 _uiaCheck = null;
                 System.Threading.Tasks.Task.Run(() =>
                 {
@@ -587,7 +587,7 @@ internal sealed class AutoType : IDisposable
         BeginPending(1, UiaTimeoutMs + 1100); // haqiqiy son tekshiruvdan keyin aniqlanadi
         int focus = _focusGen;
         bool? cached = _focusPassword; // true — shu maydon parol ekani allaqachon ma'lum
-        var check = cached != null ? null : _uiaCheck ?? System.Threading.Tasks.Task.Run(FocusIsPasswordUia); // odatda harf yozilganda boshlangan
+        var check = cached != null ? null : _uiaCheck ?? StartUiaCheck(); // odatda harf yozilganda boshlangan
         _uiaCheck = null;
         System.Threading.Tasks.Task.Run(() =>
         {
@@ -633,7 +633,7 @@ internal sealed class AutoType : IDisposable
         // Shu yerda (harf yozilganda) yangilaymiz — probelgacha javob tayyor bo'ladi, tugmalar ushlanmaydi.
         if (_focusPassword == false && !FocusKnownNotPassword) ForgetFocus();
         if (_focusPassword == null && _uiaCheck == null)
-            _uiaCheck = System.Threading.Tasks.Task.Run(FocusIsPasswordUia);
+            _uiaCheck = StartUiaCheck();
     }
 
     private const int FocusCacheMs = 3000;
@@ -660,6 +660,30 @@ internal sealed class AutoType : IDisposable
         });
         try { return t.Wait(UiaTimeoutMs) ? t.Result : null; }
         catch (AggregateException) { return null; }
+    }
+
+    private const int UiaWarmupMs = 300;
+    private IntPtr _uiaAsked; // shu oynada UIA allaqachon so'ralgan
+
+    /// <summary>
+    /// Fokus parol maydonimi — fonda. Chromium (Chrome, Edge, Electron) accessibility daraxtini birinchi so'rovdan
+    /// KEYIN quradi: birinchi javobda fokus maydon emas, butun oyna bo'lib ko'rinadi va parol maydoni "parol emas"
+    /// chiqadi (Sandbox E2E, 2026-11-11: yangi ochilgan Edge'da birinchi parol choy1990 → çoy1990 bo'ldi).
+    /// Shuning uchun oynadagi birinchi "parol emas" javobiga ishonmaymiz — biroz kutib, qayta so'raymiz.
+    /// </summary>
+    private System.Threading.Tasks.Task<bool?> StartUiaCheck()
+    {
+        bool first = _uiaAsked != _lastWindow;
+        _uiaAsked = _lastWindow;
+        return System.Threading.Tasks.Task.Run(() =>
+        {
+            bool? answer = FocusIsPasswordUia();
+            if (answer != false || !first) return answer;
+            Thread.Sleep(UiaWarmupMs);
+            bool? again = FocusIsPasswordUia();
+            if (again == true) Log.Write("AutoType: UI Automation ikkinchi so'rovda parol maydonini ko'rdi");
+            return again;
+        });
     }
 
     private const int PasteRestoreDelayMs = 500;
