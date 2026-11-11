@@ -5,7 +5,7 @@ namespace Ozbeca.App;
 /// <summary>RegisterHotKey + yashirin message-only oyna. Hotkey uchun hook kerak emas (hook faqat AutoType'da).</summary>
 internal sealed class HotkeyService : IDisposable
 {
-    private const int HotkeyId = 0x0E8A;
+    private readonly int HotkeyId;
     private readonly HwndSource _source;
     private bool _registered;
 
@@ -14,8 +14,10 @@ internal sealed class HotkeyService : IDisposable
     /// <summary>Clipboard egasi sifatida ham shu oyna ishlatiladi.</summary>
     public IntPtr Handle => _source.Handle;
 
-    public HotkeyService()
+    /// <param name="id">Ikkinchi tugma (teskari o'girish) uchun boshqa id.</param>
+    public HotkeyService(int id = 0x0E8A)
     {
+        HotkeyId = id;
         _source = new HwndSource(new HwndSourceParameters("OzbecaHotkey") { ParentWindow = new IntPtr(-3) }); // HWND_MESSAGE
         _source.AddHook(WndProc);
     }

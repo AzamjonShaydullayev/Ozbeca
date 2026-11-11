@@ -25,6 +25,12 @@ public partial class SettingsWindow : Window
         ToastToggle.IsChecked = app.Settings.ShowToast;
         ApostropheToggle.IsChecked = app.Settings.RestoreApostrophes;
         AutostartToggle.IsChecked = Autostart.IsEnabled;
+        PasteToggle.IsChecked = app.Settings.PasteConvert;
+        PauseToggle.IsChecked = app.Settings.PauseConvert;
+        EnglishToggle.IsChecked = app.Settings.EnglishGuard;
+        UpdatesToggle.IsChecked = app.Settings.CheckUpdates;
+        ReverseHint.Text = $"Belgilanmasa — joriy qator. Kirill ham o'giriladi. Teskari (ö → o'): {string.Join(" + ", HotkeyService.Caps(app.Settings.ReverseHotkey))}";
+        ShowExceptionsSummary();
         VersionText.Text = "Versiya " + Theme.Version;
         ShowAppsSummary();
         _ = AppCatalog.Refresh(); // ro'yxat oldindan yig'ilsin — "Tanlash" bosilganda darhol chiqsin
@@ -50,6 +56,7 @@ public partial class SettingsWindow : Window
         StatusText.Text = on ? "Özbeça yoqilgan" : "Özbeça o'chirilgan";
         StatusDot.Fill = on ? (Brush)FindResource("Good") : (Brush)StatusDot.FindResource("ToggleOff");
         AutoTypeToggle.IsEnabled = on;
+        PasteToggle.IsEnabled = PauseToggle.IsEnabled = on && AutoTypeToggle.IsChecked == true;
     }
 
     private void EnabledToggle_Click(object sender, RoutedEventArgs e)
@@ -126,7 +133,31 @@ public partial class SettingsWindow : Window
 
     // ---- Qolgan sozlamalar ----
 
-    private void AutoTypeToggle_Click(object sender, RoutedEventArgs e) => _app.SetAutoType(AutoTypeToggle.IsChecked == true);
+    private void AutoTypeToggle_Click(object sender, RoutedEventArgs e)
+    {
+        _app.SetAutoType(AutoTypeToggle.IsChecked == true);
+        UpdateStatus();
+    }
+
+    private void PasteToggle_Click(object sender, RoutedEventArgs e) => _app.SetPasteConvert(PasteToggle.IsChecked == true);
+    private void PauseToggle_Click(object sender, RoutedEventArgs e) => _app.SetPauseConvert(PauseToggle.IsChecked == true);
+    private void EnglishToggle_Click(object sender, RoutedEventArgs e) => _app.SetEnglishGuard(EnglishToggle.IsChecked == true);
+    private void UpdatesToggle_Click(object sender, RoutedEventArgs e) => _app.SetCheckUpdates(UpdatesToggle.IsChecked == true);
+
+    private void EditExceptions_Click(object sender, RoutedEventArgs e)
+    {
+        var words = ExceptionsDialog.Edit(this, _app.Settings.Exceptions);
+        if (words == null) return;
+        _app.SetExceptions(words);
+        ShowExceptionsSummary();
+    }
+
+    private void ShowExceptionsSummary()
+    {
+        var list = _app.Settings.Exceptions;
+        ExceptionsSummary.Text = list.Count == 0 ? "Yo'q. Bir so'zni ikki marta Backspace bilan bekor qilsangiz — o'zi qo'shiladi"
+            : string.Join(", ", list.Take(4)) + (list.Count > 4 ? $" va yana {list.Count - 4} ta" : "");
+    }
 
     private void ApostropheToggle_Click(object sender, RoutedEventArgs e)
     {

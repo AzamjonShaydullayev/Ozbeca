@@ -35,6 +35,9 @@ internal static class InputSender
         Send(stuck.Select(k => Key(k, true)).ToArray());
     }
 
+    /// <summary>Bitta tugma (bosish + qo'yish).</summary>
+    public static bool Press(int vk) => Send(Key(vk, false), Key(vk, true));
+
     /// <summary>modifier + key (masalan Ctrl+C, Shift+Insert).</summary>
     public static bool Chord(int modifierVk, int keyVk) =>
         Send(Key(modifierVk, false), Key(keyVk, false), Key(keyVk, true), Key(modifierVk, true));
@@ -42,7 +45,7 @@ internal static class InputSender
     private static INPUT Key(int vk, bool up)
     {
         uint flags = up ? KEYEVENTF_KEYUP : 0;
-        if (vk is VK_INSERT or VK_RWIN or VK_LWIN) flags |= KEYEVENTF_EXTENDEDKEY;
+        if (vk is VK_INSERT or VK_HOME or VK_RWIN or VK_LWIN or 0x27) flags |= KEYEVENTF_EXTENDEDKEY; // 0x27 — o'ng strelka
         return new INPUT
         {
             type = INPUT_KEYBOARD,

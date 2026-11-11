@@ -12,7 +12,9 @@ public partial class App : Application
 
     private Mutex? _mutex;
     private EventWaitHandle? _showEvent, _exitEvent;
-    private HotkeyService _hotkey = null!;
+    private HotkeyService _hotkey = null!, _reverseHotkey = null!;
+    private readonly Dictionary<string, int> _rejected = new(StringComparer.OrdinalIgnoreCase); // Backspace bilan bekor qilingan so'zlar
+    private Action? _noticeAction; // bildirishnoma bosilganda (null — sozlamalar)
     private ConvertEngine _engine = null!;
     private WinForms.NotifyIcon _tray = null!;
     private WinForms.ToolStripMenuItem _enabledItem = null!, _autostartItem = null!, _autoTypeItem = null!;
@@ -35,7 +37,11 @@ public partial class App : Application
             Log.Write("Kutilmagan xato: " + ev.Exception);
             ev.Handled = _ready;
         };
-        AppDomain.CurrentDomain.UnhandledException += (_, ev) => Log.Write("Jiddiy xato: " + ev.ExceptionObject);
+        AppDomain.CurrentDomain.UnhandledException += (_, ev) =>
+        {
+            Log.Write("Jiddiy xato: " + ev.ExceptionObject);
+            Log.Flush(); // jarayon hozir yopiladi — yozuv navbatda qolib ketmasin
+        };
 
         // Yangi versiya ishga tushirildi — eski nusxani yopib, o'rnini egallaymiz (mutex'dan oldin: u eskisida).
         try
@@ -78,11 +84,17 @@ public partial class App : Application
         _hotkey = new HotkeyService();
         _engine = new ConvertEngine(_hotkey.Handle);
         _hotkey.Pressed += _engine.Trigger;
+        _reverseHotkey = new HotkeyService(0x0E8B);
+        _reverseHotkey.Pressed += _engine.TriggerReverse;
         _autoType = new AutoType(_hotkey.Handle);
         _autoType.SetAllowedApps(Settings.AutoTypeApps.Select(a => a.Process));
+        _autoType.SetAppModes(Settings.AppModes.Select(m => new KeyValuePair<string, string>(m.Process, m.Mode)));
+        _autoType.WordRejected += OnWordRejected;
         _engine.Notify += msg => Dispatcher.BeginInvoke(() => Toast(msg));
         ApplyDelay();
         Ozbeca.Core.Transliterator.RestoreApostrophes = Settings.RestoreApostrophes;
+        Ozbeca.Core.Transliterator.SetExceptions(Settings.Exceptions);
+        Ozbeca.Core.CodeGuard.EnglishGuard = Settings.EnglishGuard;
         ThreadPool.QueueUserWorkItem(_ => Ozbeca.Core.Transliterator.ToNewAlphabet("ozbek")); // lug'atni oldindan yuklash
 
         CreateTray();
@@ -108,13 +120,116 @@ public partial class App : Application
             Notice("Tezkor tugma ishlamayapti", error + " Sozlamalarda boshqasini tanlang.", warning: true);
             ShowSettings()?.ShowStatus(error);
         }
+        ScheduleUpdateCheck();
+    }
+
+    // ---- yangilanish (ixtiyoriy) ----
+
+    private System.Windows.Threading.DispatcherTimer? _updateTimer;
+
+    /// <summary>Yoqilgan bo'lsa: ishga tushganda (1 daqiqadan keyin) va kuniga bir marta GitHub'dagi versiyani tekshiradi.</summary>
+    internal void ScheduleUpdateCheck()
+    {
+        _updateTimer ??= new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMinutes(1) };
+        _updateTimer.Stop();
+        if (!Settings.CheckUpdates) return;
+        _updateTimer.Tick -= OnUpdateTimer;
+        _updateTimer.Tick += OnUpdateTimer;
+        _updateTimer.Start();
+    }
+
+    private void OnUpdateTimer(object? sender, EventArgs e)
+    {
+        _updateTimer!.Interval = TimeSpan.FromHours(1);
+        if (!Settings.CheckUpdates) { _updateTimer.Stop(); return; }
+        long last = Settings.LastUpdateCheckUtcTicks;
+        if (last > 0 && last <= DateTime.UtcNow.Ticks && DateTime.UtcNow.Ticks - last < UpdateChecker.Interval.Ticks) return;
+        Settings.LastUpdateCheckUtcTicks = DateTime.UtcNow.Ticks;
+        Settings.Save();
+        var current = typeof(App).Assembly.GetName().Version;
+        ThreadPool.QueueUserWorkItem(_ =>
+        {
+            var found = UpdateChecker.Check(current);
+            if (found is not var (version, url)) return;
+            Log.Write($"Yangi versiya bor: {version}");
+            Dispatcher.BeginInvoke(() => Notice("Yangi versiya: " + version.ToString(3),
+                "Bosing — GitHub'dagi yuklab olish sahifasi ochiladi.", onClick: () => OpenUrl(url), seconds: 15));
+        });
+    }
+
+    internal static void OpenUrl(string url)
+    {
+        try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(url) { UseShellExecute = true }); }
+        catch (Exception ex) { Log.Write("Havola ochilmadi: " + ex.Message); }
+    }
+
+    internal void SetCheckUpdates(bool on)
+    {
+        Settings.CheckUpdates = on;
+        Settings.Save();
+        ScheduleUpdateCheck();
+    }
+
+    // ---- istisnolar, inglizcha, dastur rejimi ----
+
+    /// <summary>Bir so'z ikki marta Backspace bilan bekor qilinsa — istisnoga qo'shiladi (keyin umuman o'girilmaydi).</summary>
+    private void OnWordRejected(string word)
+    {
+        string w = word.Trim('"', '\'', '(', ')', ',', '.', '!', '?', ':', ';', '«', '»');
+        if (w.Length < 2 || Settings.Exceptions.Contains(w, StringComparer.OrdinalIgnoreCase)) return;
+        _rejected[w] = _rejected.TryGetValue(w, out int n) ? n + 1 : 1;
+        if (_rejected[w] < 2) return;
+        _rejected.Remove(w);
+        SetExceptions(Settings.Exceptions.Concat(new[] { w }).ToList());
+        Log.Write("Istisnoga qo'shildi (ikki marta qaytarildi)");
+        Notice($"«{w}» endi o'girilmaydi", "Ikki marta qaytardingiz — istisnolarga qo'shildi. Sozlamalarda olib tashlash mumkin.");
+    }
+
+    internal void SetExceptions(List<string> words)
+    {
+        Settings.Exceptions = words.Select(x => x.Trim()).Where(x => x.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+        Settings.Save();
+        Ozbeca.Core.Transliterator.SetExceptions(Settings.Exceptions);
+    }
+
+    internal void SetPasteConvert(bool on)
+    {
+        Settings.PasteConvert = on;
+        Settings.Save();
+        ApplyAutoType();
+    }
+
+    internal void SetPauseConvert(bool on)
+    {
+        Settings.PauseConvert = on;
+        Settings.Save();
+        ApplyAutoType();
+    }
+
+    internal void SetEnglishGuard(bool on)
+    {
+        Settings.EnglishGuard = on;
+        Settings.Save();
+        Ozbeca.Core.CodeGuard.EnglishGuard = on;
+    }
+
+    /// <summary>mode: "prose", "code", "off" yoki null (avtomatik).</summary>
+    internal void SetAppMode(string process, string? mode)
+    {
+        Settings.AppModes.RemoveAll(m => string.Equals(m.Process, process, StringComparison.OrdinalIgnoreCase));
+        if (mode != null) Settings.AppModes.Add(new AppMode { Process = process, Mode = mode });
+        Settings.Save();
+        _autoType.SetAppModes(Settings.AppModes.Select(m => new KeyValuePair<string, string>(m.Process, m.Mode)));
+        Log.Write($"Dastur rejimi: {process} = {mode ?? "avtomatik"}");
     }
 
     protected override void OnExit(ExitEventArgs e)
     {
         if (_tray != null) { _tray.Visible = false; _tray.Dispose(); }
         _hotkey?.Dispose();
+        _reverseHotkey?.Dispose();
         _autoType?.Dispose();
+        Log.Flush();
         _showEvent?.Dispose();
         _exitEvent?.Dispose();
         _mutex?.ReleaseMutex();
@@ -166,10 +281,24 @@ public partial class App : Application
     /// <summary>Joriy sozlamaga ko'ra hotkey'ni yoqadi/o'chiradi. Xato matni yoki null.</summary>
     private string? ApplyHotkeyState()
     {
-        if (!Settings.Enabled) { _hotkey.Unregister(); UpdateTrayText(); return null; }
+        if (!Settings.Enabled) { _hotkey.Unregister(); _reverseHotkey.Unregister(); UpdateTrayText(); return null; }
         string? error = Register(Settings.Hotkey);
+        RegisterReverse();
         UpdateTrayText();
         return error;
+    }
+
+    /// <summary>Teskari o'girish tugmasi (settings.json: ReverseHotkey). Band bo'lsa — faqat logga, asosiy ish to'xtamaydi.</summary>
+    private void RegisterReverse()
+    {
+        if (!HotkeyService.TryParse(Settings.ReverseHotkey, out uint mods, out int vk) || Settings.ReverseHotkey == Settings.Hotkey)
+        {
+            _reverseHotkey.Unregister();
+            Log.Write("Teskari o'girish tugmasi noto'g'ri: " + Settings.ReverseHotkey);
+            return;
+        }
+        if (_reverseHotkey.Register(mods, (uint)vk)) _engine.ReverseHotkeyVk = vk;
+        else Log.Write($"Teskari o'girish tugmasi {Settings.ReverseHotkey} boshqa dasturda band");
     }
 
     private string? Register(string combo)
@@ -201,6 +330,8 @@ public partial class App : Application
     /// <summary>Hook faqat ikkala sozlama yoqilganda o'rnatiladi.</summary>
     private void ApplyAutoType()
     {
+        _autoType.PauseConvert = Settings.PauseConvert;
+        _autoType.PasteConvert = Settings.PasteConvert;
         if (Settings.Enabled && Settings.AutoType) _autoType.Start();
         else _autoType.Stop();
     }
@@ -231,7 +362,7 @@ public partial class App : Application
         Log.Write("Avto-o'girish dasturlari: " + (apps.Count == 0 ? "hammasi" : string.Join(", ", apps.Select(a => a.Process))));
     }
 
-    internal void SuspendHotkey() => _hotkey.Unregister();
+    internal void SuspendHotkey() { _hotkey.Unregister(); _reverseHotkey.Unregister(); }
     internal string? ResumeHotkey() => ApplyHotkeyState();
     internal void ApplyDelay() => _engine.RestoreDelayMs = Settings.RestoreDelayMs;
 
@@ -249,6 +380,24 @@ public partial class App : Application
         _autoTypeItem = new WinForms.ToolStripMenuItem("Yozish paytida o'girish") { CheckOnClick = true };
         _autoTypeItem.Click += (_, _) => SetAutoType(_autoTypeItem.Checked);
 
+        var pauseItem = new WinForms.ToolStripMenuItem("Pauzada o'girish (1 s)") { CheckOnClick = true };
+        pauseItem.Click += (_, _) => { Settings.PauseConvert = pauseItem.Checked; Settings.Save(); ApplyAutoType(); };
+        var pasteItem = new WinForms.ToolStripMenuItem("Ctrl+V da o'girish") { CheckOnClick = true };
+        pasteItem.Click += (_, _) => { Settings.PasteConvert = pasteItem.Checked; Settings.Save(); ApplyAutoType(); };
+
+        // Shu (oxirgi yozilgan) dastur uchun rejim: avtomatik / matn / kod / o'chiq.
+        var appItem = new WinForms.ToolStripMenuItem("Shu dastur uchun");
+        var modes = new (string Label, string? Mode)[]
+        {
+            ("Avtomatik", null), ("Matn — hamma so'zlar", "prose"), ("Kod — faqat qo'shtirnoq ichi", "code"), ("O'chiq", "off"),
+        };
+        foreach (var (label, mode) in modes)
+        {
+            var item = new WinForms.ToolStripMenuItem(label) { Tag = mode };
+            item.Click += (_, _) => { if (_autoType.CurrentProcess is string p) SetAppMode(p, mode); };
+            appItem.DropDownItems.Add(item);
+        }
+
         _autostartItem = new WinForms.ToolStripMenuItem("Windows bilan birga ishga tushirish") { CheckOnClick = true };
         _autostartItem.Click += (_, _) => Autostart.Set(_autostartItem.Checked);
 
@@ -257,6 +406,9 @@ public partial class App : Application
         menu.Items.Add(new WinForms.ToolStripSeparator());
         menu.Items.Add(_enabledItem);
         menu.Items.Add(_autoTypeItem);
+        menu.Items.Add(pauseItem);
+        menu.Items.Add(pasteItem);
+        menu.Items.Add(appItem);
         menu.Items.Add(_autostartItem);
         menu.Items.Add(new WinForms.ToolStripSeparator());
         menu.Items.Add("Sozlamalar…", null, (_, _) => ShowSettings());
@@ -267,6 +419,18 @@ public partial class App : Application
             _enabledItem.Checked = Settings.Enabled;
             _autoTypeItem.Checked = Settings.AutoType;
             _autoTypeItem.Enabled = Settings.Enabled;
+            pauseItem.Checked = Settings.PauseConvert;
+            pasteItem.Checked = Settings.PasteConvert;
+            pauseItem.Enabled = pasteItem.Enabled = Settings.Enabled && Settings.AutoType;
+            string? proc = _autoType.CurrentProcess;
+            appItem.Visible = proc != null;
+            appItem.Enabled = Settings.Enabled && Settings.AutoType;
+            if (proc != null)
+            {
+                appItem.Text = $"Shu dastur uchun: {proc}";
+                string? current = Settings.AppModes.FirstOrDefault(m => string.Equals(m.Process, proc, StringComparison.OrdinalIgnoreCase))?.Mode;
+                foreach (WinForms.ToolStripMenuItem item in appItem.DropDownItems) item.Checked = (string?)item.Tag == current;
+            }
             _autostartItem.Checked = Autostart.IsEnabled;
         };
 
@@ -307,13 +471,14 @@ public partial class App : Application
     }
 
     /// <summary>Soat ustida chiqadigan bildirishnoma (tray balloon o'rniga — dastur uslubida).</summary>
-    private void Notice(string title, string message, bool warning = false)
+    private void Notice(string title, string message, bool warning = false, Action? onClick = null, int seconds = 6)
     {
         if (_notice == null)
         {
             _notice = new NoticeWindow();
-            _notice.Clicked += () => ShowSettings();
+            _notice.Clicked += () => { var a = _noticeAction; _noticeAction = null; if (a != null) a(); else ShowSettings(); };
         }
-        _notice.ShowNotice(title, message, warning);
+        _noticeAction = onClick;
+        _notice.ShowNotice(title, message, warning, seconds);
     }
 }

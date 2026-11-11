@@ -60,6 +60,7 @@
                                            Text="Matnni belgilang va shu tugmalarni bosing." />
                                 <ItemsControl x:Name="HotkeyCaps" Focusable="False" Margin="0,10,0,0"
                                               ItemsPanel="{StaticResource Horizontal}" ItemTemplate="{StaticResource KeyCapTemplate}" />
+                                <TextBlock x:Name="ReverseHint" Style="{StaticResource RowHint}" Margin="0,8,0,0" TextWrapping="Wrap" />
                                 <Border x:Name="HotkeyStatusBox" CornerRadius="8" Padding="10,6" Margin="0,10,0,0" Visibility="Collapsed">
                                     <TextBlock x:Name="HotkeyStatus" FontSize="12" TextWrapping="Wrap" Foreground="White" />
                                 </Border>
@@ -89,7 +90,7 @@
                           ToolTip="Kod muharrirlarida faqat qo'shtirnoq ichidagi matn o'giriladi. Terminal va parol maydonlarida ishlamaydi.">
                     <StackPanel>
                         <TextBlock Text="Yozish paytida" Style="{StaticResource RowTitle}" />
-                        <TextBlock Text="So'z tugashi bilan o'zi o'giriladi. Ctrl+V ham." Style="{StaticResource RowHint}" />
+                        <TextBlock Text="So'z tugashi bilan o'zi o'giriladi. Bekor qilish — Backspace." Style="{StaticResource RowHint}" />
                     </StackPanel>
                 </CheckBox>
                 <CheckBox x:Name="ApostropheToggle" Style="{StaticResource Tile}" Tag="&#xE8D2;" Click="ApostropheToggle_Click"
@@ -111,7 +112,55 @@
                         <TextBlock Text="Kompyuter yoqilganda o'zi ishga tushadi" Style="{StaticResource RowHint}" />
                     </StackPanel>
                 </CheckBox>
+                <CheckBox x:Name="PasteToggle" Style="{StaticResource Tile}" Tag="&#xE77F;" Click="PasteToggle_Click"
+                          ToolTip="Formatli matn (Word, brauzer), parol maydoni va Excel kataklariga tegilmaydi.">
+                    <StackPanel>
+                        <TextBlock Text="Ctrl+V da" Style="{StaticResource RowTitle}" />
+                        <TextBlock Text="Qo'yilayotgan oddiy matn ham o'giriladi" Style="{StaticResource RowHint}" />
+                    </StackPanel>
+                </CheckBox>
+                <CheckBox x:Name="PauseToggle" Style="{StaticResource Tile}" Tag="&#xE916;" Click="PauseToggle_Click"
+                          ToolTip="Tugamagan so'zni ham o'zgartiradi: login yoki email yozayotganda o'chiring.">
+                    <StackPanel>
+                        <TextBlock Text="Pauzada" Style="{StaticResource RowTitle}" />
+                        <TextBlock Text="1 soniya to'xtasangiz, probelsiz o'giriladi" Style="{StaticResource RowHint}" />
+                    </StackPanel>
+                </CheckBox>
+                <CheckBox x:Name="EnglishToggle" Style="{StaticResource Tile}" Tag="&#xF2B7;" Click="EnglishToggle_Click"
+                          ToolTip="the, you, please kabi so'zlardan keyingi so'z (aniq o'zbekcha bo'lmasa) o'girilmaydi. check, show kabi so'zlar har doim o'zgarmaydi.">
+                    <StackPanel>
+                        <TextBlock Text="Inglizcha gapga tegmaslik" Style="{StaticResource RowTitle}" />
+                        <TextBlock Text="«how are you shah» o'zgarmaydi" Style="{StaticResource RowHint}" />
+                    </StackPanel>
+                </CheckBox>
+                <CheckBox x:Name="UpdatesToggle" Style="{StaticResource Tile}" Tag="&#xE895;" Click="UpdatesToggle_Click"
+                          ToolTip="Kuniga bir marta GitHub'dagi versiya raqami o'qiladi. Hech narsa yuborilmaydi va o'zi yuklab olinmaydi.">
+                    <StackPanel>
+                        <TextBlock Text="Yangi versiya" Style="{StaticResource RowTitle}" />
+                        <TextBlock Text="Chiqqanda xabar berish (internet)" Style="{StaticResource RowHint}" />
+                    </StackPanel>
+                </CheckBox>
             </UniformGrid>
+
+            <!-- Istisnolar -->
+            <Border Style="{StaticResource Group}" Margin="5,5,5,0" Padding="16,12">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <Border Style="{StaticResource Badge}">
+                        <TextBlock Text="&#xE8C8;" Style="{StaticResource Glyph}" />
+                    </Border>
+                    <StackPanel Grid.Column="1" Margin="12,0,12,0" VerticalAlignment="Center">
+                        <TextBlock Text="O'girilmaydigan so'zlar" Style="{StaticResource RowTitle}" />
+                        <TextBlock x:Name="ExceptionsSummary" Style="{StaticResource RowHint}" Margin="0,1,0,0" TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                    <Button Grid.Column="2" Content="Tahrirlash" Style="{StaticResource SubtleButton}" Padding="14,6"
+                            VerticalAlignment="Center" Click="EditExceptions_Click" />
+                </Grid>
+            </Border>
 
             <!-- Avto-o'girish qaysi dasturlarda -->
             <Border Style="{StaticResource Group}" Margin="5,5,5,0" Padding="16,12">

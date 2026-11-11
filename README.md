@@ -146,16 +146,21 @@ Hech narsa qilish shart emas — odatdagidek yozing:
 | `O'zbekiston` + probel | `Özbekiston` |
 | `Yaxshimisan?` + Enter | `Yaxşimisan?` |
 | Ctrl+V: `Bog'da choy ichdik` | `Boğda çoy içdik` |
+| `check`, `How are you shah` | o'zgarmaydi (inglizcha) |
 
-- So'z o'zgarishini istamasangiz — darhol <kbd>Backspace</kbd>: so'z yozganingizdek qaytadi (`çess` → `chess`) va qayta o'girilmaydi.
-- Ko'p uchraydigan inglizcha so'zlar (`check`, `should`, `school`, `which`…) yozish paytida o'zgarmaydi.
-- Vaqtincha o'chirish: <img src="docs/icon.png" width="14" alt="Ö"> belgisi ustida o'ng tugma → **Yozish paytida o'girish**.
+- So'z o'zgarishini istamasangiz — darhol <kbd>Backspace</kbd>: so'z yozganingizdek qaytadi (`çess` → `chess`) va qayta o'girilmaydi. Bir so'zni ikki marta qaytarsangiz, u **istisnolarga** qo'shiladi va boshqa o'girilmaydi.
+- Inglizcha so'zlar (`check`, `should`, `school`, `which`…) va inglizcha gap davomi (`How are you shah`) yozish paytida o'zgarmaydi.
+- Vaqtincha o'chirish: <img src="docs/icon.png" width="14" alt="Ö"> belgisi ustida o'ng tugma → **Yozish paytida o'girish**. Faqat bitta dastur uchun: **Shu dastur uchun** → Matn / Kod / O'chiq. **Ctrl+V da** va **pauzada** o'girishni ham shu menyudan o'chirish mumkin.
 
 ### ⚡ Tayyor matnni o'girish
 
 1. Matnni **belgilang** (hammasi uchun <kbd>Ctrl</kbd>+<kbd>A</kbd>).
 2. <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>O</kbd> ni bosing — eslab qolish oson: **O → Ö**.
 3. Yonida **«Özbeça ✓»** chiqadi. Bekor qilish — <kbd>Ctrl</kbd>+<kbd>Z</kbd>.
+
+- Hech narsa belgilanmasa — kursordan qator boshigacha bo'lgan matn o'giriladi.
+- **Kirill** matn ham yangi lotinga o'giriladi: `Ўзбекистон` → `Özbekiston`.
+- **Teskari** (yangi harflarni qabul qilmaydigan saytlar uchun): <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>O</kbd> — `Özbekiston` → `O'zbekiston`.
 
 ### 💻 Kod yozayotganda
 
@@ -186,7 +191,12 @@ Soat yonidagi <img src="docs/icon.png" width="16" alt="Ö"> belgisini yoki ish s
 | **Tutuqsiz so'zlar** | `ozbek` → `özbek`. Ikki ma'noli so'zlar (`qol`, `ot`, `bor`) o'zgarmaydi |
 | **Xabar ko'rsatish** | O'girilganda kursor yonida «Özbeça ✓» |
 | **Windows bilan** | Kompyuter yoqilganda ishga tushadi |
+| **Ctrl+V da** | Qo'yilayotgan oddiy matnni ham o'girish (formatli matn, parol maydoni, Excel kataklariga tegilmaydi). Standart o'chiq |
+| **Pauzada** | 1 soniya to'xtasangiz, probelsiz o'girish. Standart o'chiq — login va email yozishda xalaqit beradi |
+| **Inglizchaga tegmaslik** | `check`, `show` va `the`, `you`, `please` dan keyingi so'z o'zgarmaydi |
+| **Yangi versiya** | Kuniga bir marta GitHub'dagi versiya raqamini tekshiradi. Standart o'chiq |
 | **Qaysi dasturlarda** | Yozish paytida o'girish faqat tanlangan dasturlarda ishlaydi |
+| **O'girilmaydigan so'zlar** | Ismlar, brendlar, loginlar — hech qachon o'zgarmaydi |
 
 ### Qaysi dasturlarda ishlasin
 
@@ -226,7 +236,7 @@ Manbalar: [OʻRQ-1184-son Qonun (21.10.2026)](https://lex.uz/uz/docs/8548754) �
 
 ## 🔒 Maxfiylik
 
-- Dastur **internetga umuman ulanmaydi** va hech narsa yubormaydi.
+- Dastur **internetga ulanmaydi** va hech narsa yubormaydi. Yagona istisno — o'zingiz yoqadigan **Yangi versiya** sozlamasi: kuniga bir marta GitHub'dan oxirgi versiya raqamini o'qiydi, xolos.
 - Yozish paytida o'girish uchun dastur bosilgan tugmalarni ko'radi — **faqat joriy so'zni** bilish uchun. Xotirada eng ko'pi bitta qator turadi, **diskka yozilmaydi** va probel, Enter yoki sichqoncha bosilganda unutiladi.
 - Bu funksiyani o'chirsangiz, klaviatura kuzatilmaydi — faqat <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>O</kbd> qoladi.
 - Kodi to'liq ochiq: [`src/Ozbeca.App/AutoType.cs`](src/Ozbeca.App/AutoType.cs).

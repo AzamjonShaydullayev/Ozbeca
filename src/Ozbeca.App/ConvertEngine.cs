@@ -42,7 +42,15 @@ internal sealed class ConvertEngine
     /// <summary>Foydalanuvchiga ko'rsatiladigan xabar (toast).</summary>
     public event Action<string>? Notify;
 
-    public void Trigger()
+    /// <summary>Teskari o'girish tugmasining asosiy tugmasi.</summary>
+    public int ReverseHotkeyVk { get; set; } = 0x4F;
+
+    public void Trigger() => Start(reverse: false);
+
+    /// <summary>Yangi alifbodan eskisiga: ö → o', ş → sh (yangi harflarni qabul qilmaydigan saytlar uchun).</summary>
+    public void TriggerReverse() => Start(reverse: true);
+
+    private void Start(bool reverse)
     {
         if (Interlocked.CompareExchange(ref _busy, 1, 0) != 0)
         {
@@ -51,7 +59,7 @@ internal sealed class ConvertEngine
         }
         var t = new Thread(() =>
         {
-            try { Run(); }
+            try { Run(reverse); }
             catch (Exception ex) { Log.Write("Xato: " + ex); }
             finally { Volatile.Write(ref _busy, 0); }
         }) { IsBackground = true, Name = "OzbecaConvert" };
@@ -59,7 +67,7 @@ internal sealed class ConvertEngine
         t.Start();
     }
 
-    private void Run()
+    private void Run(bool reverse)
     {
         IntPtr hwnd = GetForegroundWindow();
         if (hwnd == IntPtr.Zero) return;
@@ -81,7 +89,7 @@ internal sealed class ConvertEngine
         }
 
         if (InputSender.IsDown(VK_MENU)) InputSender.SendMask();
-        InputSender.WaitKeysReleased(HotkeyVk);
+        InputSender.WaitKeysReleased(reverse ? ReverseHotkeyVk : HotkeyVk);
         if (!Same(hwnd)) return;
 
         var snapshot = _clip.Save();
@@ -91,9 +99,23 @@ internal sealed class ConvertEngine
         bool copied = Copy(VK_CONTROL, terminal ? VK_INSERT : VK_C, seq);
         if (!copied && !terminal) copied = Copy(VK_CONTROL, VK_INSERT, seq); // zaxira yo'l
 
+        // Sekin ilova: nusxa kechikib kelishi mumkin — "belgilanmagan" deb qaror qilishdan oldin yana biroz kutamiz.
+        if (!copied) copied = ClipboardSwap.WaitForChange(seq, 300);
         string? text = copied ? _clip.ReadText() : null;
+        bool lineSelected = false;
+        if ((text == null || text.Length == 0) && !terminal && Same(hwnd) && FocusIsEditableText())
+        {
+            // Hech narsa belgilanmagan — kursordan qator boshigacha belgilab olamiz (yozilgan qatorni o'girish).
+            // Faqat matn maydonida (ro'yxatda Shift+Home hamma elementni belgilardi) va parol maydonida emas.
+            InputSender.Chord(VK_SHIFT, VK_HOME);
+            lineSelected = true;
+            seq = _clip.Clear();
+            if (seq != 0 && Copy(VK_CONTROL, VK_C, seq)) text = _clip.ReadText();
+            if (text?.Length > 0) Log.Write("Belgilanmagan — joriy qator olindi");
+        }
         if (text == null || text.Length == 0)
         {
+            // Shift+Home hech narsa bermadi — kursor qator boshida, belgilash bo'sh: o'ng strelka uni siljitardi.
             _clip.Restore(snapshot);
             Say(office ? "Matn belgilanmagan yoki tahrirlashga ruxsat yo'q" : "Matn belgilanmagan");
             return;
@@ -103,7 +125,10 @@ internal sealed class ConvertEngine
         // Telegram: stillar (qalin, chiziqli, premium emoji) alohida formatda — ularni ham surib qaytaramiz.
         List<(string, byte[])>? extras = null;
         string converted;
-        if (TryTelegram(_clip, out var tgOld, out var tgNew, out var tgTags))
+        // Teskari va kirill o'girishda harflar soni o'zgaradi (я → ya) — Telegram stillari xaritasi yo'q, oddiy matn.
+        if (reverse) converted = ReverseConverter.ToOldLatin(text);
+        else if (CyrillicConverter.HasCyrillic(text)) converted = Transliterator.ToNewAlphabet(CyrillicConverter.ToNewLatin(text));
+        else if (TryTelegram(_clip, out var tgOld, out var tgNew, out var tgTags))
         {
             text = tgOld;
             converted = tgNew;
@@ -114,13 +139,14 @@ internal sealed class ConvertEngine
 
         if (converted == text)
         {
+            Deselect(lineSelected);
             _clip.Restore(snapshot);
             Say("O'zgarish yo'q");
             return;
         }
 
         uint ours = _clip.SetText(converted, extras);
-        if (ours == 0 || !Same(hwnd)) { _clip.Restore(snapshot); return; }
+        if (ours == 0 || !Same(hwnd)) { Deselect(lineSelected && Same(hwnd)); _clip.Restore(snapshot); return; }
 
         bool sent = terminal ? InputSender.Chord(VK_SHIFT, VK_INSERT) : InputSender.Chord(VK_CONTROL, VK_V);
         if (!sent) Log.Write("SendInput: paste yuborilmadi");
@@ -151,6 +177,27 @@ internal sealed class ConvertEngine
         }
         oldText = Encoding.UTF8.GetString(tdText);
         return true;
+    }
+
+    /// <summary>O'zimiz Shift+Home bilan belgilagan, lekin qo'ymagan bo'lsak — belgilashni olib tashlaymiz (o'ng strelka
+    /// kursorni joyiga qaytaradi), aks holda keyingi tugma butun qatorni o'chirib yuborardi.</summary>
+    private static void Deselect(bool lineSelected)
+    {
+        if (lineSelected) InputSender.Press(0x27); // VK_RIGHT
+    }
+
+    /// <summary>UIA: fokusda tahrirlanadigan matn maydoni (Edit/Document), parol emas. Javob kelmasa — false.</summary>
+    private static bool FocusIsEditableText()
+    {
+        var t = System.Threading.Tasks.Task.Run(() =>
+        {
+            var el = System.Windows.Automation.AutomationElement.FocusedElement;
+            if (el == null || el.Current.IsPassword) return false;
+            var type = el.Current.ControlType;
+            return type == System.Windows.Automation.ControlType.Edit || type == System.Windows.Automation.ControlType.Document;
+        });
+        try { return t.Wait(500) && t.Result; }
+        catch (AggregateException) { return false; }
     }
 
     private static bool Copy(int modifierVk, int keyVk, uint seq)

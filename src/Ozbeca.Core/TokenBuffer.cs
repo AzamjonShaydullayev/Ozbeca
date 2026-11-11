@@ -33,7 +33,9 @@ public sealed class TokenBuffer
     private string? _undone;                      // hozirgina qaytarilgan so'z — probeli o'chirilsa bufferga qaytadi
     private string? _keep;                        // user o'girishni rad etgan so'z: o'zgarmaguncha qayta o'girilmaydi
     private bool _quoteOpen;                      // oldingi so'zlarda tirnoq ochilgan va yopilmagan ('Yaxshi tong')
-    private bool _lineKnown;                      // qator boshidan beri hamma narsani ko'rdikmi
+    private bool _english;                        // oldingi so'zlar inglizcha gap boshladi (the, please, how...)
+    private string? _rejected;                    // user qaytargan va shu holicha qoldirgan so'z (TakeRejected)
+    private bool _lineKnown;                     // qator boshidan beri hamma narsani ko'rdikmi
     private bool _inString;
     private bool _codeMode;
 
@@ -54,6 +56,7 @@ public sealed class TokenBuffer
     {
         ClearWord();
         _quoteOpen = false;
+        _english = false;
         _line.Clear();
         _lineKnown = false;
         _inString = false;
@@ -95,6 +98,8 @@ public sealed class TokenBuffer
     /// <summary>Probel/Enter bo'lmagan, ko'rinadigan belgi.</summary>
     public void Add(char c)
     {
+        // Qaytarilgan so'zdan keyin yozishda davom etdi — o'girishni haqiqatan rad etdi.
+        if (_undone != null) _rejected = _undone;
         ForgetUndo();
         AppendLine(c);
         if (_codeMode && c == '"' && !IsEscaped(_line.Length - 1))
@@ -118,7 +123,8 @@ public sealed class TokenBuffer
         string screen = _sb.ToString();
         string typed = _raw?.ToString() ?? screen;
         bool overflow = _overflow;
-        bool ok = TryConvertWord(out deleteCount, out replacement);
+        bool ok = TryConvertWord(out deleteCount, out replacement, english: _english);
+        _english = !CodeGuard.EndsSentence(typed) && CodeGuard.StartsEnglishContext(typed);
         AppendLine(' ');
         // Ekrandagi so'z user yozganidan farq qiladi (hozir yoki oldinroq pauzada o'girilgan) — qaytarish mumkin.
         string final = ok ? replacement : screen;
@@ -169,7 +175,7 @@ public sealed class TokenBuffer
     {
         deleteCount = 0;
         replacement = "";
-        bool ok = !_codeMode && TryConvertWord(out deleteCount, out replacement);
+        bool ok = !_codeMode && TryConvertWord(out deleteCount, out replacement, english: _english);
         ResetNewLine();
         return ok;
     }
@@ -189,7 +195,7 @@ public sealed class TokenBuffer
         string? keep = _keep;
         bool overflow = _overflow;
         // Lug'atsiz: so'z hali tugamagan bo'lishi mumkin ("yoq" + "imli" — yo'q emas). Lug'at probelda ishlaydi.
-        bool ok = TryConvertWord(out deleteCount, out replacement, dictionary: false);
+        bool ok = TryConvertWord(out deleteCount, out replacement, dictionary: false, english: _english);
         _sb.Append(ok ? replacement : screen);
         if (ok || raw != null) _raw = new StringBuilder(raw ?? screen);
         _overflow = overflow;
@@ -212,7 +218,18 @@ public sealed class TokenBuffer
         return TryConvertAtPause(out deleteCount, out replacement);
     }
 
-    private bool TryConvertWord(out int deleteCount, out string replacement, bool dictionary = true)
+    /// <summary>
+    /// User o'girishni qaytarib, so'zni shu holicha qoldirdi (keyingi so'zni yozdi yoki o'zgartirmasdan tugatdi) —
+    /// shu so'z, bir marta. Ilova buni istisnolar ro'yxatiga qo'shishni taklif qilishi mumkin.
+    /// </summary>
+    public string? TakeRejected()
+    {
+        string? r = _rejected;
+        _rejected = null;
+        return r;
+    }
+
+    private bool TryConvertWord(out int deleteCount, out string replacement, bool dictionary = true, bool english = false)
     {
         string screen = _sb.ToString();
         string word = _raw?.ToString() ?? screen; // lug'at asl yozilgan so'zni tekshiradi
@@ -221,11 +238,13 @@ public sealed class TokenBuffer
         ClearWord();
         deleteCount = 0;
         replacement = "";
+        if (kept && dictionary) _rejected = word;
         if (overflow || kept || word.Length == 0) return false;
         if (_codeMode && !InString) return false;        // kod: faqat qo'shtirnoq ichi
 
         string converted;
-        if (CodeGuard.ShouldSkip(word))
+        // Inglizcha gapning davomi ("the shah") — aniq o'zbekcha bo'lmasa tegmaymiz.
+        if (CodeGuard.ShouldSkip(word) || english && !CodeGuard.ClearlyUzbek(word))
         {
             // Kod, manzil yoki inglizcha so'z (check) yozilyapti — tegmaymiz. Boshi pauzada o'girilib ulgurgan bo'lsa
             // (şerzod + @gmail.com) — yozilganidek qaytaramiz.
@@ -266,7 +285,8 @@ public sealed class TokenBuffer
         ForgetUndo();
     }
 
-    private void ForgetUndo() => _undoFrom = _undoTo = _undone = null;
+    /// <summary>Almashtirish amalda bo'lmadi (parol maydoni) yoki qaytarish xavfsiz emas — qaytaradigan narsa yo'q.</summary>
+    public void ForgetUndo() => _undoFrom = _undoTo = _undone = null;
 
     private void AppendLine(char c)
     {

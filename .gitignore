@@ -40,3 +40,5 @@ secrets*.json
 *.bak
 Thumbs.db
 desktop.ini
+tools/winget/out/
+*.pfx

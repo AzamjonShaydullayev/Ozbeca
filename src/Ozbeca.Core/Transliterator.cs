@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -25,10 +26,25 @@ public static class Transliterator
 
     // Tegilmaydigan qismlar: URL, email, https'siz havola (t.me/shahar, kun.uz/choy), @username, #hashtag.
     // Email @username'dan va domendan oldin turishi shart. Domen — faqat tanish zona bilan: "tugadi.Keyin" havola emas.
-    private static readonly Regex Protected = new(
+    private const string ProtectedPattern =
         @"(?:https?://|www\.)\S+|[\w.+-]+@[\w-]+(?:\.[\w-]+)+" +
         @"|(?<![\w.@-])(?:[\w-]+\.)+(?:uz|com|org|net|ru|me|io|info|biz|edu|gov|tv|app|dev|ai|co|kz|tj|kg|tm|tr|uk|us|de|be|ly)(?![\w-])(?:[/?#]\S*)?" +
-        @"|[@#]\w+", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+        @"|[@#]\w+";
+
+    private const RegexOptions ProtectedOptions = RegexOptions.IgnoreCase | RegexOptions.CultureInvariant;
+
+    // Userning istisnolari (ismlar, brendlar: Chevrolet, Sharp) shu regex'ga qo'shiladi — almashtirilganda butunligicha yangilanadi.
+    private static volatile Regex Protected = new(ProtectedPattern, ProtectedOptions);
+
+    /// <summary>Hech qachon o'girilmaydigan so'zlar (katta-kichik harf farqsiz, butun so'z). Bo'sh — istisno yo'q.</summary>
+    public static void SetExceptions(IEnumerable<string>? words)
+    {
+        var list = (words ?? Array.Empty<string>()).Select(w => w.Trim()).Where(w => w.Length > 0)
+            .Distinct(StringComparer.OrdinalIgnoreCase).OrderByDescending(w => w.Length).Select(Regex.Escape).ToList();
+        string pattern = list.Count == 0 ? ProtectedPattern
+            : ProtectedPattern + @"|(?<![\p{L}\p{M}\d'`’‘ʻʼ´′＇])(?:" + string.Join("|", list) + @")(?![\p{L}\p{M}\d])"; // keyin tutuq + qo'shimcha kelishi mumkin: Chorsu'da
+        Protected = new Regex(pattern, ProtectedOptions);
+    }
 
     /// <summary>
     /// Tutuqsiz yozilgan so'zlarni lug'at bo'yicha tuzatish (ozbek → özbek, togri → toğri). Sozlamalardan o'chiriladi.

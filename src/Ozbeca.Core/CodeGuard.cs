@@ -31,14 +31,59 @@ public static class CodeGuard
         "refresh", "wish", "dish", "wash", "cash", "hash", "trash", "brush", "dash", "slash", "splash", "mesh", "fashion",
     };
 
+    // Inglizcha gapni tanish uchun ko'p uchraydigan yordamchi so'zlar. O'zbekcha bilan bir xillari (it, in, on, or, but, a) yo'q.
+    private static readonly HashSet<string> EnglishFunctionWords = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "the", "and", "is", "are", "was", "were", "to", "of", "for", "you", "your", "this", "that", "have", "has", "had",
+        "be", "been", "will", "would", "can", "could", "not", "from", "by", "they", "he", "her", "my", "me", "do",
+        "does", "did", "what", "how", "when", "where", "who", "there", "here", "if", "so", "just", "get", "about", "an",
+        "as", "its", "our", "us", "am", "i'm", "don't", "it's", "please", "thanks", "hello", "hi", "okay", "yes",
+        // "ok", "his" — o'zbekcha chatda ham ko'p (ok, his-tuyg'u), ataylab yo'q
+    };
+
+    /// <summary>Inglizcha gap davomiga tegmaslik ("how are you shah"). Sozlamalardan o'chiriladi; so'zlar ro'yxati har doim ishlaydi.</summary>
+    public static bool EnglishGuard { get; set; } = true;
+
     /// <summary>Token (chetidagi tinish belgilarisiz) ko'p uchraydigan inglizcha so'zmi.</summary>
     public static bool IsEnglishWord(string token)
     {
-        if (string.IsNullOrEmpty(token)) return false;
+        string w = Strip(token);
+        return w.Length > 0 && EnglishWords.Contains(w);
+    }
+
+    /// <summary>Bu so'zdan keyingi so'z ham inglizcha gapning davomi bo'lishi ehtimoli katta.</summary>
+    public static bool StartsEnglishContext(string token) =>
+        EnglishGuard && (IsEnglishWord(token) || EnglishFunctionWords.Contains(Strip(token)));
+
+    /// <summary>So'z tinish belgisi bilan tugadi (. ! ? … , ; :) — inglizcha kontekst shu yerda uziladi ("Thanks, choy").</summary>
+    public static bool EndsSentence(string token)
+    {
+        string t = token.TrimEnd('"', '\'', ')', ']', '»', '”');
+        return t.Length > 0 && ".!?…,;:".IndexOf(t[t.Length - 1]) >= 0;
+    }
+
+    /// <summary>Aniq o'zbekcha: o'/g' tutuq bilan, u'siz q yoki yangi harf bor — inglizcha kontekstda ham o'giriladi.</summary>
+    public static bool ClearlyUzbek(string token)
+    {
+        string w = Strip(token);
+        for (int i = 0; i < w.Length; i++)
+        {
+            char c = char.ToLowerInvariant(w[i]);
+            char n = i + 1 < w.Length ? w[i + 1] : '\0';
+            if ((c == 'o' || c == 'g') && "'`’‘ʻʼ´′＇".IndexOf(n) >= 0) return true;
+            if (c == 'q' && char.ToLowerInvariant(n) != 'u') return true;
+            if ("öğşçÖĞŞÇ".IndexOf(w[i]) >= 0) return true;
+        }
+        return false;
+    }
+
+    private static string Strip(string token)
+    {
+        if (string.IsNullOrEmpty(token)) return "";
         int start = 0, end = token.Length;
         while (start < end && EdgePunctuation.IndexOf(token[start]) >= 0) start++;
         while (end > start && EdgePunctuation.IndexOf(token[end - 1]) >= 0) end--;
-        return end > start && EnglishWords.Contains(token.Substring(start, end - start));
+        return token.Substring(start, end - start);
     }
 
     /// <summary>Avtomatik o'girishda tegilmaydigan token: kod yoki inglizcha so'z.</summary>
@@ -80,6 +125,7 @@ public static class CodeGuard
         var sb = new StringBuilder(text.Length);
         bool quoteOpen = false; // 'Yaxshi tong' — tirnoq bir so'zda ochilib, boshqasida yopiladi
         int i = 0;
+        bool english = false; // oldingi so'z inglizcha gapni boshlagan
         while (i < text.Length)
         {
             int j = i;
@@ -93,8 +139,10 @@ public static class CodeGuard
             {
                 while (j < text.Length && !char.IsWhiteSpace(text[j])) j++;
                 string token = text.Substring(i, j - i);
-                sb.Append(ShouldSkip(token) ? token
+                bool skip = ShouldSkip(token) || (english && !ClearlyUzbek(token));
+                sb.Append(skip ? token
                     : Transliterator.ToNewAlphabet(token, Transliterator.RestoreApostrophes, ref quoteOpen));
+                english = !EndsSentence(token) && StartsEnglishContext(token);
             }
             i = j;
         }

@@ -54,6 +54,28 @@ internal sealed class AutoType : IDisposable
 
     // Fokusdagi maydon parolmi (UI Automation). null — hali bilmaymiz; sichqoncha, Tab, boshqa oyna — qayta tekshiriladi.
     private bool? _focusPassword;
+    /// <summary>1 s pauzada probelsiz o'girish (tray'dan o'chiriladi).</summary>
+    public bool PauseConvert { get; set; } = true;
+
+    /// <summary>Ctrl+V da qo'yilayotgan matnni o'girish (tray'dan o'chiriladi).</summary>
+    public bool PasteConvert { get; set; } = true;
+
+    /// <summary>User o'girishni Backspace bilan qaytarib, so'zni shu holicha qoldirdi (asl so'z).</summary>
+    public event Action<string>? WordRejected;
+
+    /// <summary>Oxirgi yozilgan dastur (jarayon nomi) — tray'dagi "shu dastur uchun" menyusi uchun.</summary>
+    public string? CurrentProcess { get; private set; }
+
+    // Dastur bo'yicha rejim: "prose" (matn), "code" (faqat qo'shtirnoq ichi), "off". Yo'q — avtomatik.
+    private Dictionary<string, string> _appModes = new(StringComparer.OrdinalIgnoreCase);
+
+    public void SetAppModes(IEnumerable<KeyValuePair<string, string>> modes)
+    {
+        _appModes = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var m in modes) _appModes[m.Key] = m.Value;
+        _lastWindow = IntPtr.Zero; // joriy oyna keyingi tugmada qayta tekshirilsin
+    }
+
     private readonly byte[] _keyState = new byte[256];
     private readonly StringBuilder _chars = new(8);
 
@@ -90,7 +112,7 @@ internal sealed class AutoType : IDisposable
         _keyHook = SetWindowsHookEx(WH_KEYBOARD_LL, _keyProc, module, 0);
         _mouseHook = SetWindowsHookEx(WH_MOUSE_LL, _mouseProc, module, 0);
         int hookError = Marshal.GetLastWin32Error();
-        if (!IsRunning) Stop(); // klaviatura hook'i bo'lmasa sichqonchanikini ham qoldirmaymiz (keyingi Start'da oqib ketmasin)
+        if (!IsRunning) StopHooks(); // klaviatura hook'i bo'lmasa sichqonchanikini ham qoldirmaymiz (keyingi Start'da oqib ketmasin)
         _word.Reset();
         _lastWindow = IntPtr.Zero;
         if (_sender == null)
@@ -99,9 +121,123 @@ internal sealed class AutoType : IDisposable
             _sender.Start();
         }
         Log.Write(IsRunning ? "Yozish paytida o'girish yoqildi" : "Hook o'rnatilmadi: " + hookError);
+        _wanted = true;
+        _lastHookTick = Environment.TickCount;
+        if (_watchdog == null)
+        {
+            _watchdog = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(5) };
+            _watchdog.Tick += (_, _) => CheckHookAlive();
+        }
+        _watchdog.Start(); // hook o'rnatilmagan bo'lsa ham — keyinroq qayta urinadi
+        if (IsRunning) WatchFocus(true);
     }
 
+    private bool _wanted; // user yoqib qo'ygan (Stop chaqirilmagan) — nazoratchi hook'ni tiklashga urinadi
+
+    // ---- Hook nazoratchisi ----
+    // Windows hook javobi kechiksa (LowLevelHooksTimeout) uni ogohlantirmasdan olib tashlaydi — dastur "o'lik" bo'lib
+    // qoladi. Tizim kiritish olgan (GetLastInputInfo), lekin hook'imizga hech narsa kelmagan bo'lsa — qayta o'rnatamiz.
+    private System.Windows.Threading.DispatcherTimer? _watchdog;
+    private int _lastHookTick, _lastWatchdogRestart = Environment.TickCount - 60_000;
+
+    private void CheckHookAlive()
+    {
+        if (!_wanted) return;
+        if (!IsRunning)
+        {
+            // Avvalgi qayta o'rnatish muvaffaqiyatsiz bo'lgan — har 30 s da qayta urinamiz.
+            if (Environment.TickCount - _lastWatchdogRestart < 30_000) return;
+            _lastWatchdogRestart = Environment.TickCount;
+            Start();
+            return;
+        }
+        if (_pending > 0 || _settling > 0 || _held.Count > 0) return;
+        var info = new LASTINPUTINFO { cbSize = (uint)Marshal.SizeOf<LASTINPUTINFO>() };
+        if (!GetLastInputInfo(ref info)) return;
+        int silent = unchecked((int)info.dwTime - _lastHookTick); // kiritish hook'dan keyin qancha vaqt o'tib bo'lgan
+        if (silent < 2000 || Environment.TickCount - _lastWatchdogRestart < 30_000) return;
+        // Administrator oynasiga kiritish hook'ga kelmaydi (UIPI) — bu nosozlik emas.
+        if (ConvertEngine.IsElevatedWindow(GetForegroundWindow())) return;
+        _lastWatchdogRestart = Environment.TickCount;
+        Log.Write($"AutoType: hook {silent} ms javob olmadi — qayta o'rnatildi");
+        StopHooks();
+        Start();
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct LASTINPUTINFO { public uint cbSize; public uint dwTime; }
+
+    [DllImport("user32.dll")]
+    private static extern bool GetLastInputInfo(ref LASTINPUTINFO info);
+
+    // ---- UIA fokus voqealari ----
+    // Fokus boshqa maydonga o'tishi bilan u parolmi — darhol bilamiz: probelda kutish yo'q, sahifa skripti fokusni
+    // parol maydoniga o'tkazsa ham kesh eskirmaydi. Voqea kelmaydigan ilovalarda TTL (FocusCacheMs) saqlaydi.
+    private System.Windows.Automation.AutomationFocusChangedEventHandler? _focusHandler;
+    private static readonly int OwnPid = Process.GetCurrentProcess().Id;
+
+    private void WatchFocus(bool on)
+    {
+        if (on == (_focusHandler != null)) return;
+        if (on)
+        {
+            string? lastId = null; // faqat UIA thread'ida o'qiladi/yoziladi
+            _focusHandler = (sender, _) =>
+            {
+                bool? password;
+                try
+                {
+                    if (sender is not System.Windows.Automation.AutomationElement el || el.Current.ProcessId == OwnPid) return;
+                    // O'sha element qayta e'lon qilinsa (ba'zi ilovalar yozish paytida ham shunday qiladi) — so'zni unutmaymiz.
+                    string id = string.Join(".", el.GetRuntimeId());
+                    if (id == lastId) return;
+                    lastId = id;
+                    password = el.Current.IsPassword;
+                }
+                catch (Exception) { password = null; } // element yo'qolgan yoki ilova javob bermadi
+                _dispatcher.BeginInvoke(new Action(() =>
+                {
+                    // Fokus boshqa maydonda (sahifa skripti ko'chirgan bo'lishi mumkin) — eski so'z u yerda yo'q.
+                    ResetWord();
+                    ForgetFocus();
+                    if (password == null) return;
+                    _focusPassword = password;
+                    _focusCheckedAt = Environment.TickCount;
+                }));
+            };
+            var handler = _focusHandler;
+            QueueUia(() =>
+            {
+                try { System.Windows.Automation.Automation.AddAutomationFocusChangedEventHandler(handler); }
+                catch (Exception ex) { Log.Write("UIA fokus voqealari yoqilmadi: " + ex.Message); }
+            });
+        }
+        else
+        {
+            var handler = _focusHandler!;
+            _focusHandler = null;
+            QueueUia(() =>
+            {
+                try { System.Windows.Automation.Automation.RemoveAutomationFocusChangedEventHandler(handler); }
+                catch (Exception) { }
+            });
+        }
+    }
+
+    // Qo'shish va olib tashlash ketma-ket bajarilsin (Remove Add'dan oldin ishlab ketmasin).
+    private System.Threading.Tasks.Task _uiaChain = System.Threading.Tasks.Task.CompletedTask;
+    private void QueueUia(Action work) => _uiaChain = _uiaChain.ContinueWith(_ => work(), System.Threading.Tasks.TaskScheduler.Default);
+
+    /// <summary>User o'chirdi: hook'lar, nazoratchi va UIA voqealari to'xtaydi.</summary>
     public void Stop()
+    {
+        _wanted = false;
+        StopHooks();
+        _watchdog?.Stop();
+        WatchFocus(false);
+    }
+
+    private void StopHooks()
     {
         if (_keyHook != IntPtr.Zero) UnhookWindowsHookEx(_keyHook);
         if (_mouseHook != IntPtr.Zero) UnhookWindowsHookEx(_mouseHook);
@@ -115,12 +251,13 @@ internal sealed class AutoType : IDisposable
     public void Restart()
     {
         if (!IsRunning || _pending > 0 || _settling > 0 || _held.Count > 0) return;
-        Stop();
+        StopHooks();
         Start();
     }
 
     private IntPtr OnMouse(int nCode, IntPtr wParam, IntPtr lParam)
     {
+        _lastHookTick = Environment.TickCount;
         int msg = wParam.ToInt32();
         if (nCode >= 0 && (msg == WM_LBUTTONDOWN || msg == WM_RBUTTONDOWN || msg == WM_MBUTTONDOWN))
         {
@@ -149,6 +286,7 @@ internal sealed class AutoType : IDisposable
 
     private IntPtr OnKey(int nCode, IntPtr wParam, IntPtr lParam)
     {
+        _lastHookTick = Environment.TickCount;
         int msg = wParam.ToInt32();
         bool down = msg == WM_KEYDOWN || msg == WM_SYSKEYDOWN, up = msg == WM_KEYUP || msg == WM_SYSKEYUP;
         if (nCode < 0 || !(down || up)) return CallNextHookEx(_keyHook, nCode, wParam, lParam);
@@ -351,7 +489,7 @@ internal sealed class AutoType : IDisposable
         // Ctrl+V: qo'yilayotgan matn (probel yoki yangi qatori bo'lsa) ham o'giriladi.
         // Tegilmaydi: parol maydoni (UIA bilan ma'lum bo'lsa ham) va Office'ga qo'yilayotgan Excel kataklari —
         // oddiy matnga aylantirilsa formulalar va jadval yo'qolardi.
-        if (vk == VK_V && _mode == Mode.Prose && InputSender.IsDown(VK_CONTROL) && !InputSender.IsDown(VK_MENU) &&
+        if (vk == VK_V && PasteConvert && _mode == Mode.Prose && InputSender.IsDown(VK_CONTROL) && !InputSender.IsDown(VK_MENU) &&
             !InputSender.IsDown(VK_LWIN) && !InputSender.IsDown(VK_RWIN) && !IsPasswordFocus(fg) && _focusPassword != true &&
             !(ConvertEngine.IsOfficeWindow(fg) && ClipboardSwap.HasSpreadsheetCells))
         {
@@ -402,9 +540,12 @@ internal sealed class AutoType : IDisposable
             case VK_BACK:
                 if (_dead != null) { ResetWord(); return false; } // dead key bekor qilindi — nima o'chganini bilmaymiz
                 // O'girilgan so'zdan keyin darhol Backspace — o'girish qaytadi (check → çeck → check), Backspace yutiladi.
-                if (_word.TryUndo(out int undoDel, out string undoText))
+                // Faqat maydon "parol emas"ligi hozir aniq bo'lsa: aks holda Replace UIA'ni kutadi va parol/javobsiz
+                // holatda hech narsa yubormaydi — Backspace yo'qolib qolardi. Unda oddiy Backspace o'tadi.
+                if (!FocusKnownNotPassword) _word.ForgetUndo();
+                else if (_word.TryUndo(out int undoDel, out string undoText))
                 {
-                    Replace(undoDel, undoText, Array.Empty<INPUT>());
+                    SendDeferred(ReplacementKeys(undoDel, undoText, Array.Empty<INPUT>()).ToArray(), "qaytarish");
                     return true;
                 }
                 _word.Backspace();
@@ -415,8 +556,12 @@ internal sealed class AutoType : IDisposable
             case VK_RETURN:
                 _dead = null;
                 // "Yaxshimisan?" + Enter — oxirgi so'z ham o'girilsin. Parol maydoni bo'lsa — tegmaymiz (pastda UIA).
-                if (_mode == Mode.Prose && !IsPasswordFocus(fg) &&
-                    _word.TryCompleteAtEnter(out int enterDel, out string enterWord))
+                int enterDel = 0;
+                string enterWord = "";
+                bool enterOk = _mode == Mode.Prose && !IsPasswordFocus(fg) &&
+                    _word.TryCompleteAtEnter(out enterDel, out enterWord);
+                ReportRejected();
+                if (enterOk)
                 {
                     Replace(enterDel, enterWord, new[] { Key(VK_RETURN, false), Key(VK_RETURN, true) });
                     ForgetFocus(); // pastdagi izohga qarang; Replace joriy maydon javobini olib bo'ldi
@@ -472,6 +617,7 @@ internal sealed class AutoType : IDisposable
                 return true;
             }
             foreach (char ch in typed) _word.Add(ch);
+            ReportRejected();
             PrefetchPassword();
             // Pauzada o'girilgan so'z davomi bilan manzil/kodga aylandi (şerzod + @gmail.com) — yozilganidek qaytaramiz.
             // Bu tugma ushlanadi va so'z bilan birga o'zimiz yozamiz (tartib aniq bo'lsin). Shift/AltGr bosilgan paytda
@@ -541,7 +687,7 @@ internal sealed class AutoType : IDisposable
 
     private void ConvertOnPause()
     {
-        if (!IsRunning || _mode == Mode.Off || _pending > 0 || _settling > 0 || _held.Count > 0) return;
+        if (!PauseConvert || !IsRunning || _mode == Mode.Off || _pending > 0 || _settling > 0 || _held.Count > 0) return;
         IntPtr fg = GetForegroundWindow();
         if (fg != _lastWindow) return; // boshqa oynaga o'tilgan — so'z u yerda emas
         // Ushlab turilgan modifier bilan Backspace boshqa ma'no beradi (Ctrl+Backspace — butun so'zni o'chiradi).
@@ -554,9 +700,18 @@ internal sealed class AutoType : IDisposable
     private bool CompleteWord(IntPtr fg)
     {
         if (IsPasswordFocus(fg)) { ResetWord(); return false; }
-        if (!_word.TryComplete(out int deleteCount, out string replacement)) return false;
+        bool ok = _word.TryComplete(out int deleteCount, out string replacement);
+        ReportRejected();
+        if (!ok) return false;
         Replace(deleteCount, replacement, UnicodeKeys(' '));
         return true;
+    }
+
+    /// <summary>Qaytarilgan so'z shu holicha qoldirildi — App sanaydi (hook ichida oyna ochmaymiz).</summary>
+    private void ReportRejected()
+    {
+        if (_word.TakeRejected() is string word)
+            _dispatcher.BeginInvoke(new Action(() => WordRejected?.Invoke(word)));
     }
 
     private static INPUT[] UnicodeKeys(char ch) => new[] { Unicode(ch, false), Unicode(ch, true) };
@@ -599,6 +754,7 @@ internal sealed class AutoType : IDisposable
                 // Javob kutilayotganda fokus o'zgargan bo'lsa (sichqoncha, Enter) — u eski maydonniki, eslab qolmaymiz.
                 RememberFocus(focus, uia);
                 bool password = uia ?? true;
+                if (password) _word.ForgetUndo(); // so'z almashmadi — Backspace oddiy o'chirish bo'lsin
                 var keys = password ? new List<INPUT>(trailing) : ReplacementKeys(deleteCount, replacement, trailing);
                 if (uia == null) Log.Write("AutoType: UI Automation javob bermadi — so'z o'girilmadi, keyingisida qayta tekshiriladi");
                 else if (password) Log.Write("AutoType: parol maydoni — so'z o'girilmadi");
@@ -761,14 +917,19 @@ internal sealed class AutoType : IDisposable
         catch (ArgumentException) { return Mode.Off; }
         catch (InvalidOperationException) { return Mode.Off; }
         if (name.Equals("ApplicationFrameHost", StringComparison.OrdinalIgnoreCase)) name = HostedAppName(hwnd, pid) ?? name;
+        CurrentProcess = name;
+        _appModes.TryGetValue(name, out string? chosen);
         string? off = BlockedProcesses.Contains(name) ? "istisno ro'yxatida" : ConvertEngine.IsTerminalWindow(hwnd) ? "terminal"
             : ConvertEngine.IsElevatedWindow(hwnd) ? "administrator oynasi"
-            : _allowed != null && !_allowed.Contains(name) ? "tanlangan dasturlar ichida emas" : null;
+            : chosen == "off" ? "user o'chirgan"
+            : chosen == null && _allowed != null && !_allowed.Contains(name) ? "tanlangan dasturlar ichida emas" : null;
         if (off != null)
         {
             Log.Write($"AutoType: {name} — o'chiq ({off})");
             return Mode.Off;
         }
+        if (chosen == "code") return Mode.Code;
+        if (chosen == "prose") return Mode.Prose;
         return CodeEditors.Contains(name) ? Mode.Code : Mode.Prose;
     }
 

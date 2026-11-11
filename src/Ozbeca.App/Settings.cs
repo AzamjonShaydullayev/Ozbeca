@@ -24,6 +24,30 @@ internal sealed class Settings
     /// <summary>Avto-o'girish faqat shu dasturlarda (jarayon nomi). Bo'sh — hamma dasturlarda.</summary>
     [DataMember] public List<AllowedApp> AutoTypeApps { get; set; } = new();
 
+    /// <summary>Yozish to'xtaganda (1 s) tugamagan so'zni o'girish. Standart — yoqilgan; tray'dan o'chiriladi.</summary>
+    [DataMember] public bool PauseConvert { get; set; } = true;
+
+    /// <summary>Ctrl+V bilan qo'yilgan matnni o'girish. Standart — yoqilgan; tray'dan o'chiriladi.</summary>
+    [DataMember] public bool PasteConvert { get; set; } = true;
+
+    /// <summary>Teskari o'girish (ö → o', ş → sh): yangi harflarni qabul qilmaydigan saytlar uchun.</summary>
+    [DataMember] public string ReverseHotkey { get; set; } = "Ctrl+Alt+Shift+O";
+
+    /// <summary>Hech qachon o'girilmaydigan so'zlar: ismlar, brendlar, loginlar.</summary>
+    [DataMember] public List<string> Exceptions { get; set; } = new();
+
+    /// <summary>Inglizcha so'z va gapga tegmaslik (check, "how are you shop").</summary>
+    [DataMember] public bool EnglishGuard { get; set; } = true;
+
+    /// <summary>Dastur bo'yicha rejim (tray → "Shu dastur uchun"). Yo'q — avtomatik.</summary>
+    [DataMember] public List<AppMode> AppModes { get; set; } = new();
+
+    /// <summary>GitHub'dan yangi versiyani tekshirish. Standart o'chiq: dastur o'zi internetga chiqmaydi.</summary>
+    [DataMember] public bool CheckUpdates { get; set; }
+
+    // DateTime emas: DataContractJsonSerializer MinValue'ni UTC+5 da yozolmaydi (ArgumentOutOfRange).
+    [DataMember] public long LastUpdateCheckUtcTicks { get; set; }
+
     // DataContract konstruktorni chaqirmaydi — faylda yo'q maydonlar standart qiymatda qolsin.
     [OnDeserializing]
     private void SetDefaults(StreamingContext _)
@@ -35,6 +59,12 @@ internal sealed class Settings
         AutoType = true;
         RestoreApostrophes = true;
         AutoTypeApps = new();
+        PauseConvert = true;
+        PasteConvert = true;
+        ReverseHotkey = "Ctrl+Alt+Shift+O";
+        Exceptions = new();
+        EnglishGuard = true;
+        AppModes = new();
     }
 
     /// <summary>settings.json hali yo'q — birinchi ishga tushirish (o'rnatish oynasi ko'rsatiladi).</summary>
@@ -56,6 +86,11 @@ internal sealed class Settings
                 s.Hotkey ??= "Ctrl+Alt+O";
                 s.AutoTypeApps ??= new();
                 s.AutoTypeApps.RemoveAll(a => a == null || string.IsNullOrWhiteSpace(a.Process));
+                s.ReverseHotkey ??= "Ctrl+Alt+Shift+O";
+                s.Exceptions ??= new();
+                s.Exceptions.RemoveAll(string.IsNullOrWhiteSpace);
+                s.AppModes ??= new();
+                s.AppModes.RemoveAll(m => m == null || string.IsNullOrWhiteSpace(m.Process) || m.Mode is not ("prose" or "code" or "off"));
                 s.RestoreDelayMs = Math.Max(0, Math.Min(5000, s.RestoreDelayMs));
                 return s;
             }
@@ -89,6 +124,14 @@ internal sealed class AllowedApp
 {
     [DataMember] public string Name { get; set; } = "";
     [DataMember] public string Process { get; set; } = "";
+}
+
+/// <summary>Dastur uchun tanlangan rejim: "prose" (matn), "code" (faqat qo'shtirnoq ichi), "off".</summary>
+[DataContract]
+internal sealed class AppMode
+{
+    [DataMember] public string Process { get; set; } = "";
+    [DataMember] public string Mode { get; set; } = "";
 }
 
 /// <summary>HKCU\...\Run orqali Windows bilan birga ishga tushirish.</summary>
