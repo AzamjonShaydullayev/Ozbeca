@@ -18,6 +18,7 @@ public partial class App : Application
     private WinForms.ToolStripMenuItem _enabledItem = null!, _autostartItem = null!, _autoTypeItem = null!;
     private AutoType _autoType = null!;
     private ToastWindow? _toast;
+    private NoticeWindow? _notice;
     private SettingsWindow? _settingsWindow;
 
     internal Settings Settings { get; private set; } = null!;
@@ -79,10 +80,10 @@ public partial class App : Application
         string? error = ApplyHotkeyState();
         Log.Write($"Ishga tushdi {Theme.Version}, hotkey {Settings.Hotkey}, yoqilgan={Settings.Enabled}, avto-yozish={Settings.AutoType}, admin={Compat.IsElevatedSelf}" + (error != null ? $" — {error}" : ""));
         if (updated && error == null)
-            _tray.ShowBalloonTip(5000, "Özbeça", $"{Theme.Version} versiyaga yangilandi. Sozlamalar saqlandi.", WinForms.ToolTipIcon.Info);
+            Notice("Özbeça yangilandi", $"{Theme.Version} versiya ishlayapti. Sozlamalar saqlandi.");
         if (error != null)
         {
-            _tray.ShowBalloonTip(6000, "Özbeça", error + " Sozlamalarda boshqasini tanlang.", WinForms.ToolTipIcon.Warning);
+            Notice("Tezkor tugma ishlamayapti", error + " Sozlamalarda boshqasini tanlang.", warning: true);
             ShowSettings()?.ShowStatus(error);
         }
     }
@@ -211,7 +212,7 @@ public partial class App : Application
         _enabledItem.Click += (_, _) =>
         {
             string? error = SetEnabled(_enabledItem.Checked);
-            if (error != null) _tray.ShowBalloonTip(5000, "Özbeça", error, WinForms.ToolTipIcon.Warning);
+            if (error != null) Notice("Diqqat", error, warning: true);
         };
 
         _autoTypeItem = new WinForms.ToolStripMenuItem("Yozish paytida o'girish") { CheckOnClick = true };
@@ -271,5 +272,12 @@ public partial class App : Application
         if (!Settings.ShowToast) return;
         _toast ??= new ToastWindow();
         _toast.ShowMessage(message);
+    }
+
+    /// <summary>Soat ustida chiqadigan bildirishnoma (tray balloon o'rniga — dastur uslubida).</summary>
+    private void Notice(string title, string message, bool warning = false)
+    {
+        _notice ??= new NoticeWindow();
+        _notice.ShowNotice(title, message, warning);
     }
 }

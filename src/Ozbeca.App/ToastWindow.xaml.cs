@@ -68,8 +68,11 @@ public partial class ToastWindow : Window
 
     private void FadeTo(double to, bool hideAfter)
     {
-        var anim = new DoubleAnimation(to, TimeSpan.FromMilliseconds(to > 0 ? 90 : 180));
+        var anim = new DoubleAnimation(to, TimeSpan.FromMilliseconds(to > 0 ? 120 : 180));
         if (hideAfter) anim.Completed += (_, _) => { if (Opacity == 0) Hide(); };
         BeginAnimation(OpacityProperty, anim);
+        if (to > 0 && Opacity < 0.5) // yangi chiqyapti: biroz pastdan ko'tariladi
+            PillMove.BeginAnimation(System.Windows.Media.TranslateTransform.YProperty,
+                new DoubleAnimation(6, 0, TimeSpan.FromMilliseconds(160)) { EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut } });
     }
 }

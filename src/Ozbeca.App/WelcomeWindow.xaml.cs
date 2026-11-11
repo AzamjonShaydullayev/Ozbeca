@@ -1,4 +1,5 @@
 using System.Windows;
+using System.Windows.Media;
 using System.Windows.Media.Animation;
 
 namespace Ozbeca.App;
@@ -10,11 +11,11 @@ public partial class WelcomeWindow : Window
     {
         InitializeComponent();
         Theme.Apply(this);
+        Theme.RoundClip(HeroClip, 16);
         HotkeyCaps.ItemsSource = hotkey.Split('+').Select(k => k.Trim() == "Space" ? "Probel" : k.Trim()).ToArray();
-        InstallNote.Text = "Dastur doimiy papkaga ko'chiriladi — yuklab olingan faylni keyin o'chirib tashlasangiz bo'ladi.";
         if (Install.IsInstalledCopy)
         {
-            InstallRow.Visibility = Visibility.Collapsed;
+            InstallBox.Visibility = Visibility.Collapsed;
             InstallBox.IsChecked = false;
         }
     }
@@ -25,18 +26,18 @@ public partial class WelcomeWindow : Window
     internal bool DoAutostart => AutostartBox.IsChecked == true;
     internal bool DoAutoType => AutoTypeBox.IsChecked == true;
 
-    /// <summary>Bitta ko'rinish: eski yozuv xiralashadi, yangisi yonidan chiqadi.</summary>
+    /// <summary>Bitta ko'rinish: eski yozuv xiralashadi, yangisi pastdan ko'tariladi.</summary>
     private void Window_Loaded(object sender, RoutedEventArgs e)
     {
-        if (!SystemParameters.ClientAreaAnimation) { DemoArrow.Opacity = DemoNew.Opacity = 1; DemoNewMove.X = 0; DemoOld.Opacity = 0.6; return; }
+        if (!SystemParameters.ClientAreaAnimation) { DemoArrow.Opacity = DemoNew.Opacity = 1; DemoNewMove.Y = 0; DemoOld.Opacity = 0.6; return; }
         var start = TimeSpan.FromMilliseconds(450);
-        var dur = new Duration(TimeSpan.FromMilliseconds(380));
+        var dur = new Duration(TimeSpan.FromMilliseconds(420));
         var ease = new CubicEase { EasingMode = EasingMode.EaseOut };
         DemoOld.BeginAnimation(OpacityProperty, new DoubleAnimation(1, 0.6, dur) { BeginTime = start });
         DemoArrow.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, dur) { BeginTime = start });
-        DemoNew.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, dur) { BeginTime = start + TimeSpan.FromMilliseconds(120) });
-        DemoNewMove.BeginAnimation(System.Windows.Media.TranslateTransform.XProperty,
-            new DoubleAnimation(10, 0, dur) { BeginTime = start + TimeSpan.FromMilliseconds(120), EasingFunction = ease });
+        DemoNew.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, dur) { BeginTime = start + TimeSpan.FromMilliseconds(140) });
+        DemoNewMove.BeginAnimation(TranslateTransform.YProperty,
+            new DoubleAnimation(8, 0, dur) { BeginTime = start + TimeSpan.FromMilliseconds(140), EasingFunction = ease });
     }
 
     private void Done_Click(object sender, RoutedEventArgs e) => DialogResult = true;

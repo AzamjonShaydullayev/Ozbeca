@@ -4,19 +4,23 @@
         WindowStyle="None" AllowsTransparency="True" Background="Transparent"
         ShowInTaskbar="False" ShowActivated="False" Topmost="True" Focusable="False"
         ResizeMode="NoResize" SizeToContent="WidthAndHeight" Opacity="0">
-    <Border CornerRadius="17" Background="#F2202428" BorderBrush="#26FFFFFF" BorderThickness="1"
-            Padding="6,6,14,6" Margin="8">
+    <Border x:Name="Pill" CornerRadius="18" Padding="5,5,15,5" Margin="12" BorderThickness="1" BorderBrush="#4D2EC4DE">
+        <Border.Background>
+            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                <GradientStop Color="#F2262B31" Offset="0" />
+                <GradientStop Color="#F2161A1E" Offset="1" />
+            </LinearGradientBrush>
+        </Border.Background>
         <Border.Effect>
-            <DropShadowEffect BlurRadius="14" ShadowDepth="3" Opacity="0.28" />
+            <DropShadowEffect BlurRadius="18" ShadowDepth="4" Direction="270" Opacity="0.35" />
         </Border.Effect>
+        <Border.RenderTransform>
+            <TranslateTransform x:Name="PillMove" Y="0" />
+        </Border.RenderTransform>
         <StackPanel Orientation="Horizontal">
-            <Border Width="22" Height="22" CornerRadius="11" Background="#FF0099B5">
-                <TextBlock Text="Ö" Foreground="White" FontSize="13" FontWeight="SemiBold"
-                           FontFamily="Segoe UI Variable Display, Segoe UI"
-                           HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,-2,0,0" />
-            </Border>
-            <TextBlock x:Name="MessageText" Foreground="White" FontFamily="Segoe UI Variable Text, Segoe UI" FontSize="13"
-                       VerticalAlignment="Center" Margin="9,0,0,1" />
+            <ContentControl Style="{StaticResource Logo}" Width="26" Height="26" FontSize="15" />
+            <TextBlock x:Name="MessageText" Foreground="White" FontFamily="{StaticResource UiFont}" FontSize="13"
+                       FontWeight="SemiBold" VerticalAlignment="Center" Margin="9,0,0,1" />
         </StackPanel>
     </Border>
 </Window>

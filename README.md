@@ -76,7 +76,7 @@ Yuklab olingan `Ozbeca.exe` ni ikki marta bosing.
 
 Birinchi ochilganda dastur nimalarni qilishni so'raydi. Hammasi oldindan belgilangan — **Boshlash** ni bossangiz bo'ldi:
 
-<p align="center"><img src="docs/welcome.png" width="440" alt="O'rnatish oynasi"></p>
+<p align="center"><img src="docs/welcome.png" width="680" alt="O'rnatish oynasi"></p>
 
 | Belgi | Nima qiladi |
 |---|---|
@@ -174,7 +174,7 @@ Qoidalar quyidagi rasmiy manbalarga asoslangan:
 
 Sozlamalarni ochish: soat yonidagi **Ö** belgisini yoki ish stolidagi **Özbeça** yorlig'ini bosing. Oynani **−** bilan kichraytirsangiz, u yana Ö belgisiga yashirinadi — dastur ishlashda davom etadi.
 
-<p align="center"><img src="docs/settings.png" width="420" alt="Sozlamalar oynasi"></p>
+<p align="center"><img src="docs/settings.png" width="680" alt="Sozlamalar oynasi"></p>
 
 - **Yoqilgan** (yuqori o'ng burchakda) — dasturni butunlay vaqtincha o'chiradi.
 - **Tezkor tugma** — **O'zgartirish** ni bosib, yangi kombinatsiyani bosing. U darhol tekshiriladi: boshqa dastur egallagan bo'lsa, ogohlantirish chiqadi.

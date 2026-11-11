@@ -68,6 +68,7 @@ Asl qarorlar (D1–D6) va keyin o'zgarganlari. **User bilan kelishilmagan o'z qa
 | D22 | Yakka `o'` → `ö` (`o' harfi`); so'z oxiridagi `kino'` va `'o'` tirnoq bo'lib qoladi | user: "o' desam ö bo'lmayapti" |
 | D23 | README: **bitta yirik "Yuklab olish" tugmasi** (`docs/download.svg`, firuza gradient), kulrang shields badge'lari yo'q | user: "bitta ajralib, chiroyli, qorayib turmasin" |
 | D24 | **E2E user ish stolida yurgizilmaydi** — unit test yoki Windows Sandbox/VM | user: "ishlashimga xalaqit qilyapsan" (2026-11-11) |
+| D26 | **Yangi dizayn (gorizontal):** sozlamalar 780 px / o'rnatish 820 px eni; chapda firuza gradient "hero" (logo, umumiy yoqish, tezkor tugma), o'ngda 2×2 bosiladigan plitkalar (`Tile`) va chip'lar (`Chip`); tray balloon o'rniga o'z `NoticeWindow` (soat ustida); logo — gradient + yaltiroq. Funksiyalar olib tashlanmagan, uzun izohlar ToolTip'ga o'tdi | user: "cho'zinchoq bo'lmasin, eniga kattalashtir, kam tugma, premium, yaltiroq, shu rangda" (2026-11-11) |
 | D25 | Tez yozishda ushlab-qaytarilgan tugmalar **ham o'giriladi**; UIA javob bermasa so'z o'tkazib yuboriladi, maydon "parol" deb eslanmaydi | user: boshqa kompyuterda Telegram'da "tez yozsa, Ctrl+V + Enter qilsa ishlamay qolyapti" |
 
 ---
@@ -94,7 +95,7 @@ Ozbeca.sln
 │   ├─ Install.cs               o'zini ko'chirish, yangilash (UpdateOlder), IShellLinkW yorliqlar (Unicode!), Zone.Identifier'ni o'chirish
 │   ├─ Settings.cs              %AppData%\Ozbeca\settings.json (DataContractJsonSerializer, BOM'siz o'qish) + Autostart (HKCU Run)
 │   ├─ Theme.cs / Styles.xaml   ranglar, Mica (build ≥ 22621), Toggle/Group/Row/KeyCap uslublari
-│   ├─ SettingsWindow, WelcomeWindow, ToastWindow (caret yonida), TrayMenu
+│   ├─ SettingsWindow, WelcomeWindow, ToastWindow (caret yonida), NoticeWindow (soat ustida), TrayMenu
 │   ├─ Native.cs, Compat.cs     P/Invoke; net48'da yo'q funksiyalar o'rnini bosuvchilar
 │   └─ Log.cs                   %AppData%\Ozbeca\ozbeca.log (1 MB dan oshsa qayta boshlanadi)
 ├─ tests/Ozbeca.Core.Tests/    xUnit, net8.0
@@ -241,6 +242,11 @@ dotnet build src/Ozbeca.App -c Release        # → src/Ozbeca.App/bin/Release/n
 ---
 
 ## 6. Saboqlar (qayta bosmang)
+
+- **UI'ni ko'rish uchun dasturni ishga tushirmang** (user kompyuterida o'rnatilgan nusxa bor — `UpdateOlder` uni yopib, almashtiradi).
+  Oynalar exe'ni PowerShell'da `Assembly.LoadFrom` qilib, ekrandan tashqarida (`Left=-20000`) ochiladi va `RenderTargetBitmap`
+  bilan PNG'ga olinadi. Har oyna alohida jarayonda bo'lishi kerak, chunki birinchi oyna yopilgach `Application` "shut down" bo'ladi.
+  PowerShell'da `New-Object T(($a)*2, ...)` ishlamaydi, chunki vergul `*` dan kuchliroq bog'lanadi; o'rniga `[T]::new(...)` ishlating.
 
 - `.bat` fayllar **CRLF + ASCII** bo'lsin (`.gitattributes` bor) — LF bilan `cmd` qatorlarni buzadi.
 - PowerShell 5.1 skriptlari **UTF-8 BOM** bilan (aks holda o'zbekcha/Ö buziladi); `-replace` va `,` aralashsa parametr bo'linadi.

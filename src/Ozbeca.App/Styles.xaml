@@ -4,28 +4,89 @@
     <!-- Ranglar Theme.Apply orqali oynaga yoziladi (DynamicResource). Shrift — Windows 11 tizim shrifti. -->
     <FontFamily x:Key="UiFont">Segoe UI Variable Text, Segoe UI</FontFamily>
     <FontFamily x:Key="DisplayFont">Segoe UI Variable Display, Segoe UI</FontFamily>
+    <FontFamily x:Key="IconFont">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
 
-    <!-- Guruh: Windows 11 Settings'dagidek qatorlar bloki -->
+    <!-- Firuza gradient (bayroqdagi moviy) — mavzuga bog'liq emas -->
+    <LinearGradientBrush x:Key="HeroBrush" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#FF1CC8E2" Offset="0" />
+        <GradientStop Color="#FF0099B5" Offset="0.48" />
+        <GradientStop Color="#FF00657C" Offset="1" />
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="AccentGradient" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#FF2BD0E8" Offset="0" />
+        <GradientStop Color="#FF0090AD" Offset="1" />
+    </LinearGradientBrush>
+    <!-- Yaltiroq: tepadan oq nur -->
+    <LinearGradientBrush x:Key="Gloss" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#40FFFFFF" Offset="0" />
+        <GradientStop Color="#0AFFFFFF" Offset="0.5" />
+        <GradientStop Color="#00FFFFFF" Offset="0.51" />
+    </LinearGradientBrush>
+    <RadialGradientBrush x:Key="Glow" Center="0.15,0.05" GradientOrigin="0.15,0.05" RadiusX="0.9" RadiusY="0.55">
+        <GradientStop Color="#4DFFFFFF" Offset="0" />
+        <GradientStop Color="#00FFFFFF" Offset="1" />
+    </RadialGradientBrush>
+
+    <!-- Hero panel: ichidagi Toggle/KeyCap/tugma/havolalar oq palitrani oladi (DynamicResource shu yerdan topiladi) -->
+    <Style x:Key="Hero" TargetType="Border">
+        <Setter Property="CornerRadius" Value="16" />
+        <Setter Property="Background" Value="{StaticResource HeroBrush}" />
+        <Setter Property="TextElement.Foreground" Value="White" />
+        <Style.Resources>
+            <SolidColorBrush x:Key="Fg" Color="White" />
+            <SolidColorBrush x:Key="Muted" Color="#D0FFFFFF" />
+            <SolidColorBrush x:Key="Accent" Color="White" />
+            <SolidColorBrush x:Key="AccentHover" Color="#E6FFFFFF" />
+            <SolidColorBrush x:Key="AccentText" Color="#FF00728A" />
+            <SolidColorBrush x:Key="ToggleOff" Color="#C0FFFFFF" />
+            <SolidColorBrush x:Key="KeyCap" Color="#26FFFFFF" />
+            <SolidColorBrush x:Key="KeyCapLine" Color="#59FFFFFF" />
+            <SolidColorBrush x:Key="CardLine" Color="#40FFFFFF" />
+            <SolidColorBrush x:Key="Card" Color="#1AFFFFFF" />
+        </Style.Resources>
+    </Style>
+    <!-- Hero ichidagi shishasimon blok -->
+    <Style x:Key="Glass" TargetType="Border">
+        <Setter Property="Background" Value="#1FFFFFFF" />
+        <Setter Property="BorderBrush" Value="#33FFFFFF" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="12" />
+        <Setter Property="Padding" Value="14,12" />
+    </Style>
+
+    <!-- Logo: gradient plitka + yaltiroq + Ö -->
+    <Style x:Key="Logo" TargetType="ContentControl">
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="IsTabStop" Value="False" />
+        <Setter Property="Width" Value="52" />
+        <Setter Property="Height" Value="52" />
+        <Setter Property="FontSize" Value="30" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ContentControl">
+                    <Grid>
+                        <Border CornerRadius="14" Background="{StaticResource AccentGradient}" BorderBrush="#4DFFFFFF" BorderThickness="1" />
+                        <Border CornerRadius="14" Background="{StaticResource Gloss}" />
+                        <TextBlock Text="Ö" FontFamily="{StaticResource DisplayFont}" FontWeight="SemiBold" Foreground="White"
+                                   FontSize="{TemplateBinding FontSize}" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                   Margin="0,-3,0,0" />
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Guruh: kartochka -->
     <Style x:Key="Group" TargetType="Border">
         <Setter Property="Background" Value="{DynamicResource Card}" />
         <Setter Property="BorderBrush" Value="{DynamicResource CardLine}" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="CornerRadius" Value="8" />
-        <Setter Property="Margin" Value="0,0,0,12" />
-    </Style>
-
-    <!-- Guruh ichidagi qator (oxirgisidan tashqari pastida ingichka chiziq) -->
-    <Style x:Key="Row" TargetType="Border">
-        <Setter Property="Padding" Value="16,13" />
-        <Setter Property="BorderBrush" Value="{DynamicResource Line}" />
-        <Setter Property="BorderThickness" Value="0,0,0,1" />
-    </Style>
-    <Style x:Key="LastRow" TargetType="Border" BasedOn="{StaticResource Row}">
-        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="CornerRadius" Value="12" />
     </Style>
 
     <Style x:Key="RowTitle" TargetType="TextBlock">
         <Setter Property="FontSize" Value="14" />
+        <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="Foreground" Value="{DynamicResource Fg}" />
         <Setter Property="TextWrapping" Value="Wrap" />
     </Style>
@@ -36,11 +97,34 @@
         <Setter Property="LineHeight" Value="17" />
         <Setter Property="Margin" Value="0,3,0,0" />
     </Style>
-    <Style x:Key="SectionTitle" TargetType="TextBlock">
-        <Setter Property="FontSize" Value="14" />
+    <Style x:Key="PageTitle" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource DisplayFont}" />
+        <Setter Property="FontSize" Value="22" />
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="Foreground" Value="{DynamicResource Fg}" />
-        <Setter Property="Margin" Value="2,6,0,8" />
+    </Style>
+    <Style x:Key="SectionTitle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{DynamicResource Muted}" />
+        <Setter Property="Margin" Value="2,16,0,8" />
+    </Style>
+
+    <!-- Kichik ikonka plitkasi (kartochkalarda) -->
+    <Style x:Key="Badge" TargetType="Border">
+        <Setter Property="Width" Value="36" />
+        <Setter Property="Height" Value="36" />
+        <Setter Property="CornerRadius" Value="10" />
+        <Setter Property="Background" Value="{DynamicResource Soft}" />
+        <Setter Property="HorizontalAlignment" Value="Left" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style x:Key="Glyph" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource IconFont}" />
+        <Setter Property="FontSize" Value="17" />
+        <Setter Property="Foreground" Value="{DynamicResource Accent}" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+        <Setter Property="VerticalAlignment" Value="Center" />
     </Style>
 
     <!-- Toggle (CheckBox) — o'ngda kalit, chapda matn -->
@@ -77,14 +161,18 @@
                             <Trigger.EnterActions>
                                 <BeginStoryboard>
                                     <Storyboard>
-                                        <DoubleAnimation Storyboard.TargetName="ThumbMove" Storyboard.TargetProperty="X" To="20" Duration="0:0:0.12" />
+                                        <DoubleAnimation Storyboard.TargetName="ThumbMove" Storyboard.TargetProperty="X" To="20" Duration="0:0:0.14">
+                                            <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut" /></DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
                                     </Storyboard>
                                 </BeginStoryboard>
                             </Trigger.EnterActions>
                             <Trigger.ExitActions>
                                 <BeginStoryboard>
                                     <Storyboard>
-                                        <DoubleAnimation Storyboard.TargetName="ThumbMove" Storyboard.TargetProperty="X" To="0" Duration="0:0:0.12" />
+                                        <DoubleAnimation Storyboard.TargetName="ThumbMove" Storyboard.TargetProperty="X" To="0" Duration="0:0:0.14">
+                                            <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut" /></DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
                                     </Storyboard>
                                 </BeginStoryboard>
                             </Trigger.ExitActions>
@@ -106,16 +194,151 @@
         </Setter>
     </Style>
 
+    <!--
+      Plitka (CheckBox): butun kartochka bosiladi. Tag — ikonka belgisi (Segoe Fluent Icons), Content — sarlavha va izoh.
+      Yoqilganda ikonka plitkasi firuza gradientga to'ladi.
+    -->
+    <Style x:Key="Tile" TargetType="CheckBox">
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="Margin" Value="5" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="CheckBox">
+                    <Grid>
+                        <Border x:Name="Bd" Background="{DynamicResource Card}" BorderBrush="{DynamicResource CardLine}"
+                                BorderThickness="1" CornerRadius="12" Padding="16,14,16,15">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="*" />
+                                </Grid.RowDefinitions>
+                                <Border x:Name="Badge" Style="{StaticResource Badge}">
+                                    <Grid>
+                                        <Border x:Name="BadgeFill" CornerRadius="10" Background="{StaticResource AccentGradient}" Opacity="0" />
+                                        <Border x:Name="BadgeGloss" CornerRadius="10" Background="{StaticResource Gloss}" Opacity="0" />
+                                        <TextBlock x:Name="Glyph" Style="{StaticResource Glyph}"
+                                                   Text="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}" />
+                                    </Grid>
+                                </Border>
+                                <Border x:Name="Track" Width="40" Height="20" CornerRadius="10" HorizontalAlignment="Right"
+                                        VerticalAlignment="Center" BorderThickness="1" BorderBrush="{DynamicResource ToggleOff}"
+                                        Background="Transparent">
+                                    <Ellipse x:Name="Thumb" Width="12" Height="12" HorizontalAlignment="Left" Margin="4,0,0,0"
+                                             Fill="{DynamicResource ToggleOff}">
+                                        <Ellipse.RenderTransform>
+                                            <TranslateTransform x:Name="ThumbMove" X="0" />
+                                        </Ellipse.RenderTransform>
+                                    </Ellipse>
+                                </Border>
+                                <ContentPresenter Grid.Row="1" Margin="0,12,0,0" />
+                            </Grid>
+                        </Border>
+                        <Border x:Name="Focus" CornerRadius="12" BorderThickness="2" BorderBrush="{DynamicResource Fg}"
+                                Visibility="Collapsed" IsHitTestVisible="False" />
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="BadgeFill" Property="Opacity" Value="1" />
+                            <Setter TargetName="BadgeGloss" Property="Opacity" Value="1" />
+                            <Setter TargetName="Glyph" Property="Foreground" Value="White" />
+                            <Setter TargetName="Track" Property="Background" Value="{DynamicResource Accent}" />
+                            <Setter TargetName="Track" Property="BorderBrush" Value="{DynamicResource Accent}" />
+                            <Setter TargetName="Thumb" Property="Fill" Value="{DynamicResource AccentText}" />
+                            <Trigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="ThumbMove" Storyboard.TargetProperty="X" To="20" Duration="0:0:0.14">
+                                            <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut" /></DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.EnterActions>
+                            <Trigger.ExitActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="ThumbMove" Storyboard.TargetProperty="X" To="0" Duration="0:0:0.14">
+                                            <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut" /></DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.ExitActions>
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource AccentLine}" />
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource CardHover}" />
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter TargetName="Focus" Property="Visibility" Value="Visible" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.45" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Chip (CheckBox): ixcham tanlov — doira ichida ✓ va matn -->
+    <Style x:Key="Chip" TargetType="CheckBox">
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="Margin" Value="4" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="CheckBox">
+                    <Border x:Name="Bd" Background="{DynamicResource Card}" BorderBrush="{DynamicResource CardLine}"
+                            BorderThickness="1" CornerRadius="10" Padding="12,10">
+                        <StackPanel Orientation="Horizontal">
+                            <Grid Width="20" Height="20" VerticalAlignment="Center">
+                                <Ellipse x:Name="Ring" Stroke="{DynamicResource ToggleOff}" StrokeThickness="1.5" />
+                                <Ellipse x:Name="Fill" Fill="{StaticResource AccentGradient}" Opacity="0" />
+                                <TextBlock x:Name="Mark" Text="&#xE73E;" FontFamily="{StaticResource IconFont}" FontSize="11"
+                                           Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" Opacity="0" />
+                            </Grid>
+                            <ContentPresenter Margin="10,0,0,0" VerticalAlignment="Center" TextElement.FontSize="13" />
+                        </StackPanel>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="Fill" Property="Opacity" Value="1" />
+                            <Setter TargetName="Mark" Property="Opacity" Value="1" />
+                            <Setter TargetName="Ring" Property="Stroke" Value="Transparent" />
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource AccentLine}" />
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource AccentSoft}" />
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource Accent}" />
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource Fg}" />
+                            <Setter TargetName="Bd" Property="BorderThickness" Value="2" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <!-- Klaviatura tugmasi ko'rinishi: Ctrl, Alt, O -->
     <Style x:Key="KeyCap" TargetType="Border">
         <Setter Property="Background" Value="{DynamicResource KeyCap}" />
         <Setter Property="BorderBrush" Value="{DynamicResource KeyCapLine}" />
         <Setter Property="BorderThickness" Value="1,1,1,2" />
-        <Setter Property="CornerRadius" Value="5" />
-        <Setter Property="Padding" Value="9,3,9,4" />
-        <Setter Property="Margin" Value="0,0,5,0" />
-        <Setter Property="MinWidth" Value="30" />
+        <Setter Property="CornerRadius" Value="6" />
+        <Setter Property="Padding" Value="10,4,10,5" />
+        <Setter Property="Margin" Value="0,0,6,0" />
+        <Setter Property="MinWidth" Value="32" />
     </Style>
+    <DataTemplate x:Key="KeyCapTemplate">
+        <Border Style="{StaticResource KeyCap}">
+            <TextBlock Text="{Binding}" FontWeight="SemiBold" FontSize="12.5" HorizontalAlignment="Center" />
+        </Border>
+    </DataTemplate>
+    <ItemsPanelTemplate x:Key="Horizontal">
+        <StackPanel Orientation="Horizontal" />
+    </ItemsPanelTemplate>
 
     <!-- Tugmalar -->
     <Style x:Key="ButtonBase" TargetType="Button">
@@ -127,7 +350,7 @@
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
                     <Border x:Name="Bd" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
-                            BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6" Padding="{TemplateBinding Padding}">
+                            BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="8" Padding="{TemplateBinding Padding}">
                         <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                     </Border>
                     <ControlTemplate.Triggers>
@@ -143,18 +366,6 @@
             </Setter.Value>
         </Setter>
     </Style>
-    <Style x:Key="AccentButton" TargetType="Button" BasedOn="{StaticResource ButtonBase}">
-        <Setter Property="Background" Value="{DynamicResource Accent}" />
-        <Setter Property="Foreground" Value="{DynamicResource AccentText}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource Accent}" />
-        <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="FontWeight" Value="SemiBold" />
-        <Style.Triggers>
-            <Trigger Property="IsMouseOver" Value="True">
-                <Setter Property="Background" Value="{DynamicResource AccentHover}" />
-            </Trigger>
-        </Style.Triggers>
-    </Style>
     <Style x:Key="SubtleButton" TargetType="Button" BasedOn="{StaticResource ButtonBase}">
         <Setter Property="Background" Value="{DynamicResource KeyCap}" />
         <Setter Property="Foreground" Value="{DynamicResource Fg}" />
@@ -165,6 +376,46 @@
                 <Setter Property="BorderBrush" Value="{DynamicResource KeyCapLine}" />
             </Trigger>
         </Style.Triggers>
+    </Style>
+    <!-- Asosiy tugma: gradient + yaltiroq + firuza soya -->
+    <Style x:Key="PrimaryButton" TargetType="Button">
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="White" />
+        <Setter Property="Padding" Value="26,10" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Grid>
+                        <Border x:Name="Shadow" CornerRadius="10" Background="#FF0099B5" Margin="2,4,2,0" Opacity="0.45">
+                            <Border.Effect>
+                                <BlurEffect Radius="14" />
+                            </Border.Effect>
+                        </Border>
+                        <Border x:Name="Bd" CornerRadius="10" Background="{StaticResource AccentGradient}"
+                                BorderBrush="#33FFFFFF" BorderThickness="1" />
+                        <Border CornerRadius="10" Background="{StaticResource Gloss}" />
+                        <Border x:Name="Focus" CornerRadius="10" BorderThickness="2" BorderBrush="{DynamicResource Fg}"
+                                Margin="-3" Visibility="Collapsed" />
+                        <ContentPresenter Margin="{TemplateBinding Padding}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Shadow" Property="Opacity" Value="0.9" />
+                            <Setter TargetName="Bd" Property="Opacity" Value="0.92" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Bd" Property="Opacity" Value="0.8" />
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter TargetName="Focus" Property="Visibility" Value="Visible" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
 
     <Style x:Key="Field" TargetType="TextBox">

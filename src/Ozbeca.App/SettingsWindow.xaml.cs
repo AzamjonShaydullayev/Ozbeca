@@ -8,7 +8,7 @@ namespace Ozbeca.App;
 public partial class SettingsWindow : Window
 {
     private const string RepoUrl = "https://github.com/AzamjonShaydullayev/Ozbeca";
-    private static readonly Brush ErrorBrush = new SolidColorBrush(Color.FromRgb(0xE5, 0x48, 0x4D));
+    private static readonly Brush WarningBrush = new SolidColorBrush(Color.FromArgb(0x40, 0, 0, 0)); // hero ustida xira qora
 
     private readonly App _app;
     private bool _capturing; // hotkey tanlanmoqda
@@ -18,6 +18,7 @@ public partial class SettingsWindow : Window
         _app = app;
         InitializeComponent();
         Theme.Apply(this);
+        Theme.RoundClip(HeroClip, 16);
 
         EnabledToggle.IsChecked = app.Settings.Enabled;
         AutoTypeToggle.IsChecked = app.Settings.AutoType;
@@ -35,9 +36,9 @@ public partial class SettingsWindow : Window
 
     internal void ShowStatus(string? message)
     {
-        HotkeyStatus.Visibility = message == null ? Visibility.Collapsed : Visibility.Visible;
+        HotkeyStatusBox.Visibility = message == null ? Visibility.Collapsed : Visibility.Visible;
         HotkeyStatus.Text = message ?? "";
-        HotkeyStatus.Foreground = message == App.AltGrWarning ? (Brush)FindResource("Muted") : ErrorBrush;
+        HotkeyStatusBox.Background = message == App.AltGrWarning ? WarningBrush : (Brush)FindResource("Danger");
     }
 
     private void ShowHotkey(string combo) =>
@@ -46,8 +47,8 @@ public partial class SettingsWindow : Window
     private void UpdateStatus()
     {
         bool on = EnabledToggle.IsChecked == true;
-        StatusText.Text = on ? "Yoqilgan" : "O'chirilgan";
-        StatusDot.Fill = on ? (Brush)FindResource("Good") : (Brush)FindResource("ToggleOff");
+        StatusText.Text = on ? "Özbeça yoqilgan" : "Özbeça o'chirilgan";
+        StatusDot.Fill = on ? (Brush)FindResource("Good") : (Brush)StatusDot.FindResource("ToggleOff");
         AutoTypeToggle.IsEnabled = on;
     }
 

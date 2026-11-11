@@ -23,9 +23,10 @@ internal static class Theme
         int.TryParse(Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion", "CurrentBuildNumber", "0") as string, out int b)
         && b >= 22621;
 
-    public static void Apply(Window w)
+    /// <param name="useMica">false — shaffof (AllowsTransparency) oynalar uchun: fon va kartochkalar to'liq rangli.</param>
+    public static void Apply(Window w, bool useMica = true)
     {
-        bool dark = IsDark, mica = SupportsMica;
+        bool dark = IsDark, mica = useMica && SupportsMica;
         void Set(string k, uint argb) => w.Resources[k] = new SolidColorBrush(Color.FromArgb(
             (byte)(argb >> 24), (byte)(argb >> 16), (byte)(argb >> 8), (byte)argb));
 
@@ -43,6 +44,11 @@ internal static class Theme
         w.Resources["AccentHover"] = new SolidColorBrush(dark ? Accent : AccentDeep);
         w.Resources["AccentText"] = new SolidColorBrush(dark ? Color.FromRgb(0x00, 0x1E, 0x24) : Colors.White);
         w.Resources["Good"] = new SolidColorBrush(Good);
+        Set("CardHover", dark ? (mica ? 0x17FFFFFFu : 0xFF323232u) : 0xFFFFFFFFu);
+        Set("Soft", dark ? 0x1A2EC4DEu : 0x170099B5u);       // ikonka plitkasi (o'chiq holat)
+        Set("AccentSoft", dark ? 0x1F2EC4DEu : 0x120099B5u); // tanlangan chip foni
+        Set("AccentLine", dark ? 0x802EC4DEu : 0x800099B5u);
+        Set("Danger", 0xFFE5484D);
 
         w.SourceInitialized += (_, _) =>
         {
@@ -57,6 +63,10 @@ internal static class Theme
             Native.DwmSetWindowAttribute(hwnd, 38, ref backdrop, sizeof(int));
         };
     }
+
+    /// <summary>Elementni yumaloq burchak bo'yicha kesadi (hero ichidagi katta Ö burchakdan chiqmasin).</summary>
+    public static void RoundClip(FrameworkElement e, double radius) =>
+        e.SizeChanged += (_, _) => e.Clip = new RectangleGeometry(new Rect(e.RenderSize), radius, radius);
 
     /// <summary>"1.1.0" — exe versiyasi (commit hash'siz).</summary>
     public static string Version
