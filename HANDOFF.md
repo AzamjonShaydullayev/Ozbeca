@@ -187,6 +187,11 @@ dotnet build src/Ozbeca.App -c Release        # → src/Ozbeca.App/bin/Release/n
   u NumLock bosadi, Chrome/Electron'ga Ctrl+C yetkazmaydi.
 - Kutilgan natija dasturning o'z kodi bilan (`Ozbeca.Core.TokenBuffer`, exe'dan yuklanadi).
 - Natija: `tools\e2e\results\autotype_<vaqt>.md`, oxirgisining yo'li `LATEST.txt` (results/ va work/ git'ga kirmaydi).
+- **2026-11-11, tez yozish tuzatishi (49b2aa3):** Chrome textarea/input **333/333** (oddiy, tez, juda tez 15 ms, Ctrl+V,
+  Ctrl+V+Enter, parol). Notepad A/B (tuzatishdan oldin / keyin): "o'girilmadi" xatolari **6 → 0**. "Buzildi" xatolari
+  (~24 ta, ikkalasida bir xil) — Win11 Notepad tez kelgan tugmani yo'qotadi (`kuni` → `kui`), so'ng keyingi almashtirishning
+  Backspace'i probelni o'chiradi. Bu dastur xatosi emas, Notepad xususiyati; v1.1 sinovida (10:49) kamroq edi.
+  Saralash skripti: har "chiqdi"ni `ToNewAlphabet` dan o'tkazib, natija "kutildi" ga tenglashsa — o'girilmadi, aks holda buzildi.
 - Oxirgi to'liq natija (v1.2.0): **402/408** — Notepad tez 53/55, Word 4 ta (skript artefakti, tuzatildi). Batafsil: `docs/M4_SINOV.md`.
 
 **Muhim shartlar:**
@@ -268,8 +273,7 @@ dotnet build src/Ozbeca.App -c Release        # → src/Ozbeca.App/bin/Release/n
 
 ## 8. Keyingi qadamlar (takliflar — user bilan kelishiladi)
 
-0. **Tez yozish tuzatishini real sinash:** E2E `-Only Notepad`/`-Only Chrome` (yangi "juda tez" 15 ms va Ctrl+V+Enter holatlari),
-   keyin boshqa kompyuterda v1.4.0 bilan. Ishlamasa — o'sha kompyuterning `ozbeca.log` i (UIA/kutish vaqti yozuvlari).
+0. **Tez yozish tuzatishi E2E'da tasdiqlandi** (Chrome 333/333). Keyingi qadam: boshqa kompyuterda v1.4.0 bilan Telegram'da sinash. Ishlamasa — o'sha kompyuterning `ozbeca.log` i (UIA/kutish vaqti yozuvlari).
 1. User v1.3.0 ni boshqa kompyuterda sinaydi (UAC tuzatishi u yerda tasdiqlanmagan — faqat koddan topilgan sabab;
    o'z kompyuterimizda sinov: yangilash ✅, pauza va probel ✅) → ishlamasa logni so'rab, sababni logdan aniqlash.
    Ehtimoliy boshqa sabab: sekin kompyuterda UIA parol tekshiruvi 400 ms dan oshib, maydon "parol" deb keshlanadi
