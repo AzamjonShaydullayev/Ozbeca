@@ -2,7 +2,7 @@
 
 > **Yangi chatda birinchi bo'lib shu faylni to'liq o'qing.** Unda loyihaning joriy holati, qabul qilingan
 > qarorlar (va ularning sababi), ish tartibi, sinov usullari va oldingi sessiyalarda o'rganilgan saboqlar bor.
-> Oxirgi yangilanish: **2026-11-11**, v1.3.0 (release hali chiqmagan).
+> Oxirgi yangilanish: **2026-11-11**, v1.3.0 release chiqqandan keyin.
 
 ---
 
@@ -11,7 +11,7 @@
 | | |
 |---|---|
 | **Nima** | Windows uchun tray dasturi: o'zbekcha matnni 2026-yilgi yangi lotin alifbosiga (Ö Ğ Ş Ç) o'giradi |
-| **Oxirgi versiya** | **v1.2.0** — https://github.com/AzamjonShaydullayev/Ozbeca/releases/tag/v1.2.0 |
+| **Oxirgi versiya** | **v1.3.0** — https://github.com/AzamjonShaydullayev/Ozbeca/releases/tag/v1.3.0 |
 | **Repo** | https://github.com/AzamjonShaydullayev/Ozbeca (**ochiq**), branch `main`, lokal: `D:\projects\ozbeca` |
 | **Platforma** | C#, WPF, **.NET Framework 4.8** (Windows 10/11 ichida bor) — bitta `Ozbeca.exe`, ~135 KB |
 | **Testlar** | 385 unit test (xUnit, .NET 8) + real ilovalarda E2E: 402/408 |
