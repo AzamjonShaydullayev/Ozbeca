@@ -1,0 +1,83 @@
+<Window x:Class="Ozbeca.App.AppPickerWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Özbeça — dasturlar" Width="780" Height="560"
+        ResizeMode="NoResize" WindowStartupLocation="CenterOwner" ShowInTaskbar="False"
+        FontFamily="{StaticResource UiFont}" FontSize="13"
+        Background="{DynamicResource Bg}" Foreground="{DynamicResource Fg}"
+        PreviewKeyDown="Window_PreviewKeyDown">
+
+    <DockPanel Margin="22,12,22,20">
+        <!-- Sarlavha + qidiruv -->
+        <Grid DockPanel.Dock="Top">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <StackPanel>
+                <TextBlock Text="Qaysi dasturlarda o'girsin?" Style="{StaticResource PageTitle}" />
+                <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                    <Ellipse x:Name="StateDot" Width="8" Height="8" VerticalAlignment="Center" Margin="1,1,8,0" />
+                    <TextBlock x:Name="StateText" Style="{StaticResource RowHint}" Margin="0" />
+                </StackPanel>
+            </StackPanel>
+            <Border Grid.Column="1" Width="250" Height="38" VerticalAlignment="Center" CornerRadius="10"
+                    Background="{DynamicResource Field}" BorderBrush="{DynamicResource KeyCapLine}" BorderThickness="1">
+                <Grid>
+                    <TextBlock Text="&#xE721;" FontFamily="{StaticResource IconFont}" FontSize="14" Foreground="{DynamicResource Muted}"
+                               VerticalAlignment="Center" Margin="12,0,0,0" IsHitTestVisible="False" />
+                    <TextBlock x:Name="SearchHint" Text="Qidirish…" Foreground="{DynamicResource Muted}" VerticalAlignment="Center"
+                               Margin="36,0,0,0" IsHitTestVisible="False" />
+                    <TextBox x:Name="SearchBox" Background="Transparent" BorderThickness="0" Foreground="{DynamicResource Fg}"
+                             CaretBrush="{DynamicResource Fg}" VerticalContentAlignment="Center" Padding="32,0,10,0"
+                             TextChanged="SearchBox_TextChanged" AutomationProperties.Name="Dastur qidirish" />
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- Pastki qator -->
+        <Grid DockPanel.Dock="Bottom" Margin="0,14,0,0">
+            <TextBlock VerticalAlignment="Center" FontSize="12.5" Foreground="{DynamicResource Muted}" TextWrapping="Wrap" MaxWidth="470"
+                       HorizontalAlignment="Left"
+                       Text="Hech qaysi dastur belgilanmasa — hamma joyda ishlaydi. Terminal va parol maydonlarida baribir ishlamaydi." />
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button x:Name="ClearButton" Content="Tanlovni tozalash" Style="{StaticResource SubtleButton}" Padding="14,8"
+                        Margin="0,0,10,0" Click="Clear_Click" />
+                <Button Content="Tayyor" IsDefault="True" Style="{StaticResource PrimaryButton}" MinWidth="120" Click="Done_Click" />
+            </StackPanel>
+        </Grid>
+
+        <!-- Dasturlar -->
+        <Border Style="{StaticResource Group}" Margin="0,14,0,0" Padding="6">
+            <Grid>
+                <ScrollViewer VerticalScrollBarVisibility="Auto" Focusable="False" PanningMode="VerticalOnly">
+                    <ItemsControl x:Name="AppList" Focusable="False">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <UniformGrid Columns="3" VerticalAlignment="Top" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <CheckBox Style="{StaticResource Chip}" IsChecked="{Binding IsChecked, Mode=TwoWay}"
+                                          ToolTip="{Binding Process}" AutomationProperties.Name="{Binding Name}">
+                                    <DockPanel>
+                                        <Grid Width="24" Height="24" DockPanel.Dock="Left" Margin="0,0,10,0">
+                                            <TextBlock Text="&#xE71D;" FontFamily="{StaticResource IconFont}" FontSize="16"
+                                                       Foreground="{DynamicResource Muted}" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                       Visibility="{Binding FallbackVisibility}" />
+                                            <Image Source="{Binding Icon}" Width="24" Height="24" RenderOptions.BitmapScalingMode="HighQuality" />
+                                        </Grid>
+                                        <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                                    </DockPanel>
+                                </CheckBox>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+                <TextBlock x:Name="EmptyText" Text="Dasturlar yuklanmoqda…" Foreground="{DynamicResource Muted}" FontSize="14"
+                           HorizontalAlignment="Center" VerticalAlignment="Center" />
+            </Grid>
+        </Border>
+    </DockPanel>
+</Window>

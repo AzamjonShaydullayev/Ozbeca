@@ -31,7 +31,7 @@ internal sealed class AutoType : IDisposable
     };
 
     /// <summary>Umuman o'chiq: buyruqlar, parollar, boshqa kompyuter.</summary>
-    private static readonly HashSet<string> BlockedProcesses = new(StringComparer.OrdinalIgnoreCase)
+    internal static readonly HashSet<string> BlockedProcesses = new(StringComparer.OrdinalIgnoreCase)
     {
         // terminallar
         "WindowsTerminal", "cmd", "powershell", "pwsh", "conhost", "putty", "mintty", "wsl",
@@ -68,6 +68,17 @@ internal sealed class AutoType : IDisposable
     }
 
     public bool IsRunning => _keyHook != IntPtr.Zero;
+
+    // Faqat shu dasturlarda o'giriladi (jarayon nomi). null — hamma dasturlarda.
+    private HashSet<string>? _allowed;
+
+    /// <summary>User tanlagan dasturlar. Bo'sh ro'yxat — hamma dasturlarda ishlaydi.</summary>
+    public void SetAllowedApps(IEnumerable<string> processes)
+    {
+        var set = new HashSet<string>(processes, StringComparer.OrdinalIgnoreCase);
+        _allowed = set.Count == 0 ? null : set;
+        _lastWindow = IntPtr.Zero; // joriy oyna keyingi tugmada qayta tekshirilsin
+    }
 
     public void Start()
     {
@@ -647,7 +658,7 @@ internal sealed class AutoType : IDisposable
         return n > 0 ? _chars.ToString(0, Math.Min(n, _chars.Length)) : null;
     }
 
-    private static Mode WindowMode(IntPtr hwnd)
+    private Mode WindowMode(IntPtr hwnd)
     {
         if (hwnd == IntPtr.Zero) return Mode.Off;
         GetWindowThreadProcessId(hwnd, out uint pid);
@@ -660,8 +671,10 @@ internal sealed class AutoType : IDisposable
         }
         catch (ArgumentException) { return Mode.Off; }
         catch (InvalidOperationException) { return Mode.Off; }
+        if (name.Equals("ApplicationFrameHost", StringComparison.OrdinalIgnoreCase)) name = HostedAppName(hwnd, pid) ?? name;
         string? off = BlockedProcesses.Contains(name) ? "istisno ro'yxatida" : ConvertEngine.IsTerminalWindow(hwnd) ? "terminal"
-            : ConvertEngine.IsElevatedWindow(hwnd) ? "administrator oynasi" : null;
+            : ConvertEngine.IsElevatedWindow(hwnd) ? "administrator oynasi"
+            : _allowed != null && !_allowed.Contains(name) ? "tanlangan dasturlar ichida emas" : null;
         if (off != null)
         {
             Log.Write($"AutoType: {name} — o'chiq ({off})");
@@ -669,6 +682,29 @@ internal sealed class AutoType : IDisposable
         }
         return CodeEditors.Contains(name) ? Mode.Code : Mode.Prose;
     }
+
+    /// <summary>
+    /// UWP ilovalar (Kalkulyator, Pochta) oynasi ApplicationFrameHost'niki — ichidagi haqiqiy ilova jarayonini topamiz,
+    /// aks holda user tanlagan ilova tanilmasdi.
+    /// </summary>
+    private static string? HostedAppName(IntPtr frame, uint hostPid)
+    {
+        string? found = null;
+        EnumChildWindows(frame, (child, _) =>
+        {
+            GetWindowThreadProcessId(child, out uint pid);
+            if (pid == hostPid) return true;
+            try { using var p = Process.GetProcessById((int)pid); found = p.ProcessName; }
+            catch (Exception ex) when (ex is ArgumentException or InvalidOperationException) { }
+            return found == null;
+        }, IntPtr.Zero);
+        return found;
+    }
+
+    private delegate bool EnumChildProc(IntPtr hwnd, IntPtr lParam);
+
+    [DllImport("user32.dll")]
+    private static extern bool EnumChildWindows(IntPtr parent, EnumChildProc proc, IntPtr lParam);
 
     /// <summary>Klassik Win32 parol maydoni (ES_PASSWORD). Brauzerlardagi parol maydonida probel kam bo'ladi.</summary>
     private static bool IsPasswordFocus(IntPtr fg)

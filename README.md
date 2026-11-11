@@ -182,6 +182,9 @@ Sozlamalarni ochish: soat yonidagi **Ö** belgisini yoki ish stolidagi **Özbeç
 - **Tutuqsiz so'zlar** — `ozbek` → `özbek` kabi. Lug'atda ~9 000 so'z bor, ular ochiq o'zbekcha matnlardan olingan. Ikki ma'noli so'zlar (`qol`, `ot`, `bor`) lug'atga kiritilmagan.
 - **Xabar ko'rsatish** — "Özbeça ✓" xabari.
 - **Windows bilan** — kompyuter yoqilganda ishga tushadi.
+- **Qaysi dasturlarda** — **Tanlash** ni bosing: kompyuterdagi hamma dasturlar (Store ilovalari ham) ikonkasi bilan chiqadi. Belgilanganlarida yozish paytida o'giriladi, boshqalarida yo'q. Hech narsa belgilanmasa — hamma dasturlarda ishlaydi.
+
+<p align="center"><img src="docs/apps.png" width="600" alt="Dasturlarni tanlash"></p>
 
 **Tray menyusi** (Ö belgisi ustida o'ng tugma): Yoqilgan · Yozish paytida o'girish · Kompyuter yoqilganda ishga tushirish · Sozlamalar… · Chiqish.
 

@@ -26,6 +26,8 @@ public partial class SettingsWindow : Window
         ApostropheToggle.IsChecked = app.Settings.RestoreApostrophes;
         AutostartToggle.IsChecked = Autostart.IsEnabled;
         VersionText.Text = "Versiya " + Theme.Version;
+        ShowAppsSummary();
+        _ = AppCatalog.Refresh(); // ro'yxat oldindan yig'ilsin — "Tanlash" bosilganda darhol chiqsin
         ShowHotkey(app.Settings.Hotkey);
         UpdateStatus();
 
@@ -141,6 +143,20 @@ public partial class SettingsWindow : Window
     }
 
     private void AutostartToggle_Click(object sender, RoutedEventArgs e) => Autostart.Set(AutostartToggle.IsChecked == true);
+
+    private void ChooseApps_Click(object sender, RoutedEventArgs e)
+    {
+        new AppPickerWindow(_app) { Owner = this }.ShowDialog();
+        ShowAppsSummary();
+    }
+
+    /// <summary>"Hamma dasturlarda" yoki "Telegram, Word va yana 2 ta".</summary>
+    private void ShowAppsSummary()
+    {
+        var apps = _app.Settings.AutoTypeApps;
+        AppsSummary.Text = apps.Count == 0 ? "Hamma dasturlarda ishlaydi"
+            : string.Join(", ", apps.Take(2).Select(a => a.Name)) + (apps.Count > 2 ? $" va yana {apps.Count - 2} ta" : "");
+    }
 
     private void Guide_Click(object sender, RoutedEventArgs e) => Open(RepoUrl + "#readme");
     private void Github_Click(object sender, RoutedEventArgs e) => Open(RepoUrl);

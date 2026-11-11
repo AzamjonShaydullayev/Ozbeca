@@ -112,6 +112,26 @@
                     </StackPanel>
                 </CheckBox>
             </UniformGrid>
+
+            <!-- Avto-o'girish qaysi dasturlarda -->
+            <Border Style="{StaticResource Group}" Margin="5,5,5,0" Padding="16,12">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <Border Style="{StaticResource Badge}">
+                        <TextBlock Text="&#xE71D;" Style="{StaticResource Glyph}" />
+                    </Border>
+                    <StackPanel Grid.Column="1" Margin="12,0,12,0" VerticalAlignment="Center">
+                        <TextBlock Text="Qaysi dasturlarda" Style="{StaticResource RowTitle}" />
+                        <TextBlock x:Name="AppsSummary" Style="{StaticResource RowHint}" Margin="0,1,0,0" TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                    <Button Grid.Column="2" Content="Tanlash" Style="{StaticResource SubtleButton}" Padding="14,6"
+                            VerticalAlignment="Center" Click="ChooseApps_Click" />
+                </Grid>
+            </Border>
         </StackPanel>
     </Grid>
 </Window>

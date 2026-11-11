@@ -69,6 +69,7 @@ Asl qarorlar (D1–D6) va keyin o'zgarganlari. **User bilan kelishilmagan o'z qa
 | D23 | README: **bitta yirik "Yuklab olish" tugmasi** (`docs/download.svg`, firuza gradient), kulrang shields badge'lari yo'q | user: "bitta ajralib, chiroyli, qorayib turmasin" |
 | D24 | **E2E user ish stolida yurgizilmaydi** — unit test yoki Windows Sandbox/VM | user: "ishlashimga xalaqit qilyapsan" (2026-11-11) |
 | D26 | **Yangi dizayn (gorizontal):** sozlamalar 780 px / o'rnatish 820 px eni; chapda firuza gradient "hero" (logo, umumiy yoqish, tezkor tugma), o'ngda 2×2 bosiladigan plitkalar (`Tile`) va chip'lar (`Chip`); tray balloon o'rniga o'z `NoticeWindow` (soat ustida); logo — gradient + yaltiroq. Funksiyalar olib tashlanmagan, uzun izohlar ToolTip'ga o'tdi | user: "cho'zinchoq bo'lmasin, eniga kattalashtir, kam tugma, premium, yaltiroq, shu rangda" (2026-11-11) |
+| D27 | **Dasturlarni tanlash:** avto-o'girish faqat user belgilagan dasturlarda (`Settings.AutoTypeApps` — nom + jarayon nomi); bo'sh — hammasida. Ro'yxat Windows "Barcha ilovalar"dan (`shell:AppsFolder`): oddiy dastur — yorliq exe'si, Store ilovasi — `AppxManifest.xml` Executable. UWP (`ApplicationFrameHost`) — ichki oynaning jarayoni. Clipboard kechikishi UI'dan olindi (Office — avtomatik 1000 ms) | user: "faqat tanlagan dasturlarda, tanlamasa hammasida; hamma dasturlarni ko'ra oladigan, oson" (2026-11-11) |
 | D25 | Tez yozishda ushlab-qaytarilgan tugmalar **ham o'giriladi**; UIA javob bermasa so'z o'tkazib yuboriladi, maydon "parol" deb eslanmaydi | user: boshqa kompyuterda Telegram'da "tez yozsa, Ctrl+V + Enter qilsa ishlamay qolyapti" |
 
 ---
@@ -125,7 +126,9 @@ tiklash (sequence bizniki bo'lsa **yoki matn hamon biznikiga teng** bo'lsa — E
 ### 3.3 Avto-yozish (AutoType) — eng nozik qism
 - **Rejimlar** (oyna jarayoni bo'yicha): `Off` (terminallar, KeePass/1Password/Bitwarden, mstsc, VM'lar, admin oynalar,
   o'z oynalarimiz), `Code` (VS Code, Cursor, JetBrains, Visual Studio, Notepad++ va b. — faqat `"…"` ichi, Ctrl+V yo'q),
-  `Prose` (qolganlari).
+  `Prose` (qolganlari). User dasturlar tanlagan bo'lsa (D27), ro'yxatda yo'q jarayon — `Off` (bloklanganlar baribir `Off`).
+- **Pauza + lug'at:** pauzada so'z lug'atsiz o'giriladi (`organish` → `organiş`), `TokenBuffer` asl shaklni (`_raw`) saqlaydi —
+  probelda lug'at asl so'zni tekshiradi (`örganiş`). Aks holda `ş` bor so'z lug'atdan o'tmasdi (2026-11-11 bug).
 - **Trigger:** probel (so'z + probel almashtiriladi), Enter (faqat Prose, UIA bilan parol emasligi tekshirilgach),
   kod rejimida yopuvchi `"`.
 - **So'z unutiladi:** sichqoncha bosilsa, strelka/End/PgUp/Tab/Esc/Delete, Ctrl/Alt/Win kombinatsiya, boshqa oyna.
@@ -246,6 +249,8 @@ dotnet build src/Ozbeca.App -c Release        # → src/Ozbeca.App/bin/Release/n
 - **UI'ni ko'rish uchun dasturni ishga tushirmang** (user kompyuterida o'rnatilgan nusxa bor — `UpdateOlder` uni yopib, almashtiradi).
   Oynalar exe'ni PowerShell'da `Assembly.LoadFrom` qilib, ekrandan tashqarida (`Left=-20000`) ochiladi va `RenderTargetBitmap`
   bilan PNG'ga olinadi. Har oyna alohida jarayonda bo'lishi kerak, chunki birinchi oyna yopilgach `Application` "shut down" bo'ladi.
+  Ekrandan tashqaridagi `Application` bir necha soniyadan keyin o'zi shutdown bo'ladi — sekin yuklanadigan ma'lumotni
+  (masalan `AppCatalog`) oynani ochishdan **oldin** tayyorlang.
   PowerShell'da `New-Object T(($a)*2, ...)` ishlamaydi, chunki vergul `*` dan kuchliroq bog'lanadi; o'rniga `[T]::new(...)` ishlating.
 
 - `.bat` fayllar **CRLF + ASCII** bo'lsin (`.gitattributes` bor) — LF bilan `cmd` qatorlarni buzadi.

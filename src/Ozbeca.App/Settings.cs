@@ -21,6 +21,9 @@ internal sealed class Settings
     /// <summary>Tutuqsiz so'zlarni lug'at bo'yicha tuzatish (ozbek → özbek). Standart — yoqilgan (user qarori, 2026-11-11).</summary>
     [DataMember] public bool RestoreApostrophes { get; set; } = true;
 
+    /// <summary>Avto-o'girish faqat shu dasturlarda (jarayon nomi). Bo'sh — hamma dasturlarda.</summary>
+    [DataMember] public List<AllowedApp> AutoTypeApps { get; set; } = new();
+
     // DataContract konstruktorni chaqirmaydi — faylda yo'q maydonlar standart qiymatda qolsin.
     [OnDeserializing]
     private void SetDefaults(StreamingContext _)
@@ -31,6 +34,7 @@ internal sealed class Settings
         RestoreDelayMs = 400;
         AutoType = true;
         RestoreApostrophes = true;
+        AutoTypeApps = new();
     }
 
     /// <summary>settings.json hali yo'q — birinchi ishga tushirish (o'rnatish oynasi ko'rsatiladi).</summary>
@@ -50,6 +54,8 @@ internal sealed class Settings
                 using var f = new MemoryStream(new UTF8Encoding(false).GetBytes(File.ReadAllText(FilePath)));
                 var s = (Settings?)Json.ReadObject(f) ?? new Settings();
                 s.Hotkey ??= "Ctrl+Alt+O";
+                s.AutoTypeApps ??= new();
+                s.AutoTypeApps.RemoveAll(a => a == null || string.IsNullOrWhiteSpace(a.Process));
                 s.RestoreDelayMs = Math.Max(0, Math.Min(5000, s.RestoreDelayMs));
                 return s;
             }
@@ -75,6 +81,14 @@ internal sealed class Settings
             Log.Write("settings.json saqlanmadi: " + ex.Message);
         }
     }
+}
+
+/// <summary>Tanlangan dastur: nomi (sozlamalarda ko'rsatish uchun) va jarayon nomi (tekshirish uchun).</summary>
+[DataContract]
+internal sealed class AllowedApp
+{
+    [DataMember] public string Name { get; set; } = "";
+    [DataMember] public string Process { get; set; } = "";
 }
 
 /// <summary>HKCU\...\Run orqali Windows bilan birga ishga tushirish.</summary>

@@ -69,6 +69,7 @@ public partial class App : Application
         _engine = new ConvertEngine(_hotkey.Handle);
         _hotkey.Pressed += _engine.Trigger;
         _autoType = new AutoType(_hotkey.Handle);
+        _autoType.SetAllowedApps(Settings.AutoTypeApps.Select(a => a.Process));
         _engine.Notify += msg => Dispatcher.BeginInvoke(() => Toast(msg));
         ApplyDelay();
         Ozbeca.Core.Transliterator.RestoreApostrophes = Settings.RestoreApostrophes;
@@ -198,6 +199,15 @@ public partial class App : Application
         Settings.AutoType = on;
         Settings.Save();
         ApplyAutoType();
+    }
+
+    /// <summary>Avto-o'girish qaysi dasturlarda ishlaydi. Bo'sh — hammasida.</summary>
+    internal void SetAutoTypeApps(List<AllowedApp> apps)
+    {
+        Settings.AutoTypeApps = apps;
+        Settings.Save();
+        _autoType.SetAllowedApps(apps.Select(a => a.Process));
+        Log.Write("Avto-o'girish dasturlari: " + (apps.Count == 0 ? "hammasi" : string.Join(", ", apps.Select(a => a.Process))));
     }
 
     internal void SuspendHotkey() => _hotkey.Unregister();
