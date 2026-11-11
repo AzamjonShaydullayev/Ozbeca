@@ -4,14 +4,15 @@
 
 # Özbeça
 
-**Belgilangan matnni bitta tugma bilan yangi o'zbek alifbosiga o'giradi.**<br>
-Notepad, Word, Telegram, Chrome, VS Code va boshqa ilovalarda — matn o'sha joyning o'zida almashadi.
+**O'zbekcha matnni yangi alifboga (Ö, Ğ, Ş, Ç) o'giradi — yozayotganingizda yoki bitta tugma bilan.**<br>
+Word, Telegram, Chrome, Notepad, Excel, VS Code va boshqa ilovalarda — matn o'sha joyning o'zida almashadi.
 
 [![Yuklab olish](https://img.shields.io/badge/⬇_Yuklab_olish-Ozbeca.exe-0099B5?style=for-the-badge)](https://github.com/AzamjonShaydullayev/Ozbeca/releases/latest/download/Ozbeca.exe)
 
 ![Windows 10/11](https://img.shields.io/badge/Windows-10%20%7C%2011-0078D4?logo=windows)
 ![Versiya](https://img.shields.io/github/v/release/AzamjonShaydullayev/Ozbeca?label=versiya&color=0099B5)
-![O'rnatish shart emas](https://img.shields.io/badge/o'rnatish-shart_emas-2ea44f)
+![Bitta fayl](https://img.shields.io/badge/bitta_fayl-0.1_MB-2ea44f)
+![Admin](https://img.shields.io/badge/admin_huquqi-shart_emas-2ea44f)
 
 </div>
 
@@ -30,12 +31,10 @@ Notepad, Word, Telegram, Chrome, VS Code va boshqa ilovalarda — matn o'sha joy
 | **Oʻ** oʻ | **Ö** ö | oʻzbek → **ö**zbek |
 | **Gʻ** gʻ | **Ğ** ğ | gʻisht → **ğ**işt |
 
-Bu harflarni klaviaturada yozish noqulay. **Özbeça** shu muammoni hal qiladi:
-1. Odatdagidek yozasiz.
-2. Matnni belgilaysiz.
-3. <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>O</kbd> ni bosasiz.
+Bu harflarni klaviaturada yozish noqulay. **Özbeça** ikki yo'l bilan yordam beradi:
 
-Matn o'sha joyning o'zida yangi alifboga o'tadi.
+- **Shunchaki yozing.** Odatdagidek `choy` deb yozib probel bossangiz, so'z o'zi `çoy` ga aylanadi — telefondagi klaviaturadek.
+- **Tayyor matnni o'giring.** Eski yozuvdagi matnni belgilang va <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>O</kbd> ni bosing.
 
 ---
 
@@ -43,9 +42,9 @@ Matn o'sha joyning o'zida yangi alifboga o'tadi.
 
 ### 1. Yuklab oling
 
-👉 **[Ozbeca.exe ni yuklab olish](https://github.com/AzamjonShaydullayev/Ozbeca/releases/latest/download/Ozbeca.exe)** (atigi ~0.1 MB)
+👉 **[Ozbeca.exe ni yuklab olish](https://github.com/AzamjonShaydullayev/Ozbeca/releases/latest/download/Ozbeca.exe)** (~0.1 MB)
 
-Bitta kichik fayl, qo'shimcha hech narsa o'rnatish shart emas. Windows 10 va 11 da kerakli hamma narsa allaqachon bor.
+Bitta kichik fayl. Alohida installer, .NET yoki boshqa narsa kerak emas — Windows 10 va 11 da hammasi bor. Dastur o'zini birinchi ochilganda bir bosishda o'rnatadi (3-qadam).
 
 ### 2. Ishga tushiring
 
@@ -66,28 +65,27 @@ Yuklab olingan `Ozbeca.exe` ni ikki marta bosing.
 > Oyna dasturda virus borligini anglatmaydi. U faqat Windows bu dasturni hali "tanimasligini" bildiradi.
 >
 > Özbeça xavfsiz:
-> - **kodi to'liq ochiq**, bu sahifada istalgan kishi ko'rib chiqishi mumkin;
-> - **internetga ulanmaydi**, hech qanday ma'lumot yubormaydi;
+> - **kodi to'liq ochiq** — bu sahifada istalgan kishi ko'rib chiqishi mumkin;
+> - **internetga ulanmaydi** va hech qanday ma'lumot yubormaydi;
 > - **administrator huquqi so'ramaydi**;
-> - **klaviaturani kuzatmaydi**: Windows'ning oddiy `RegisterHotKey` funksiyasi ishlatiladi, keylogger usuli emas.
+> - **yozganlaringizni saqlamaydi** — batafsil: [Maxfiylik](#-maxfiylik).
 >
 > Xohlasangiz, faylni [VirusTotal](https://www.virustotal.com/) saytida 70 dan ortiq antivirus bilan tekshirib ko'rishingiz mumkin.
 > </details>
 
-### 3. O'rnatish oynasida «Tayyor» ni bosing
+### 3. O'rnatish oynasida «Boshlash» ni bosing
 
-Birinchi ochilganda dastur nimalarni qilish kerakligini so'raydi. Hammasi oldindan belgilangan, shunchaki **Tayyor** ni bossangiz bo'ldi:
+Birinchi ochilganda dastur nimalarni qilishni so'raydi. Hammasi oldindan belgilangan — **Boshlash** ni bossangiz bo'ldi:
 
 <p align="center"><img src="docs/welcome.png" width="440" alt="O'rnatish oynasi"></p>
 
 | Belgi | Nima qiladi |
 |---|---|
+| **Shunchaki yozing** | Yozish paytida avtomatik o'girish. Keyin tray menyusidan bir bosishda o'chirsa bo'ladi |
 | **Kompyuterga o'rnatish** | Dastur `%LocalAppData%\Programs\Ozbeca` ga ko'chiriladi. Yuklab olingan faylni keyin o'chirib tashlasangiz bo'ladi |
 | **Ish stolida yorliq** | Ish stolida **Özbeça** belgisi paydo bo'ladi |
 | **Start menyusiga qo'shish** | Start menyusida "Özbeça" deb qidirsangiz topiladi |
-| **Avtomatik ishga tushirish** | Kompyuter yonganda dastur o'zi ochiladi va jim kutib turadi |
-
-Administrator huquqi so'ralmaydi.
+| **Kompyuter yoqilganda ishga tushirish** | Dastur o'zi ochiladi va jim kutib turadi |
 
 Shundan keyin dastur oyna ochmaydi. U ekranning pastki o'ng burchagida, soat yonida <img src="docs/icon.png" width="16"> **Ö** belgisi bo'lib turadi. Belgi ko'rinmasa, **^** (yashirin belgilar) tugmasini bosing.
 
@@ -95,14 +93,42 @@ Shundan keyin dastur oyna ochmaydi. U ekranning pastki o'ng burchagida, soat yon
 
 ## ✍️ Qanday foydalaniladi
 
-1. Istalgan joyda matn yozing: Word, Telegram, brauzer, Notepad...
-2. O'girmoqchi bo'lgan qismni **belgilang**. Hammasini belgilash uchun <kbd>Ctrl</kbd>+<kbd>A</kbd>.
-3. <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>O</kbd> ni bosing.
-4. Matn o'girildi, kursor yonida **"Özbeça ✓"** chiqadi.
+### Yozish paytida
 
-**Bekor qilmoqchimisiz?** Oddiy <kbd>Ctrl</kbd>+<kbd>Z</kbd> ni bosing, eski matn qaytadi.
+Hech narsa qilish shart emas — odatdagidek yozing:
+
+| Yozasiz | Probel bosilgach |
+|---|---|
+| `choy ` | `çoy ` |
+| `O'zbekiston ` | `Özbekiston ` |
+| `bog'da ` | `boğda ` |
+
+- **Ctrl+V** bilan uzun matn qo'ysangiz ham o'giriladi (bir nechta so'zli matn bo'lsa).
+- So'zni o'zgartirmoqchi bo'lmasangiz — <kbd>Ctrl</kbd>+<kbd>Z</kbd>.
+- Vaqtincha kerak bo'lmasa: Ö belgisi ustida o'ng tugma → **Yozish paytida o'girish** belgisini olib tashlang.
+
+### Tayyor matnni o'girish
+
+1. O'girmoqchi bo'lgan qismni **belgilang** (hammasi uchun <kbd>Ctrl</kbd>+<kbd>A</kbd>).
+2. <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>O</kbd> ni bosing.
+3. Matn o'girildi, yonida **"Özbeça ✓"** chiqadi. Bekor qilish — <kbd>Ctrl</kbd>+<kbd>Z</kbd>.
 
 > 💡 Eslab qolish oson: **O** → **Ö**.
+
+### Kod yozayotganda
+
+Kod muharrirlarida (VS Code, Visual Studio, JetBrains, Cursor, Notepad++ va boshqalar) dastur kodga tegmaydi — **faqat qo'shtirnoq ichidagi matnni** o'giradi:
+
+```js
+console.log("Bugun choy ichdik");   // →  console.log("Bugun çoy içdik");
+const shahar_id = getChoy();        // →  o'zgarmaydi
+```
+
+Brauzerda kod yozsangiz ham `user_name`, `print(choy)`, `shop.check`, `showChart` kabi kodga o'xshash so'zlar o'zgarmaydi.
+
+### Qayerda o'zi o'chiq turadi
+
+Terminallar (cmd, PowerShell, Windows Terminal), parol maydonlari, parol menejerlari, masofaviy ish stoli va administrator oynalarida yozish paytida o'girish ishlamaydi. Enter bosilganda ham o'girilmaydi — parollar ko'pincha Enter bilan tugaydi.
 
 ---
 
@@ -114,7 +140,7 @@ Shundan keyin dastur oyna ochmaydi. U ekranning pastki o'ng burchagida, soat yon
 - **Tutuq belgisining hamma xilini taniydi:** `'` `` ` `` `’` `‘` `ʻ` `ʼ` `´` `′`. Kim qanday yozgan bo'lsa ham, `o'`, `o‘`, `o`` va boshqalar `ö` ga aylanadi.
 - **Kerakmas joyga tegmaydi.** Havolalar, email, `@username` va `#hashtag` o'zgarmaydi. Tirnoqni tutuq deb adashtirmaydi: `'kino'` va `'tong'` shundayligicha qoladi.
 - **Clipboard'ingiz buzilmaydi.** Oldin nima nusxalagan bo'lsangiz, o'girishdan keyin o'sha joyida qoladi. Win+V tarixiga ortiqcha narsa tushmaydi.
-- **Yengil va xavfsiz.** Internetga ulanmaydi, administrator huquqi so'ramaydi, klaviaturani kuzatmaydi (keylogger emas).
+- **Yengil.** Bitta 0.1 MB fayl, internetga ulanmaydi, administrator huquqi so'ramaydi.
 
 ---
 
@@ -141,48 +167,58 @@ Qoidalar quyidagi rasmiy manbalarga asoslangan:
 
 ## ⚙️ Sozlamalar
 
-Sozlamalarni ochishning uchta yo'li bor:
-- soat yonidagi **Ö** belgisini bosish;
-- shu belgi ustida o'ng tugmani bosib **Sozlamalar…** ni tanlash;
-- ish stolidagi **Özbeça** yorlig'ini bosish.
-
-Oynani **−** bilan kichraytirsangiz, u yana Ö belgisiga yashirinadi. Dastur esa ishlashda davom etadi.
+Sozlamalarni ochish: soat yonidagi **Ö** belgisini yoki ish stolidagi **Özbeça** yorlig'ini bosing. Oynani **−** bilan kichraytirsangiz, u yana Ö belgisiga yashirinadi — dastur ishlashda davom etadi.
 
 <p align="center"><img src="docs/settings.png" width="420" alt="Sozlamalar oynasi"></p>
 
-- **Hotkey.** Maydonni bosing va yangi kombinatsiyani bosing. U darhol tekshiriladi: boshqa dastur egallagan bo'lsa, ogohlantirish chiqadi.
-- **O'girilganda xabar ko'rsatish.** "Özbeça ✓" xabarini yoqadi yoki o'chiradi.
-- **Windows bilan birga ishga tushirish.** Kompyuter yonganda dastur o'zi ochiladi.
-- **Kengaytirilgan → kechikish.** Biror ilovada matn qo'yilmay qolsa, qiymatni oshiring (masalan, 400 → 800).
+- **Yoqilgan** (yuqori o'ng burchakda) — dasturni butunlay vaqtincha o'chiradi.
+- **Tezkor tugma** — **O'zgartirish** ni bosib, yangi kombinatsiyani bosing. U darhol tekshiriladi: boshqa dastur egallagan bo'lsa, ogohlantirish chiqadi.
+- **Yozilgan so'zni o'zi o'girsin** — yozish paytida avtomatik o'girish.
+- **O'girilganda xabar ko'rsatish** — "Özbeça ✓" xabari.
+- **Kompyuter yoqilganda ishga tushirish.**
+- **Clipboard'ni tiklash kechikishi** — biror ilovada matn qo'yilmay qolsa, oshiring (masalan, 400 → 800).
 
-**Tray menyusi** (Ö belgisi ustida o'ng tugma):
-- **Yoqilgan** — vaqtincha o'chirib qo'yish uchun.
-- **Sozlamalar…**
-- **Windows bilan birga ishga tushirish**
-- **Chiqish**
+**Tray menyusi** (Ö belgisi ustida o'ng tugma): Yoqilgan · Yozish paytida o'girish · Kompyuter yoqilganda ishga tushirish · Sozlamalar… · Chiqish.
+
+---
+
+## 🔒 Maxfiylik
+
+- Dastur **internetga umuman ulanmaydi** va hech narsa yubormaydi.
+- **Yozish paytida o'girish** yoqilganda dastur qaysi tugmalar bosilganini ko'radi — **faqat joriy so'zni** bilish uchun. Xotirada eng ko'pi bitta qator turadi, u **diskka yozilmaydi** va probel, Enter, sichqoncha bosilganda unutiladi.
+- Bu funksiyani o'chirsangiz, klaviatura kuzatilmaydi — faqat <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>O</kbd> (Windows'ning `RegisterHotKey` funksiyasi) qoladi.
+- Kodi to'liq ochiq: [`src/Ozbeca.App/AutoType.cs`](src/Ozbeca.App/AutoType.cs).
 
 ---
 
 ## ✅ Qayerlarda sinalgan
 
-| Ilova | Natija |
-|---|---|
-| Notepad, Word, Excel (katak va tahrirlash rejimi) | ✅ |
-| Chrome (input, textarea), VS Code | ✅ |
-| Telegram Desktop (stillar bilan) | ✅ |
-| Windows Terminal, cmd | ✅ |
-| Explorer — fayl nomini o'zgartirish | ✅ |
+| Ilova | Belgilab o'girish | Yozish paytida | Ctrl+V |
+|---|:---:|:---:|:---:|
+| Notepad, Word | ✅ | ✅ | ✅ |
+| Chrome (input, textarea) | ✅ | ✅ | ✅ |
+| Excel (katak va tahrirlash rejimi) | ✅ | | |
+| Telegram Desktop (stillar bilan) | ✅ | | |
+| VS Code | ✅ | ✅ faqat qo'shtirnoq ichi | — |
+| Windows Terminal, cmd | ✅ | — o'chiq | — |
+| Explorer — fayl nomini o'zgartirish | ✅ | | |
 
-Batafsil natijalar: [docs/M4_SINOV.md](docs/M4_SINOV.md).
+Batafsil natijalar: [docs/M4_SINOV.md](docs/M4_SINOV.md). Yozish paytida o'girish uchun avtomatik sinov: [tools/e2e](tools/e2e).
 
 ---
 
 ## ❓ Savollar va muammolar
 
 <details>
+<summary><b>Yozayotganimda keraksiz so'z o'zgarib ketdi</b></summary>
+
+<kbd>Ctrl</kbd>+<kbd>Z</kbd> ni bosing — so'z qaytadi. Inglizcha yozayotgan bo'lsangiz (`check` → `çeck`), Ö belgisi ustida o'ng tugma → **Yozish paytida o'girish** ni vaqtincha o'chiring.
+</details>
+
+<details>
 <summary><b>Hech narsa bo'lmadi / "Matn belgilanmagan" chiqdi</b></summary>
 
-Avval matnni belgilang (sichqoncha bilan yoki <kbd>Ctrl</kbd>+<kbd>A</kbd>), keyin tugmalarni bosing. Shu xabar chiqmasa, tray'dagi Ö belgisida **Yoqilgan** belgisi turganini tekshiring.
+Avval matnni belgilang (sichqoncha bilan yoki <kbd>Ctrl</kbd>+<kbd>A</kbd>), keyin tugmalarni bosing. Shu xabar chiqmasa, sozlamalarda **Yoqilgan** turganini tekshiring.
 </details>
 
 <details>
@@ -194,13 +230,19 @@ Hujjat **himoyalangan ko'rinishda** (Protected View) ochilgan. Bu internetdan yo
 <details>
 <summary><b>"… boshqa dasturda band" degan xabar chiqdi</b></summary>
 
-Tanlangan tugmalar kombinatsiyasini boshqa dastur egallab olgan. Sozlamalar oynasi o'zi ochiladi: hotkey maydonini bosing va boshqa kombinatsiyani tanlang, masalan <kbd>Win</kbd>+<kbd>Alt</kbd>+<kbd>Space</kbd>.
+Tanlangan tugmalar kombinatsiyasini boshqa dastur egallab olgan. Sozlamalar oynasi o'zi ochiladi: **O'zgartirish** ni bosing va boshqa kombinatsiyani tanlang, masalan <kbd>Win</kbd>+<kbd>Alt</kbd>+<kbd>Space</kbd>.
+</details>
+
+<details>
+<summary><b>Antivirus ogohlantirdi</b></summary>
+
+Yozish paytida o'girish uchun dastur Windows'ning klaviatura hook'idan foydalanadi — ba'zi antiviruslar bunday dasturlarni ehtiyotdan belgilashi mumkin. Dastur internetga ulanmaydi va yozganlaringizni saqlamaydi ([Maxfiylik](#-maxfiylik)), kodi ochiq. Xohlasangiz, bu funksiyani o'chirib qo'yishingiz mumkin.
 </details>
 
 <details>
 <summary><b>Dasturni qayta ochsam faqat sozlamalar chiqyapti</b></summary>
 
-Bu to'g'ri: dastur allaqachon ishlab turibdi, shuning uchun ikkinchi nusxa ochilmaydi, faqat sozlamalar ko'rsatiladi. Matnni o'girish uchun hech narsa ochish shart emas: matnni belgilab <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>O</kbd> ni bosing.
+Bu to'g'ri: dastur allaqachon ishlab turibdi, shuning uchun ikkinchi nusxa ochilmaydi, faqat sozlamalar ko'rsatiladi.
 </details>
 
 <details>
@@ -212,26 +254,20 @@ Administrator sifatida ochilgan dasturlarga Windows oddiy dasturlarning tugma yu
 <details>
 <summary><b>Word'da qalin yoki rangli harflar oddiy bo'lib qoldi</b></summary>
 
-Word'da o'girilgan qism oddiy matn sifatida qo'yiladi, shuning uchun belgilangan joydagi aralash formatlash (qalin, kursiv, rang) bitta formatga tushadi. Telegram'da bu muammo yo'q, u yerda stillar saqlanadi.
+Belgilab o'girishda Word'ga oddiy matn qo'yiladi, shuning uchun belgilangan joydagi aralash formatlash (qalin, kursiv, rang) bitta formatga tushadi. Yozish paytida o'girishda bu muammo yo'q. Telegram'da esa ikkala holatda ham stillar saqlanadi.
 </details>
 
 <details>
 <summary><b>Terminalda matn almashmadi, oxiriga qo'shildi</b></summary>
 
-Terminal kiritilgan matnni almashtirishga imkon bermaydi. O'girilgan matn kursor turgan joyga qo'yiladi. Terminalda dastur xavfsiz tugmalarni ishlatadi (Ctrl+Insert / Shift+Insert), shuning uchun ishlab turgan buyruq to'xtab qolmaydi.
-</details>
-
-<details>
-<summary><b>Inglizcha so'zlar ham o'zgarib ketdi</b></summary>
-
-Dastur so'zning qaysi tilda ekanini bilmaydi: `shop` → `şop`, `don't` → `donʼt`. Faqat o'zbekcha qismni belgilab o'giring.
+Terminal kiritilgan matnni almashtirishga imkon bermaydi — o'girilgan matn kursor turgan joyga qo'yiladi. Terminalda dastur xavfsiz tugmalarni ishlatadi (Ctrl+Insert / Shift+Insert), shuning uchun ishlab turgan buyruq to'xtab qolmaydi.
 </details>
 
 ---
 
 ## 🗑️ O'chirish
 
-1. Ö belgisi ustida o'ng tugma → **Windows bilan birga ishga tushirish** belgisini olib tashlang.
+1. Ö belgisi ustida o'ng tugma → **Kompyuter yoqilganda ishga tushirish** belgisini olib tashlang.
 2. Shu menyuda **Chiqish** ni bosing.
 3. Ish stolidagi va Start menyusidagi **Özbeça** yorliqlarini o'chiring.
 4. <kbd>Win</kbd>+<kbd>R</kbd> → `%LocalAppData%\Programs\Ozbeca` → papkani o'chiring (dasturning o'zi).
@@ -241,12 +277,15 @@ Dastur so'zning qaysi tilda ekanini bilmaydi: `shop` → `şop`, `don't` → `do
 
 ## 🛠️ Dasturchilar uchun
 
-C#, WPF, **.NET Framework 4.8**. U Windows 10/11 tarkibida bor, shuning uchun exe ~0.1 MB va foydalanuvchi hech narsa o'rnatmaydi. O'girish mantig'i alohida, Windows'ga bog'liq bo'lmagan `netstandard2.0` kutubxonada joylashgan va 300 dan ortiq test bilan himoyalangan. Bu kod exe ichiga kompilyatsiya qilinadi, natijada bitta fayl chiqadi.
+C#, WPF, **.NET Framework 4.8** — u Windows 10/11 tarkibida bor, shuning uchun exe ~0.1 MB. O'girish mantig'i alohida, Windows'ga bog'liq bo'lmagan `netstandard2.0` kutubxonada va 370 dan ortiq unit test bilan himoyalangan; bu kod exe ichiga kompilyatsiya qilinadi.
 
 ```
-src/Ozbeca.Core/         o'girish qoidalari (Transliterator), Telegram stillari (TelegramTags)
-src/Ozbeca.App/          tray, hotkey (RegisterHotKey), clipboard, sozlamalar, toast, o'rnatish oynasi
+src/Ozbeca.Core/         Transliterator (qoidalar), TokenBuffer (yozish paytida, kod rejimi),
+                         CodeGuard (kodga tegmaslik), TelegramTags (Telegram stillari)
+src/Ozbeca.App/          AutoType (klaviatura hook'i), ConvertEngine (hotkey), ClipboardSwap,
+                         sozlamalar, o'rnatish oynasi, toast, tray
 tests/Ozbeca.Core.Tests/ xUnit testlar (.NET 8)
+tools/e2e/               real ilovalarda avtomatik sinov: run_autotype_tests.bat
 tools/                   ikonka va README rasmlarini yasash
 ```
 
@@ -254,12 +293,10 @@ tools/                   ikonka va README rasmlarini yasash
 dotnet test
 ```
 
-Exe'ni yasash (natija `src/Ozbeca.App/bin/Release/net48/Ozbeca.exe` da chiqadi):
-
 ```bash
 dotnet build src/Ozbeca.App -c Release
 ```
 
-Qanday ishlaydi: hotkey bosilganda dastur clipboard'ni saqlab qo'yadi. Keyin belgilangan matnni nusxalaydi (Ctrl+C), uni o'giradi va qayta qo'yadi (Ctrl+V). Oxirida asl clipboard'ni tiklaydi. Klaviatura hook'i ishlatilmaydi, faqat `RegisterHotKey`.
+Natija: `src/Ozbeca.App/bin/Release/net48/Ozbeca.exe`.
 
 Takliflar va xatolar uchun **[Issues](https://github.com/AzamjonShaydullayev/Ozbeca/issues)** bo'limiga yozing.
