@@ -1,4 +1,4 @@
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
@@ -10,12 +10,15 @@ namespace Ozbeca.App;
 
 /// <summary>
 /// Ekranning pastki o'ng burchagida (soat ustida) chiqadigan bildirishnoma — tray balloon o'rniga.
-/// Fokusni olmaydi; bosilsa yopiladi; sichqoncha ustida turganda yopilmaydi.
+/// Fokusni olmaydi; bosilsa — dastur oynasi ochiladi (X — faqat yopadi); sichqoncha ustida turganda yopilmaydi.
 /// </summary>
 public partial class NoticeWindow : Window
 {
     private static readonly Brush WarningStripe = new SolidColorBrush(Color.FromRgb(0xF5, 0xA5, 0x24));
     private readonly DispatcherTimer _timer = new();
+
+    /// <summary>Kartochka bosildi (X dan tashqari) — dastur oynasini ochish uchun.</summary>
+    public event Action? Clicked;
 
     public NoticeWindow()
     {
@@ -59,5 +62,15 @@ public partial class NoticeWindow : Window
 
     private void Window_MouseEnter(object sender, MouseEventArgs e) => _timer.Stop();
     private void Window_MouseLeave(object sender, MouseEventArgs e) { if (Opacity > 0) _timer.Start(); }
-    private void Window_Click(object sender, MouseButtonEventArgs e) => Dismiss();
+    private void Window_Click(object sender, MouseButtonEventArgs e)
+    {
+        Dismiss();
+        Clicked?.Invoke();
+    }
+
+    private void Close_Click(object sender, MouseButtonEventArgs e)
+    {
+        e.Handled = true; // kartochka bosilishiga o'tmasin
+        Dismiss();
+    }
 }

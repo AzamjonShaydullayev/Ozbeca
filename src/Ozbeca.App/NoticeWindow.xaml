@@ -31,8 +31,12 @@
                     <TextBlock x:Name="MessageText" Foreground="{DynamicResource Muted}" FontSize="12.5" TextWrapping="Wrap"
                                LineHeight="18" Margin="0,2,0,0" />
                 </StackPanel>
-                <TextBlock Grid.Column="2" Text="&#xE8BB;" FontFamily="{StaticResource IconFont}" FontSize="10"
-                           Foreground="{DynamicResource Muted}" VerticalAlignment="Top" Margin="0,4,4,0" />
+                <!-- X — faqat yopadi; kartochkaning qolgan joyi sozlamalarni ochadi -->
+                <Border Grid.Column="2" Width="28" Height="28" CornerRadius="6" Background="Transparent" VerticalAlignment="Top"
+                        Margin="0,-3,-2,0" ToolTip="Yopish" MouseLeftButtonUp="Close_Click">
+                    <TextBlock Text="&#xE8BB;" FontFamily="{StaticResource IconFont}" FontSize="10"
+                               Foreground="{DynamicResource Muted}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                </Border>
             </Grid>
         </Grid>
     </Border>

@@ -273,6 +273,7 @@ public partial class App : Application
             _settingsWindow.Closed += (_, _) => _settingsWindow = null;
             _settingsWindow.Show();
         }
+        if (_settingsWindow.WindowState == WindowState.Minimized) _settingsWindow.WindowState = WindowState.Normal;
         _settingsWindow.Activate();
         return _settingsWindow;
     }
@@ -287,7 +288,11 @@ public partial class App : Application
     /// <summary>Soat ustida chiqadigan bildirishnoma (tray balloon o'rniga — dastur uslubida).</summary>
     private void Notice(string title, string message, bool warning = false)
     {
-        _notice ??= new NoticeWindow();
+        if (_notice == null)
+        {
+            _notice = new NoticeWindow();
+            _notice.Clicked += () => ShowSettings();
+        }
         _notice.ShowNotice(title, message, warning);
     }
 }
