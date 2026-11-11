@@ -2,7 +2,7 @@
 
   <!--
     .NET Framework 4.8 — Windows 10/11 ichida allaqachon bor: foydalanuvchi hech narsa o'rnatmaydi,
-    exe esa ~0.3 MB (self-contained .NET 8 da 68 MB edi).
+    exe esa ~0.1 MB (self-contained .NET 8 da 68 MB edi).
   -->
   <PropertyGroup>
     <OutputType>WinExe</OutputType>

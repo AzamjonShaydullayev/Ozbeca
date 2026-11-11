@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="76" viewBox="0 0 360 76" role="img" aria-label="Yuklab olish — Ozbeca.exe">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#14B8CC"/>
+      <stop offset="1" stop-color="#0086A0"/>
+    </linearGradient>
+  </defs>
+  <rect x="1" y="1" width="358" height="74" rx="16" fill="url(#bg)"/>
+  <rect x="1.5" y="1.5" width="357" height="73" rx="15.5" fill="none" stroke="#FFFFFF" stroke-opacity=".25"/>
+  <circle cx="44" cy="38" r="22" fill="#FFFFFF" fill-opacity=".18"/>
+  <path d="M44 26v18m-8-8 8 8 8-8M34 50h20" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <g font-family="'Segoe UI', -apple-system, 'Helvetica Neue', Arial, sans-serif" fill="#FFFFFF">
+    <text x="80" y="36" font-size="24" font-weight="700">Yuklab olish</text>
+    <text x="80" y="57" font-size="13.5" fill-opacity=".9">Ozbeca.exe · Windows 10 / 11 · 0.1 MB</text>
+  </g>
+</svg>

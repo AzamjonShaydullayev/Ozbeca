@@ -7,12 +7,11 @@
 **O'zbekcha matnni yangi alifboga (Ö, Ğ, Ş, Ç) o'giradi — yozayotganingizda yoki bitta tugma bilan.**<br>
 Word, Telegram, Chrome, Notepad, Excel, VS Code va boshqa ilovalarda — matn o'sha joyning o'zida almashadi.
 
-[![Yuklab olish](https://img.shields.io/badge/⬇_Yuklab_olish-Ozbeca.exe-0099B5?style=for-the-badge)](https://github.com/AzamjonShaydullayev/Ozbeca/releases/latest/download/Ozbeca.exe)
+<br>
 
-![Windows 10/11](https://img.shields.io/badge/Windows-10%20%7C%2011-0078D4?logo=windows)
-![Versiya](https://img.shields.io/github/v/release/AzamjonShaydullayev/Ozbeca?label=versiya&color=0099B5)
-![Bitta fayl](https://img.shields.io/badge/bitta_fayl-0.1_MB-2ea44f)
-![Admin](https://img.shields.io/badge/admin_huquqi-shart_emas-2ea44f)
+<a href="https://github.com/AzamjonShaydullayev/Ozbeca/releases/latest/download/Ozbeca.exe"><img src="docs/download.svg" width="360" alt="Yuklab olish — Ozbeca.exe"></a>
+
+<sub>Bepul · ochiq kod · internetga ulanmaydi · admin huquqi shart emas · <a href="https://github.com/AzamjonShaydullayev/Ozbeca/releases">barcha versiyalar</a></sub>
 
 </div>
 
@@ -42,7 +41,7 @@ Bu harflarni klaviaturada yozish noqulay. **Özbeça** ikki yo'l bilan yordam be
 
 ### 1. Yuklab oling
 
-👉 **[Ozbeca.exe ni yuklab olish](https://github.com/AzamjonShaydullayev/Ozbeca/releases/latest/download/Ozbeca.exe)** (~0.1 MB)
+Sahifa boshidagi **Yuklab olish** tugmasini bosing — [`Ozbeca.exe`](https://github.com/AzamjonShaydullayev/Ozbeca/releases/latest/download/Ozbeca.exe) yuklanadi.
 
 Bitta kichik fayl. Alohida installer, .NET yoki boshqa narsa kerak emas — Windows 10 va 11 da hammasi bor. Dastur o'zini birinchi ochilganda bir bosishda o'rnatadi (3-qadam).
 
@@ -285,7 +284,7 @@ Terminal kiritilgan matnni almashtirishga imkon bermaydi — o'girilgan matn kur
 
 ## 🛠️ Dasturchilar uchun
 
-C#, WPF, **.NET Framework 4.8** — u Windows 10/11 tarkibida bor, shuning uchun exe ~0.1 MB. O'girish mantig'i alohida, Windows'ga bog'liq bo'lmagan `netstandard2.0` kutubxonada va 370 dan ortiq unit test bilan himoyalangan; bu kod exe ichiga kompilyatsiya qilinadi.
+C#, WPF, **.NET Framework 4.8** — u Windows 10/11 tarkibida bor, shuning uchun exe ~0.1 MB. O'girish mantig'i alohida, Windows'ga bog'liq bo'lmagan `netstandard2.0` kutubxonada va 380 dan ortiq unit test bilan himoyalangan; bu kod exe ichiga kompilyatsiya qilinadi.
 
 ```
 src/Ozbeca.Core/         Transliterator (qoidalar), TokenBuffer (yozish paytida, kod rejimi),
