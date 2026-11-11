@@ -15,8 +15,9 @@
 | **Repo** | https://github.com/AzamjonShaydullayev/Ozbeca (**ochiq**), branch `main`, lokal: `D:\projects\ozbeca` |
 | **Platforma** | C#, WPF, **.NET Framework 4.8** (Windows 10/11 ichida bor) — bitta `Ozbeca.exe`, ~135 KB |
 | **Testlar** | 385 unit test (xUnit, .NET 8) + real ilovalarda E2E: 402/408 |
-| **Bosqichlar** | M1–M5 (asl reja) tugadi; undan keyin: avto-yozish, Ctrl+V, kod rejimi, premium UI, o'rnatish oynasi |
-| **Foydalanuvchining kompyuteri** | Özbeça o'rnatilmagan holda qoldirildi — user README'dan v1.2.0 ni o'zi o'rnatadi |
+| **Bosqichlar** | M1–M5 (asl reja) tugadi; undan keyin: avto-yozish, Ctrl+V, kod rejimi, premium UI, o'rnatish oynasi; v1.3.0 — pauzada o'girish, o'zini yangilash, UAC tuzatishi |
+| **Foydalanuvchining kompyuteri** | **v1.3.0 o'rnatilgan va ishlab turibdi** (`%LocalAppData%\Programs\Ozbeca`, sinov paytida v1.2.0 dan yangilangan; build commit `de2555e`'dan oldingi — release exe bilan bir xil kod) |
+| **Kutilayotgan fikr** | User v1.3.0 ni **boshqa kompyuterga** beradi (u yerda v1.2.0'da avto-yozish ishlamagan, Ctrl+Alt+O ishlagan). Ishlamasa — o'sha kompyuterning `%AppData%\Ozbeca\ozbeca.log` ini so'rang |
 
 Ishlash yo'llari:
 1. **Belgilab o'girish:** matnni belgilab <kbd>Ctrl+Alt+O</kbd> (clipboard orqali almashtirish).
@@ -72,7 +73,7 @@ Asl qarorlar (D1–D6) va keyin o'zgarganlari. **User bilan kelishilmagan o'z qa
 Ozbeca.sln
 ├─ src/Ozbeca.Core/            netstandard2.0 — Windows'ga bog'liq emas, exe ichiga <Compile Include> bilan kiradi
 │   ├─ Transliterator.cs        ToNewAlphabet(text) va ToNewAlphabet(text, out map) — pozitsiyalar xaritasi
-│   ├─ TokenBuffer.cs           avto-yozish: probelgacha token; CodeMode (qo'shtirnoq ichi), TryCompleteAtEnter
+│   ├─ TokenBuffer.cs           avto-yozish: probelgacha token; CodeMode (qo'shtirnoq ichi), TryCompleteAtEnter, TryConvertAtPause
 │   ├─ CodeGuard.cs             LooksLikeCode(token), ConvertProse(text) — kodga tegmaslik
 │   ├─ TelegramTags.cs          application/x-td-field-text + x-td-field-tags (QDataStream BE) — stillarni surish
 │   └─ Polyfills.cs             IsExternalInit (record'lar uchun)
@@ -83,7 +84,7 @@ Ozbeca.sln
 │   ├─ ClipboardSwap.cs         saqlash/tiklash, no-history formatlar, VS Code bo'sh tanlov
 │   ├─ InputSender.cs           SendInput (EngineInput belgisi bilan), modifier kutish, mask key
 │   ├─ AutoType.cs              klaviatura/sichqoncha hook, almashtirish, ushlab-qaytarish, UIA parol, Ctrl+V
-│   ├─ Install.cs               o'zini ko'chirish, IShellLinkW yorliqlar (Unicode!), Zone.Identifier'ni o'chirish
+│   ├─ Install.cs               o'zini ko'chirish, yangilash (UpdateOlder), IShellLinkW yorliqlar (Unicode!), Zone.Identifier'ni o'chirish
 │   ├─ Settings.cs              %AppData%\Ozbeca\settings.json (DataContractJsonSerializer, BOM'siz o'qish) + Autostart (HKCU Run)
 │   ├─ Theme.cs / Styles.xaml   ranglar, Mica (build ≥ 22621), Toggle/Group/Row/KeyCap uslublari
 │   ├─ SettingsWindow, WelcomeWindow, ToastWindow (caret yonida), TrayMenu
@@ -131,6 +132,23 @@ tiklash (sequence bizniki bo'lsa **yoki matn hamon biznikiga teng** bo'lsa — E
   javob bo'lmasa — "parol" deb hisoblanadi). Natija maydon uchun keshlanadi (sichqoncha/Tab/oyna — qayta).
 - **Ctrl+V:** V ushlanadi → clipboard'dagi matn (bo'shliq bo'lsa) `CodeGuard.ConvertProse` / Telegram yo'li →
   no-history bilan qo'yiladi → V yuboriladi → 500 ms dan keyin asl clipboard tiklanadi.
+- **Pauza (v1.3.0):** har harf/Backspace'da `DispatcherTimer` (`PauseMs` = 1000) qayta boshlanadi. Tick'da: navbat bo'sh
+  (`_pending`/`_settling`/`_held` = 0), oyna o'sha, modifier'lar (Shift ham) bosilmagan, Win32 parol emas →
+  `TokenBuffer.TryConvertAtPause` → `Replace(..., trailing: bo'sh)` (UIA parol tekshiruvi shu yerda). So'z bufferda
+  o'girilgan holda qoladi; probelda yana tekshiriladi (idempotent — ikki marta yuborilmaydi). Timer hook bilan bitta
+  UI thread'da — poyga yo'q.
+- **Oyna o'chiq sababi logda:** `AutoType: <jarayon> — o'chiq (istisno ro'yxatida | terminal | administrator oynasi)`.
+  Ishga tushish qatorida `avto-yozish=` va `admin=` bor — boshqa kompyuterdagi muammoni log bilan aniqlang.
+
+### 3.4 O'zini yangilash (Install.UpdateOlder, v1.3.0)
+`App.OnStartup` boshida, **mutex'dan oldin** (mutex eski nusxada): o'rnatilgan nusxa bo'lmasak →
+`Ozbeca*` nomli jarayonlar (`OriginalFilename` = Ozbeca bilan tasdiqlanadi, yo'l `QueryFullProcessImageName` bilan) →
+bittasi bir xil/yangiroq bo'lsa — eski xatti-harakat (sozlamalarni och). Aks holda, o'rnatilgan exe eski yoki eski nusxa
+ishlab turgan bo'lsa: eski nusxalar to'xtatiladi (`Local\Ozbeca.Exit` signali → 3 s → `Kill`; v1.2.0'da signal yo'q,
+tray'da "arvoh" belgi sichqoncha ustiga borguncha qoladi) → o'rnatilgan bo'lsa `CopySelf` (band bo'lsa 10×300 ms qayta) va
+`Ozbeca.exe --updated` ishga tushiriladi; o'rnatilmagan bo'lsa shu nusxa davom etadi, autostart yozuvi bor bo'lsa unga
+ko'chiriladi. Yangisi balloon chiqaradi: "X versiyaga yangilandi". `--updated` argumenti hotkey sifatida o'qilmaydi.
+**Versiya solishtiruvi FileVersion bo'yicha** — har release'da `<Version>` ni oshirish SHART, aks holda yangilanmaydi.
 
 ---
 
@@ -214,7 +232,10 @@ dotnet build src/Ozbeca.App -c Release        # → src/Ozbeca.App/bin/Release/n
 
 ## 8. Keyingi qadamlar (takliflar — user bilan kelishiladi)
 
-1. User v1.2.0 ni README'dan o'rnatib sinab ko'radi → fikrlarga qarab tuzatishlar.
+1. User v1.3.0 ni boshqa kompyuterda sinaydi (UAC tuzatishi u yerda tasdiqlanmagan — faqat koddan topilgan sabab;
+   o'z kompyuterimizda sinov: yangilash ✅, pauza va probel ✅) → ishlamasa logni so'rab, sababni logdan aniqlash.
+   Ehtimoliy boshqa sabab: sekin kompyuterda UIA parol tekshiruvi 400 ms dan oshib, maydon "parol" deb keshlanadi
+   (logda `parol maydoni — so'z o'girilmadi`).
 2. Telegram'da avto-yozish va Ctrl+V ni real sinash (user bilan; xabar tasodifan yuborilmasin).
 3. Sozlamalarda **istisno ilovalar ro'yxati** (user o'zi qo'shadigan) — hozir ro'yxat kodda.
 4. **Microsoft Store** (MSIX, bepul individual akkaunt) — ko'k SmartScreen oynasisiz o'rnatish; user akkaunti kerak.
