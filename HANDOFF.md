@@ -70,6 +70,7 @@ Asl qarorlar (D1–D6) va keyin o'zgarganlari. **User bilan kelishilmagan o'z qa
 | D24 | **E2E user ish stolida yurgizilmaydi** — unit test yoki Windows Sandbox/VM | user: "ishlashimga xalaqit qilyapsan" (2026-11-11) |
 | D26 | **Yangi dizayn (gorizontal):** sozlamalar 780 px / o'rnatish 820 px eni; chapda firuza gradient "hero" (logo, umumiy yoqish, tezkor tugma), o'ngda 2×2 bosiladigan plitkalar (`Tile`) va chip'lar (`Chip`); tray balloon o'rniga o'z `NoticeWindow` (soat ustida); logo — gradient + yaltiroq. Funksiyalar olib tashlanmagan, uzun izohlar ToolTip'ga o'tdi | user: "cho'zinchoq bo'lmasin, eniga kattalashtir, kam tugma, premium, yaltiroq, shu rangda" (2026-11-11) |
 | D27 | **Dasturlarni tanlash:** avto-o'girish faqat user belgilagan dasturlarda (`Settings.AutoTypeApps` — nom + jarayon nomi); bo'sh — hammasida. Ro'yxat Windows "Barcha ilovalar"dan (`shell:AppsFolder`): oddiy dastur — yorliq exe'si, Store ilovasi — `AppxManifest.xml` Executable. UWP (`ApplicationFrameHost`) — ichki oynaning jarayoni. Clipboard kechikishi UI'dan olindi (Office — avtomatik 1000 ms) | user: "faqat tanlagan dasturlarda, tanlamasa hammasida; hamma dasturlarni ko'ra oladigan, oson" (2026-11-11) |
+| D28 | **README qayta qurildi (premium):** banner, `download.png` tugma, 2 ta jonli GIF (yozish / Ctrl+Alt+O), harf kartochkalari, 9 ta ikonkali imkoniyatlar to'ri, oyna ramkasidagi skrinshotlar. Hammasi `tools/make_readme_art.py` bilan yasaladi; D23 saqlandi — shields badge yo'q | user: "README ham ilova kabi premium, juda chiroyli bo'lsin" (2026-11-11) |
 | D25 | Tez yozishda ushlab-qaytarilgan tugmalar **ham o'giriladi**; UIA javob bermasa so'z o'tkazib yuboriladi, maydon "parol" deb eslanmaydi | user: boshqa kompyuterda Telegram'da "tez yozsa, Ctrl+V + Enter qilsa ishlamay qolyapti" |
 
 ---
@@ -102,7 +103,7 @@ Ozbeca.sln
 ├─ tests/Ozbeca.Core.Tests/    xUnit, net8.0
 ├─ tools/e2e/                  real ilovalarda avto-yozish sinovi (run_autotype_tests.bat → autotype_e2e.ps1)
 ├─ tools/wordlist/             build_wordlist.py — lug'atni korpusdan qayta yasash (manbalar fayl boshida)
-├─ tools/make_icon.py, make_demo.py — ikonka va README rasmlari
+├─ tools/make_icon.py, make_readme_art.py — ikonka va README rasmlari (banner, GIF'lar, oyna ramkalari; manba: docs/raw/)
 └─ docs/                       M4_SINOV.md (sinov natijalari), README rasmlari
 ```
 

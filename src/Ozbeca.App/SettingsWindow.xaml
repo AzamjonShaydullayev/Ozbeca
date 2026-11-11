@@ -96,7 +96,7 @@
                           ToolTip="Faqat bir ma'noli so'zlar: ot, qol, bor kabilarga tegilmaydi.">
                     <StackPanel>
                         <TextBlock Text="Tutuqsiz so'zlar" Style="{StaticResource RowTitle}" />
-                        <TextBlock Text="ozbek → özbek, togri → toğri" Style="{StaticResource RowHint}" />
+                        <TextBlock Text="ozbek → özbek, togri → töğri" Style="{StaticResource RowHint}" />
                     </StackPanel>
                 </CheckBox>
                 <CheckBox x:Name="ToastToggle" Style="{StaticResource Tile}" Tag="&#xEA8F;" Click="ToastToggle_Click">

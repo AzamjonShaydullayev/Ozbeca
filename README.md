@@ -1,152 +1,205 @@
-<div align="center">
+<p align="center">
+  <img src="docs/banner.png" width="100%" alt="Özbeça — o'zbekcha matnni yangi alifboga (Ö, Ğ, Ş, Ç) o'giradi">
+</p>
 
-<img src="docs/icon.png" width="96" alt="Özbeça ikonkasi">
+<p align="center">
+  <b>O'zbekcha matnni yangi lotin alifbosiga o'giradi — yozayotganingizda, o'zi.</b><br>
+  Telegram, Word, Chrome, Excel, Notepad, VS Code — matn o'sha joyning o'zida almashadi.
+</p>
 
-# Özbeça
+<p align="center">
+  <a href="https://github.com/AzamjonShaydullayev/Ozbeca/releases/latest/download/Ozbeca.exe">
+    <img src="docs/download.png" width="380" alt="Yuklab olish — Ozbeca.exe">
+  </a>
+</p>
 
-**O'zbekcha matnni yangi alifboga (Ö, Ğ, Ş, Ç) o'giradi — yozayotganingizda yoki bitta tugma bilan.**<br>
-Word, Telegram, Chrome, Notepad, Excel, VS Code va boshqa ilovalarda — matn o'sha joyning o'zida almashadi.
+<p align="center">
+  <sub>Bepul&nbsp;&nbsp;·&nbsp;&nbsp;ochiq kod&nbsp;&nbsp;·&nbsp;&nbsp;internetga ulanmaydi&nbsp;&nbsp;·&nbsp;&nbsp;admin huquqi shart emas&nbsp;&nbsp;·&nbsp;&nbsp;<a href="https://github.com/AzamjonShaydullayev/Ozbeca/releases">barcha versiyalar</a></sub>
+</p>
 
 <br>
 
-<a href="https://github.com/AzamjonShaydullayev/Ozbeca/releases/latest/download/Ozbeca.exe"><img src="docs/download.svg" width="360" alt="Yuklab olish — Ozbeca.exe"></a>
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <img src="docs/demo-type.gif" width="100%" alt="Yozish paytida: choy → çoy, go'zal → gözal">
+      <h3>✍️ Shunchaki yozing</h3>
+      Odatdagidek yozasiz — probel yoki Enter bosilishi bilan so'z o'zi yangi alifboga o'tadi. Telefondagi klaviaturadek.
+    </td>
+    <td width="50%" valign="top">
+      <img src="docs/demo-hotkey.gif" width="100%" alt="Belgilab o'girish: Ctrl + Alt + O">
+      <h3>⚡ Belgilang va bosing</h3>
+      Tayyor matnni belgilab <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>O</kbd> ni bosing — butun matn bir zumda o'giriladi.
+    </td>
+  </tr>
+</table>
 
-<sub>Bepul · ochiq kod · internetga ulanmaydi · admin huquqi shart emas · <a href="https://github.com/AzamjonShaydullayev/Ozbeca/releases">barcha versiyalar</a></sub>
+<br>
 
-</div>
+## Yangi alifbo — 4 ta harf
 
-<p align="center"><img src="docs/demo.png" width="760" alt="Oldin va keyin: O'zbekiston → Özbekiston, Bog'da choy → Boğda çoy"></p>
+2026-yil 21-oktabrda o'zbek lotin alifbosi yangilandi ([OʻRQ-1184-son Qonun](https://lex.uz/uz/docs/8548754)). Endi 4 ta harf boshqacha yoziladi. Ularni klaviaturada terish noqulay — **Özbeça** shu ishni o'zi qiladi.
 
----
+<p align="center"><img src="docs/alphabet.png" width="100%" alt="Sh → Ş, Ch → Ç, Oʻ → Ö, Gʻ → Ğ"></p>
 
-## Bu nima?
+<br>
 
-2026-yil 21-oktabrda lotin yozuviga asoslangan o'zbek alifbosi yangilandi. Yangi alifboda 4 ta harf boshqacha yoziladi:
+## Imkoniyatlar
 
-| Eski | Yangi | Misol |
-|:---:|:---:|---|
-| **Sh** sh | **Ş** ş | shahar → **ş**ahar |
-| **Ch** ch | **Ç** ç | choy → **ç**oy |
-| **Oʻ** oʻ | **Ö** ö | oʻzbek → **ö**zbek |
-| **Gʻ** gʻ | **Ğ** ğ | gʻisht → **ğ**işt |
+<table>
+  <tr>
+    <td width="33%" valign="top">
+      <img src="docs/icons/type.png" width="56" alt=""><br>
+      <b>Yozish paytida o'giradi</b><br>
+      <sub>Probel, Enter yoki Ctrl+V bilan qo'yilgan matn ham — hech narsa bosish shart emas.</sub>
+    </td>
+    <td width="33%" valign="top">
+      <img src="docs/icons/dictionary.png" width="56" alt=""><br>
+      <b>Tutuqsiz so'zlarni tuzatadi</b><br>
+      <sub><code>ozbek</code> → <code>özbek</code>, <code>togri</code> → <code>töğri</code>. Lug'atda ~9 000 so'z, ikki ma'noli so'zlarga tegmaydi.</sub>
+    </td>
+    <td width="33%" valign="top">
+      <img src="docs/icons/apps.png" width="56" alt=""><br>
+      <b>Siz tanlagan dasturlarda</b><br>
+      <sub>Faqat Telegram va Word'da ishlasinmi? Belgilab qo'ying. Tanlamasangiz — hamma joyda.</sub>
+    </td>
+  </tr>
+  <tr>
+    <td valign="top">
+      <img src="docs/icons/telegram.png" width="56" alt=""><br>
+      <b>Telegram stillari saqlanadi</b><br>
+      <sub>Qalin, chiziqli matn va premium emoji o'girilgandan keyin ham joyida qoladi.</sub>
+    </td>
+    <td valign="top">
+      <img src="docs/icons/code.png" width="56" alt=""><br>
+      <b>Kodga tegmaydi</b><br>
+      <sub>VS Code, JetBrains, Cursor'da faqat <code>"qo'shtirnoq"</code> ichidagi matn o'giriladi.</sub>
+    </td>
+    <td valign="top">
+      <img src="docs/icons/clipboard.png" width="56" alt=""><br>
+      <b>Clipboard buzilmaydi</b><br>
+      <sub>Nusxalagan narsangiz o'girishdan keyin ham joyida. Win+V tarixi toza qoladi.</sub>
+    </td>
+  </tr>
+  <tr>
+    <td valign="top">
+      <img src="docs/icons/hotkey.png" width="56" alt=""><br>
+      <b>Aqlli o'giradi</b><br>
+      <sub>Havola, email, <code>@username</code>, <code>#hashtag</code> o'zgarmaydi. <code>'kino'</code> dagi tirnoq tutuq deb olinmaydi.</sub>
+    </td>
+    <td valign="top">
+      <img src="docs/icons/privacy.png" width="56" alt=""><br>
+      <b>Maxfiy</b><br>
+      <sub>Internetga ulanmaydi, yozganlaringizni saqlamaydi, hech narsa yubormaydi.</sub>
+    </td>
+    <td valign="top">
+      <img src="docs/icons/light.png" width="56" alt=""><br>
+      <b>Yengil</b><br>
+      <sub>Bitta 0.3 MB fayl. Installer, .NET yoki administrator huquqi kerak emas.</sub>
+    </td>
+  </tr>
+</table>
 
-Bu harflarni klaviaturada yozish noqulay. **Özbeça** ikki yo'l bilan yordam beradi:
+<br>
 
-- **Shunchaki yozing.** Odatdagidek `choy` deb yozib probel bossangiz, so'z o'zi `çoy` ga aylanadi — telefondagi klaviaturadek.
-- **Tayyor matnni o'giring.** Eski yozuvdagi matnni belgilang va <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>O</kbd> ni bosing.
+## O'rnatish — 1 daqiqa
 
----
+**1. Yuklab oling.** Yuqoridagi tugmani bosing — [`Ozbeca.exe`](https://github.com/AzamjonShaydullayev/Ozbeca/releases/latest/download/Ozbeca.exe) yuklanadi. Windows 10 va 11 da boshqa hech narsa kerak emas.
 
-## ⬇️ Yuklab olish va ishga tushirish (1 daqiqa)
-
-### 1. Yuklab oling
-
-Sahifa boshidagi **Yuklab olish** tugmasini bosing — [`Ozbeca.exe`](https://github.com/AzamjonShaydullayev/Ozbeca/releases/latest/download/Ozbeca.exe) yuklanadi.
-
-Bitta kichik fayl. Alohida installer, .NET yoki boshqa narsa kerak emas — Windows 10 va 11 da hammasi bor. Dastur o'zini birinchi ochilganda bir bosishda o'rnatadi (3-qadam).
-
-### 2. Ishga tushiring
-
-Yuklab olingan `Ozbeca.exe` ni ikki marta bosing.
+**2. Ishga tushiring.** Faylni ikki marta bosing.
 
 > [!NOTE]
-> **Ko'k "Windows protected your PC" ("Windows kompyuteringizni himoya qildi") oynasi chiqadi — bu normal holat.**
->
-> Ochish uchun **«More info» / «Подробнее»** → **«Run anyway» / «Выполнить в любом случае»** ni bosing. Bu faqat bir marta so'raladi.
+> **Ko'k "Windows protected your PC" oynasi chiqsa — bu normal.** **More info** / **Подробнее** → **Run anyway** / **Выполнить в любом случае** ni bosing. Bu faqat bir marta so'raladi.
 >
 > <details>
-> <summary>Bu oyna nega chiqadi? Xavfsizmi?</summary>
+> <summary>Nega chiqadi? Xavfsizmi?</summary>
 >
-> Bu Windows'ning **SmartScreen** himoyasi. U internetdan yuklangan va ikkita belgisi bo'lgan har qanday dasturda chiqadi:
-> - **raqamli imzo yo'q** — imzo uchun har yili pullik sertifikat kerak bo'ladi;
-> - **hali kam odam yuklab olgan.**
+> Bu Windows'ning **SmartScreen** himoyasi. U raqamli imzosi yo'q (imzo har yili pullik) va hali kam yuklab olingan har qanday dasturda chiqadi — virus borligini anglatmaydi.
 >
-> Oyna dasturda virus borligini anglatmaydi. U faqat Windows bu dasturni hali "tanimasligini" bildiradi.
->
-> Özbeça xavfsiz:
-> - **kodi to'liq ochiq** — bu sahifada istalgan kishi ko'rib chiqishi mumkin;
-> - **internetga ulanmaydi** va hech qanday ma'lumot yubormaydi;
-> - **administrator huquqi so'ramaydi**;
-> - **yozganlaringizni saqlamaydi** — batafsil: [Maxfiylik](#-maxfiylik).
->
-> Xohlasangiz, faylni [VirusTotal](https://www.virustotal.com/) saytida 70 dan ortiq antivirus bilan tekshirib ko'rishingiz mumkin.
+> Özbeça kodi to'liq ochiq, internetga ulanmaydi, administrator huquqi so'ramaydi va yozganlaringizni saqlamaydi ([Maxfiylik](#-maxfiylik)). Xohlasangiz, faylni [VirusTotal](https://www.virustotal.com/) da 70 dan ortiq antivirus bilan tekshiring.
 > </details>
 
-### 3. O'rnatish oynasida «Boshlash» ni bosing
+**3. «Boshlash» ni bosing.** Hammasi oldindan belgilangan:
 
-Birinchi ochilganda dastur nimalarni qilishni so'raydi. Hammasi oldindan belgilangan — **Boshlash** ni bossangiz bo'ldi:
+<p align="center"><img src="docs/welcome.png" width="760" alt="O'rnatish oynasi"></p>
 
-<p align="center"><img src="docs/welcome.png" width="680" alt="O'rnatish oynasi"></p>
-
-| Belgi | Nima qiladi |
+| | |
 |---|---|
-| **Shunchaki yozing** | Yozish paytida avtomatik o'girish. Keyin tray menyusidan bir bosishda o'chirsa bo'ladi |
-| **Kompyuterga o'rnatish** | Dastur `%LocalAppData%\Programs\Ozbeca` ga ko'chiriladi. Yuklab olingan faylni keyin o'chirib tashlasangiz bo'ladi |
-| **Ish stolida yorliq** | Ish stolida **Özbeça** belgisi paydo bo'ladi |
-| **Start menyusiga qo'shish** | Start menyusida "Özbeça" deb qidirsangiz topiladi |
-| **Kompyuter yoqilganda ishga tushirish** | Dastur o'zi ochiladi va jim kutib turadi |
+| **Shunchaki yozing** | Yozish paytida avtomatik o'girish |
+| **Kompyuterga o'rnatish** | Dastur `%LocalAppData%\Programs\Ozbeca` ga ko'chadi — yuklangan faylni o'chirsangiz bo'ladi |
+| **Avtomatik ishga tushish** | Kompyuter yoqilganda jim kutib turadi |
+| **Ish stolida yorliq** · **Start menyusi** | Özbeça'ni topish oson bo'ladi |
 
-Shundan keyin dastur oyna ochmaydi. U ekranning pastki o'ng burchagida, soat yonida <img src="docs/icon.png" width="16"> **Ö** belgisi bo'lib turadi. Belgi ko'rinmasa, **^** (yashirin belgilar) tugmasini bosing.
+Tayyor. Dastur soat yonida <img src="docs/icon.png" width="16" alt="Ö"> **Ö** belgisi bo'lib turadi (ko'rinmasa — **^** tugmasini bosing). Eski versiya o'rnatilgan bo'lsa, u o'zi yangilanadi, sozlamalaringiz saqlanadi.
 
----
+<br>
 
-## ✍️ Qanday foydalaniladi
+## Qanday ishlatiladi
 
-### Yozish paytida
+### ✍️ Yozish paytida
 
 Hech narsa qilish shart emas — odatdagidek yozing:
 
-| Yozasiz | Probel bosilgach |
+| Yozasiz | Natija |
 |---|---|
-| `choy ` | `çoy ` |
-| `O'zbekiston ` | `Özbekiston ` |
-| `bog'da ` | `boğda ` |
+| `choy` + probel | `çoy` |
+| `O'zbekiston` + probel | `Özbekiston` |
+| `Yaxshimisan?` + Enter | `Yaxşimisan?` |
+| Ctrl+V: `Bog'da choy ichdik` | `Boğda çoy içdik` |
 
-- **Ctrl+V** bilan uzun matn qo'ysangiz ham o'giriladi (bir nechta so'zli matn bo'lsa).
-- So'zni o'zgartirmoqchi bo'lmasangiz — <kbd>Ctrl</kbd>+<kbd>Z</kbd>.
-- Vaqtincha kerak bo'lmasa: Ö belgisi ustida o'ng tugma → **Yozish paytida o'girish** belgisini olib tashlang.
+- So'z o'zgarishini istamasangiz — <kbd>Ctrl</kbd>+<kbd>Z</kbd>.
+- Vaqtincha o'chirish: <img src="docs/icon.png" width="14" alt="Ö"> belgisi ustida o'ng tugma → **Yozish paytida o'girish**.
 
-### Tayyor matnni o'girish
+### ⚡ Tayyor matnni o'girish
 
-1. O'girmoqchi bo'lgan qismni **belgilang** (hammasi uchun <kbd>Ctrl</kbd>+<kbd>A</kbd>).
-2. <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>O</kbd> ni bosing.
-3. Matn o'girildi, yonida **"Özbeça ✓"** chiqadi. Bekor qilish — <kbd>Ctrl</kbd>+<kbd>Z</kbd>.
+1. Matnni **belgilang** (hammasi uchun <kbd>Ctrl</kbd>+<kbd>A</kbd>).
+2. <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>O</kbd> ni bosing — eslab qolish oson: **O → Ö**.
+3. Yonida **«Özbeça ✓»** chiqadi. Bekor qilish — <kbd>Ctrl</kbd>+<kbd>Z</kbd>.
 
-> 💡 Eslab qolish oson: **O** → **Ö**.
+### 💻 Kod yozayotganda
 
-### Kod yozayotganda
-
-Kod muharrirlarida (VS Code, Visual Studio, JetBrains, Cursor, Notepad++ va boshqalar) dastur kodga tegmaydi — **faqat qo'shtirnoq ichidagi matnni** o'giradi:
+Kod muharrirlarida (VS Code, Visual Studio, JetBrains, Cursor, Notepad++ va b.) faqat **qo'shtirnoq ichidagi matn** o'giriladi:
 
 ```js
 console.log("Bugun choy ichdik");   // →  console.log("Bugun çoy içdik");
 const shahar_id = getChoy();        // →  o'zgarmaydi
 ```
 
-Brauzerda kod yozsangiz ham `user_name`, `print(choy)`, `shop.check`, `showChart` kabi kodga o'xshash so'zlar o'zgarmaydi.
+### 🛡️ Qayerda o'zi o'chiq turadi
 
-### Qayerda o'zi o'chiq turadi
+Terminallar (cmd, PowerShell, Windows Terminal), parol maydonlari, parol menejerlari, masofaviy ish stoli va administrator oynalarida yozish paytida o'girish ishlamaydi — u yerda bitta harf ham muhim.
 
-Terminallar (cmd, PowerShell, Windows Terminal), parol maydonlari, parol menejerlari, masofaviy ish stoli va administrator oynalarida yozish paytida o'girish ishlamaydi.
+<br>
 
-Probelsiz Enter bosilsa ham oxirgi so'z o'giriladi (`Yaxshimisan?` + Enter → `Yaxşimisan?`) — lekin faqat parol maydoni bo'lmasa. Oxirgi so'zdan keyin sichqoncha bilan **Yuborish** tugmasi bosilsa, o'sha so'z o'girilmaydi — probel yoki Enter bosing.
+## ⚙️ Sozlamalar
 
----
+Soat yonidagi <img src="docs/icon.png" width="16" alt="Ö"> belgisini yoki ish stolidagi **Özbeça** yorlig'ini bosing. **−** bilan kichraytirsangiz, oyna yana Ö belgisiga yashirinadi.
 
-## ✨ Imkoniyatlar
+<p align="center"><img src="docs/settings.png" width="760" alt="Sozlamalar oynasi"></p>
 
-- **Deyarli hamma joyda ishlaydi.** Notepad, Word, Excel, Chrome, Telegram, VS Code, terminal, hatto Explorer'da fayl nomini o'zgartirishda ham.
-- **Telegram'da stillar saqlanadi.** Qalin, chiziqli matn va premium emoji o'girilgandan keyin ham joyida qoladi.
-- **Aralash matnni tushunadi.** Eski yozuv, yangi yozuv yoki ikkalasi aralash bo'lsa ham to'g'ri o'giradi. Allaqachon yangi alifboda yozilgan qism o'zgarmaydi.
-- **Tutuq belgisining hamma xilini taniydi:** `'` `` ` `` `’` `‘` `ʻ` `ʼ` `´` `′`. Kim qanday yozgan bo'lsa ham, `o'`, `o‘`, `o`` va boshqalar `ö` ga aylanadi.
-- **Kerakmas joyga tegmaydi.** Havolalar, email, `@username` va `#hashtag` o'zgarmaydi. Tirnoqni tutuq deb adashtirmaydi: `'kino'` va `'tong'` shundayligicha qoladi.
-- **Clipboard'ingiz buzilmaydi.** Oldin nima nusxalagan bo'lsangiz, o'girishdan keyin o'sha joyida qoladi. Win+V tarixiga ortiqcha narsa tushmaydi.
-- **Tutuqsiz yozilganini ham tuzatadi.** `ozbek`, `togri`, `kop` → `özbek`, `töğri`, `köp`. Faqat bir ma'noli so'zlar: `qol` (qol/qo'l), `ot` (ot/o't), `bor` (bor/bo'r) kabilarga tegilmaydi.
-- **Yengil.** Bitta ~0.25 MB fayl, internetga ulanmaydi, administrator huquqi so'ramaydi.
+| | |
+|---|---|
+| **Özbeça yoqilgan** | Dasturni butunlay vaqtincha o'chiradi |
+| **Belgilab o'girish** | **O'zgartirish** → yangi kombinatsiyani bosing. Band bo'lsa, darhol aytadi |
+| **Yozish paytida** | Yozish paytida avtomatik o'girish |
+| **Tutuqsiz so'zlar** | `ozbek` → `özbek`. Ikki ma'noli so'zlar (`qol`, `ot`, `bor`) o'zgarmaydi |
+| **Xabar ko'rsatish** | O'girilganda kursor yonida «Özbeça ✓» |
+| **Windows bilan** | Kompyuter yoqilganda ishga tushadi |
+| **Qaysi dasturlarda** | Yozish paytida o'girish faqat tanlangan dasturlarda ishlaydi |
 
----
+### Qaysi dasturlarda ishlasin
 
-## 🔤 Qanday o'giradi
+**Tanlash** ni bosing — kompyuterdagi hamma dasturlar (Store ilovalari ham) ikonkasi bilan chiqadi. Belgilaganlaringizda o'giradi, qolganlarida tegmaydi. Hech narsa belgilanmasa — hamma joyda ishlaydi.
+
+<p align="center"><img src="docs/apps.png" width="760" alt="Dasturlarni tanlash oynasi"></p>
+
+<br>
+
+## 🔤 O'girish qoidalari
+
+<details>
+<summary><b>To'liq jadvalni ko'rish</b></summary>
+<br>
 
 | Yozilgan | Natija | Qoida |
 |---|---|---|
@@ -155,49 +208,29 @@ Probelsiz Enter bosilsa ham oxirgi so'z o'giriladi (`Yaxshimisan?` + Enter → `
 | `shahar`, `Shahar`, `SHAHAR` | `şahar`, `Şahar`, `ŞAHAR` | sh → **ş** |
 | `choy`, `Chorshanba` | `çoy`, `Çorşanba` | ch → **ç** |
 | `ma'no`, `san'at`, `she'r` | `maʼno`, `sanʼat`, `şeʼr` | harflar orasidagi tutuq → rasmiy **ʼ** |
-| `Is'hoq`, `as'hob` | `Isʼhoq`, `asʼhob` | s va h alohida tovush bo'lsa, ş bo'lmaydi |
-| `Ishoq`, `ashob` | `Isʼhoq`, `asʼhob` | tutuqsiz yozilgani ham tuzatiladi |
-| `ozbek`, `togri`, `Fargona` | `özbek`, `töğri`, `Farğona` | tutuqsiz yozilgan so'z — lug'at bo'yicha tuzatiladi |
-| `qol`, `ot`, `bor`, `yoq` | o'zgarmaydi | ikki ma'noli (qol/qo'l, ot/o't) — qaysi biri ekanini bilib bo'lmaydi |
+| `Is'hoq`, `as'hob`, `Ishoq` | `Isʼhoq`, `asʼhob`, `Isʼhoq` | s va h alohida tovush — ş bo'lmaydi |
+| `ozbek`, `togri`, `Fargona` | `özbek`, `töğri`, `Farğona` | tutuqsiz so'z — lug'at bo'yicha |
+| `qol`, `ot`, `bor`, `yoq` | o'zgarmaydi | ikki ma'noli (qol/qo'l, ot/o't) |
 | `o' harfi` | `ö harfi` | yakka o' ham |
-| `tong`, `keng`, `dengiz` | o'zgarmaydi | **ng** o'z holicha qoladi |
-| `Bu 'kino' edi`, `'tong'` | o'zgarmaydi | tirnoq tutuq deb olinmaydi |
+| `tong`, `keng`, `dengiz` | o'zgarmaydi | **ng** o'z holicha |
+| `Bu 'kino' edi` | o'zgarmaydi | tirnoq tutuq emas |
 | `https://shop.uz/choy`, `info@shahar.uz` | o'zgarmaydi | havola va email |
 
-Qoidalar quyidagi rasmiy manbalarga asoslangan:
-- [OʻRQ-1184-son Qonun (21.10.2026)](https://lex.uz/uz/docs/8548754) — 28 harf va tutuq belgisi **ʼ** (U+02BC);
-- [Oʻzbek tilining asosiy imlo qoidalari (1995)](https://lex.uz/docs/1625271).
+Tutuqning hamma xili taniladi: `'` `` ` `` `’` `‘` `ʻ` `ʼ` `´` `′`. Aralash (eski + yangi) matn ham to'g'ri o'giriladi.
 
----
+Manbalar: [OʻRQ-1184-son Qonun (21.10.2026)](https://lex.uz/uz/docs/8548754) — 28 harf va tutuq belgisi **ʼ** (U+02BC); [Oʻzbek tilining asosiy imlo qoidalari (1995)](https://lex.uz/docs/1625271).
+</details>
 
-## ⚙️ Sozlamalar
-
-Sozlamalarni ochish: soat yonidagi **Ö** belgisini yoki ish stolidagi **Özbeça** yorlig'ini bosing. Oynani **−** bilan kichraytirsangiz, u yana Ö belgisiga yashirinadi — dastur ishlashda davom etadi.
-
-<p align="center"><img src="docs/settings.png" width="680" alt="Sozlamalar oynasi"></p>
-
-- **Özbeça yoqilgan** (chap paneldagi tugma) — dasturni butunlay vaqtincha o'chiradi.
-- **Belgilab o'girish** — **O'zgartirish** ni bosib, yangi kombinatsiyani bosing. U darhol tekshiriladi: boshqa dastur egallagan bo'lsa, ogohlantirish chiqadi.
-- **Yozish paytida** — yozish paytida avtomatik o'girish.
-- **Tutuqsiz so'zlar** — `ozbek` → `özbek` kabi. Lug'atda ~9 000 so'z bor, ular ochiq o'zbekcha matnlardan olingan. Ikki ma'noli so'zlar (`qol`, `ot`, `bor`) lug'atga kiritilmagan.
-- **Xabar ko'rsatish** — "Özbeça ✓" xabari.
-- **Windows bilan** — kompyuter yoqilganda ishga tushadi.
-- **Qaysi dasturlarda** — **Tanlash** ni bosing: kompyuterdagi hamma dasturlar (Store ilovalari ham) ikonkasi bilan chiqadi. Belgilanganlarida yozish paytida o'giriladi, boshqalarida yo'q. Hech narsa belgilanmasa — hamma dasturlarda ishlaydi.
-
-<p align="center"><img src="docs/apps.png" width="600" alt="Dasturlarni tanlash"></p>
-
-**Tray menyusi** (Ö belgisi ustida o'ng tugma): Yoqilgan · Yozish paytida o'girish · Kompyuter yoqilganda ishga tushirish · Sozlamalar… · Chiqish.
-
----
+<br>
 
 ## 🔒 Maxfiylik
 
 - Dastur **internetga umuman ulanmaydi** va hech narsa yubormaydi.
-- **Yozish paytida o'girish** yoqilganda dastur qaysi tugmalar bosilganini ko'radi — **faqat joriy so'zni** bilish uchun. Xotirada eng ko'pi bitta qator turadi, u **diskka yozilmaydi** va probel, Enter, sichqoncha bosilganda unutiladi.
-- Bu funksiyani o'chirsangiz, klaviatura kuzatilmaydi — faqat <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>O</kbd> (Windows'ning `RegisterHotKey` funksiyasi) qoladi.
+- Yozish paytida o'girish uchun dastur bosilgan tugmalarni ko'radi — **faqat joriy so'zni** bilish uchun. Xotirada eng ko'pi bitta qator turadi, **diskka yozilmaydi** va probel, Enter yoki sichqoncha bosilganda unutiladi.
+- Bu funksiyani o'chirsangiz, klaviatura kuzatilmaydi — faqat <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>O</kbd> qoladi.
 - Kodi to'liq ochiq: [`src/Ozbeca.App/AutoType.cs`](src/Ozbeca.App/AutoType.cs).
 
----
+<br>
 
 ## ✅ Qayerlarda sinalgan
 
@@ -207,103 +240,107 @@ Sozlamalarni ochish: soat yonidagi **Ö** belgisini yoki ish stolidagi **Özbeç
 | Chrome (input, textarea) | ✅ | ✅ | ✅ |
 | Excel (katak va tahrirlash rejimi) | ✅ | | |
 | Telegram Desktop (stillar bilan) | ✅ | | |
-| VS Code | ✅ | ✅ faqat qo'shtirnoq ichi | — |
+| VS Code | ✅ | ✅ qo'shtirnoq ichi | — |
 | Windows Terminal, cmd | ✅ | — o'chiq | — |
 | Explorer — fayl nomini o'zgartirish | ✅ | | |
 
-Batafsil natijalar: [docs/M4_SINOV.md](docs/M4_SINOV.md). Yozish paytida o'girish uchun avtomatik sinov: [tools/e2e](tools/e2e).
+Batafsil: [docs/M4_SINOV.md](docs/M4_SINOV.md).
 
----
+<br>
 
-## ❓ Savollar va muammolar
+## ❓ Savollar
 
 <details>
-<summary><b>Yozayotganimda keraksiz so'z o'zgarib ketdi</b></summary>
+<summary><b>Keraksiz so'z o'zgarib ketdi</b></summary>
+<br>
 
-<kbd>Ctrl</kbd>+<kbd>Z</kbd> ni bosing — so'z qaytadi. Inglizcha yozayotgan bo'lsangiz (`check` → `çeck`), Ö belgisi ustida o'ng tugma → **Yozish paytida o'girish** ni vaqtincha o'chiring.
+<kbd>Ctrl</kbd>+<kbd>Z</kbd> — so'z qaytadi. Inglizcha yozayotgan bo'lsangiz (`check` → `çeck`), Ö belgisi ustida o'ng tugma → **Yozish paytida o'girish** ni vaqtincha o'chiring yoki sozlamalarda **Qaysi dasturlarda** faqat kerakli dasturlarni belgilang.
+</details>
+
+<details>
+<summary><b>Hech narsa bo'lmadi / "Matn belgilanmagan"</b></summary>
+<br>
+
+Avval matnni belgilang, keyin tugmalarni bosing. Sozlamalarda **Özbeça yoqilgan** turganini tekshiring.
 </details>
 
 <details>
 <summary><b>Notepad'da "tört" o'zi "tort" bo'lib qoldi</b></summary>
+<br>
 
-Bu Windows 11 Notepad'ning **o'z avto-tuzatishi**: u ba'zi so'zlarni inglizcha lug'atdagi so'zga "tuzatadi" (Özbeça o'chiq bo'lsa ham shunday bo'ladi). Notepad'da ⚙️ Sozlamalar → **Imlo tekshiruvi / Spelling** → **Avto-tuzatish / Autocorrect** ni o'chirib qo'ying.
+Bu Windows 11 Notepad'ning o'z avto-tuzatishi (Özbeça o'chiq bo'lsa ham shunday bo'ladi). Notepad'da ⚙️ → **Spelling** → **Autocorrect** ni o'chiring.
 </details>
 
 <details>
-<summary><b>Hech narsa bo'lmadi / "Matn belgilanmagan" chiqdi</b></summary>
+<summary><b>Word: "Tahrirlashga ruxsat yo'q"</b></summary>
+<br>
 
-Avval matnni belgilang (sichqoncha bilan yoki <kbd>Ctrl</kbd>+<kbd>A</kbd>), keyin tugmalarni bosing. Shu xabar chiqmasa, sozlamalarda **Yoqilgan** turganini tekshiring.
+Hujjat himoyalangan ko'rinishda (Protected View) ochilgan. Sariq qatordagi **«Tahrirlashni yoqish»** ni bosing va qayta urinib ko'ring.
 </details>
 
 <details>
-<summary><b>"Tahrirlashga ruxsat yo'q" chiqdi (Word)</b></summary>
+<summary><b>"… boshqa dasturda band"</b></summary>
+<br>
 
-Hujjat **himoyalangan ko'rinishda** (Protected View) ochilgan. Bu internetdan yoki Telegram'dan yuklangan fayllarda bo'ladi. Yuqoridagi sariq qatordagi **«Tahrirlashni yoqish» / «Разрешить редактирование»** tugmasini bosing va qayta urinib ko'ring.
-</details>
-
-<details>
-<summary><b>"… boshqa dasturda band" degan xabar chiqdi</b></summary>
-
-Tanlangan tugmalar kombinatsiyasini boshqa dastur egallab olgan. Sozlamalar oynasi o'zi ochiladi: **O'zgartirish** ni bosing va boshqa kombinatsiyani tanlang, masalan <kbd>Win</kbd>+<kbd>Alt</kbd>+<kbd>Space</kbd>.
+Bu tugmalarni boshqa dastur egallagan. Sozlamalarda **O'zgartirish** ni bosing va boshqasini tanlang, masalan <kbd>Win</kbd>+<kbd>Alt</kbd>+<kbd>Space</kbd>.
 </details>
 
 <details>
 <summary><b>Antivirus ogohlantirdi</b></summary>
+<br>
 
-Yozish paytida o'girish uchun dastur Windows'ning klaviatura hook'idan foydalanadi — ba'zi antiviruslar bunday dasturlarni ehtiyotdan belgilashi mumkin. Dastur internetga ulanmaydi va yozganlaringizni saqlamaydi ([Maxfiylik](#-maxfiylik)), kodi ochiq. Xohlasangiz, bu funksiyani o'chirib qo'yishingiz mumkin.
-</details>
-
-<details>
-<summary><b>Dasturni qayta ochsam faqat sozlamalar chiqyapti</b></summary>
-
-Bu to'g'ri: dastur allaqachon ishlab turibdi, shuning uchun ikkinchi nusxa ochilmaydi, faqat sozlamalar ko'rsatiladi.
+Yozish paytida o'girish Windows'ning klaviatura hook'idan foydalanadi — ba'zi antiviruslar bunday dasturlarni ehtiyotdan belgilaydi. Dastur internetga ulanmaydi va yozganlaringizni saqlamaydi, kodi ochiq. Xohlasangiz, bu funksiyani o'chirib qo'yishingiz mumkin.
 </details>
 
 <details>
 <summary><b>"Administrator huquqidagi oynada ishlamaydi"</b></summary>
+<br>
 
-Administrator sifatida ochilgan dasturlarga Windows oddiy dasturlarning tugma yuborishini xavfsizlik uchun taqiqlaydi. Bu Windows'ning himoyasi, uni chetlab o'tmaymiz.
+Windows xavfsizlik uchun oddiy dasturlarga administrator oynalariga tugma yuborishni taqiqlaydi. Biz bu himoyani chetlab o'tmaymiz.
 </details>
 
 <details>
 <summary><b>Word'da qalin yoki rangli harflar oddiy bo'lib qoldi</b></summary>
+<br>
 
-Belgilab o'girishda Word'ga oddiy matn qo'yiladi, shuning uchun belgilangan joydagi aralash formatlash (qalin, kursiv, rang) bitta formatga tushadi. Yozish paytida o'girishda bu muammo yo'q. Telegram'da esa ikkala holatda ham stillar saqlanadi.
+Belgilab o'girishda Word'ga oddiy matn qo'yiladi, shuning uchun aralash formatlash bitta formatga tushadi. Yozish paytida o'girishda bu muammo yo'q. Telegram'da ikkala holatda ham stillar saqlanadi.
 </details>
 
 <details>
 <summary><b>Terminalda matn almashmadi, oxiriga qo'shildi</b></summary>
+<br>
 
-Terminal kiritilgan matnni almashtirishga imkon bermaydi — o'girilgan matn kursor turgan joyga qo'yiladi. Terminalda dastur xavfsiz tugmalarni ishlatadi (Ctrl+Insert / Shift+Insert), shuning uchun ishlab turgan buyruq to'xtab qolmaydi.
+Terminal kiritilgan matnni almashtirishga imkon bermaydi — o'girilgan matn kursor joyiga qo'yiladi. Dastur xavfsiz tugmalarni ishlatadi (Ctrl+Insert / Shift+Insert), ishlab turgan buyruq to'xtamaydi.
 </details>
 
----
+<details>
+<summary><b>Dasturni qayta ochsam faqat sozlamalar chiqyapti</b></summary>
+<br>
 
-## 🗑️ O'chirish
+Bu to'g'ri: dastur allaqachon ishlab turibdi, ikkinchi nusxa ochilmaydi — faqat sozlamalar ko'rsatiladi.
+</details>
 
-1. Ö belgisi ustida o'ng tugma → **Kompyuter yoqilganda ishga tushirish** belgisini olib tashlang.
-2. Shu menyuda **Chiqish** ni bosing.
-3. Ish stolidagi va Start menyusidagi **Özbeça** yorliqlarini o'chiring.
-4. <kbd>Win</kbd>+<kbd>R</kbd> → `%LocalAppData%\Programs\Ozbeca` → papkani o'chiring (dasturning o'zi).
-5. <kbd>Win</kbd>+<kbd>R</kbd> → `%AppData%\Ozbeca` → papkani o'chiring (sozlamalar).
+<details>
+<summary><b>Dasturni o'chirish</b></summary>
+<br>
 
----
+1. Ö belgisi ustida o'ng tugma → **Kompyuter yoqilganda ishga tushirish** ni olib tashlang → **Chiqish**.
+2. Ish stoli va Start menyusidagi **Özbeça** yorliqlarini o'chiring.
+3. <kbd>Win</kbd>+<kbd>R</kbd> → `%LocalAppData%\Programs\Ozbeca` — papkani o'chiring (dastur).
+4. <kbd>Win</kbd>+<kbd>R</kbd> → `%AppData%\Ozbeca` — papkani o'chiring (sozlamalar).
+</details>
+
+<br>
 
 ## 🛠️ Dasturchilar uchun
 
-C#, WPF, **.NET Framework 4.8** — u Windows 10/11 tarkibida bor, shuning uchun exe ~0.25 MB. O'girish mantig'i alohida, Windows'ga bog'liq bo'lmagan `netstandard2.0` kutubxonada va 420 dan ortiq unit test bilan himoyalangan; bu kod exe ichiga kompilyatsiya qilinadi.
-
-Tutuqsiz so'zlar lug'ati (`src/Ozbeca.Core/words.txt`) `tools/wordlist/build_wordlist.py` bilan yasalgan. Manba — [Leipzig Corpora Collection](https://wortschatz.uni-leipzig.de/) (uzb_community_2017, uzb_wikipedia_2021_100K, CC BY 4.0). Ikki ma'noli so'zlarni chiqarib tashlash uchun [uz-hunspell](https://github.com/uzbek-net/uz-hunspell) faqat tekshiruvda ishlatiladi.
+C#, WPF, **.NET Framework 4.8** — Windows 10/11 tarkibida bor, shuning uchun exe atigi ~0.3 MB. O'girish mantig'i Windows'ga bog'liq bo'lmagan `netstandard2.0` kutubxonada, 420 dan ortiq unit test bilan himoyalangan va exe ichiga kompilyatsiya qilinadi.
 
 ```
-src/Ozbeca.Core/         Transliterator (qoidalar), TokenBuffer (yozish paytida, kod rejimi),
-                         CodeGuard (kodga tegmaslik), TelegramTags (Telegram stillari)
-src/Ozbeca.App/          AutoType (klaviatura hook'i), ConvertEngine (hotkey), ClipboardSwap,
-                         sozlamalar, o'rnatish oynasi, toast, tray
+src/Ozbeca.Core/         Transliterator, TokenBuffer (yozish paytida, kod rejimi), CodeGuard, TelegramTags, WordList
+src/Ozbeca.App/          AutoType (klaviatura hook'i), ConvertEngine (hotkey), AppCatalog, oynalar, tray
 tests/Ozbeca.Core.Tests/ xUnit testlar (.NET 8)
-tools/e2e/               real ilovalarda avtomatik sinov: run_autotype_tests.bat
-tools/wordlist/          tutuqsiz so'zlar lug'atini yasash (korpusdan)
-tools/                   ikonka va README rasmlarini yasash
+tools/                   ikonka va README rasmlari, lug'at yasash, E2E sinovlar
 ```
 
 ```bash
@@ -314,6 +351,14 @@ dotnet test
 dotnet build src/Ozbeca.App -c Release
 ```
 
-Natija: `src/Ozbeca.App/bin/Release/net48/Ozbeca.exe`.
+Natija: `src/Ozbeca.App/bin/Release/net48/Ozbeca.exe`. README rasmlari: `python tools/make_readme_art.py`.
 
-Takliflar va xatolar uchun **[Issues](https://github.com/AzamjonShaydullayev/Ozbeca/issues)** bo'limiga yozing.
+Tutuqsiz so'zlar lug'ati [Leipzig Corpora Collection](https://wortschatz.uni-leipzig.de/) (uzb_community_2017, uzb_wikipedia_2021_100K, CC BY 4.0) asosida `tools/wordlist/build_wordlist.py` bilan yasalgan; ikki ma'noli so'zlarni ajratishda [uz-hunspell](https://github.com/uzbek-net/uz-hunspell) ishlatilgan.
+
+<br>
+
+<p align="center">
+  <img src="docs/icon.png" width="48" alt="Özbeça"><br>
+  <b>Özbeça</b><br>
+  <sub>Takliflar va xatolar — <a href="https://github.com/AzamjonShaydullayev/Ozbeca/issues">Issues</a>&nbsp;&nbsp;·&nbsp;&nbsp;yoqqan bo'lsa, ⭐ bosib qo'ying</sub>
+</p>
