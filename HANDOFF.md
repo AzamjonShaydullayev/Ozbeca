@@ -2,7 +2,7 @@
 
 > **Yangi chatda birinchi bo'lib shu faylni to'liq o'qing.** Unda loyihaning joriy holati, qabul qilingan
 > qarorlar (va ularning sababi), ish tartibi, sinov usullari va oldingi sessiyalarda o'rganilgan saboqlar bor.
-> Oxirgi yangilanish: **2026-11-11**, v1.2.0 chiqqandan keyin.
+> Oxirgi yangilanish: **2026-11-11**, v1.3.0 (release hali chiqmagan).
 
 ---
 
@@ -14,13 +14,13 @@
 | **Oxirgi versiya** | **v1.2.0** — https://github.com/AzamjonShaydullayev/Ozbeca/releases/tag/v1.2.0 |
 | **Repo** | https://github.com/AzamjonShaydullayev/Ozbeca (**ochiq**), branch `main`, lokal: `D:\projects\ozbeca` |
 | **Platforma** | C#, WPF, **.NET Framework 4.8** (Windows 10/11 ichida bor) — bitta `Ozbeca.exe`, ~135 KB |
-| **Testlar** | 384 unit test (xUnit, .NET 8) + real ilovalarda E2E: 402/408 |
+| **Testlar** | 385 unit test (xUnit, .NET 8) + real ilovalarda E2E: 402/408 |
 | **Bosqichlar** | M1–M5 (asl reja) tugadi; undan keyin: avto-yozish, Ctrl+V, kod rejimi, premium UI, o'rnatish oynasi |
 | **Foydalanuvchining kompyuteri** | Özbeça o'rnatilmagan holda qoldirildi — user README'dan v1.2.0 ni o'zi o'rnatadi |
 
 Ishlash yo'llari:
 1. **Belgilab o'girish:** matnni belgilab <kbd>Ctrl+Alt+O</kbd> (clipboard orqali almashtirish).
-2. **Yozish paytida:** so'z tugab probel/Enter bosilganda o'zi o'giriladi (klaviatura hook'i). Standart — yoqilgan.
+2. **Yozish paytida:** so'z tugab probel/Enter bosilganda yoki 1 s pauzada o'zi o'giriladi (klaviatura hook'i). Standart — yoqilgan.
 3. **Ctrl+V:** qo'yilgan ko'p so'zli matn o'girilib qo'yiladi.
 
 ---
@@ -61,6 +61,8 @@ Asl qarorlar (D1–D6) va keyin o'zgarganlari. **User bilan kelishilmagan o'z qa
 | D16 | Exe hajmi 0.1 MB qoladi (sun'iy kattalashtirilmaydi) | user "virusga o'xshaydi" degandi, tushuntirilgach rozi bo'ldi |
 | D17 | Ko'k SmartScreen oynasi qoladi, README'da tushuntiriladi | imzo pullik; Azure Artifact Signing individual uchun faqat AQSh/Kanada; Microsoft Store (bepul, MSIX) — kelajak uchun variant |
 | D18 | Repo **ochiq**, commitlarda GitHub **noreply** pochta | user so'rovi; shaxsiy pochta ochiq repoda ko'rinmasin |
+| D19 | **Pauzada o'girish:** so'z yozilib 1 s (`AutoType.PauseMs`) kutilsa — probel/Enter'siz o'giriladi; so'z bufferda qoladi | user so'rovi (v1.3.0) |
+| D20 | **Yangilash:** yangi exe ishga tushsa eski nusxa yopiladi (`Local\Ozbeca.Exit`, eskilarida Kill), o'rnatilgan exe almashtiriladi, `--updated` bilan qayta ishga tushadi | user: "eskini o'chir, boshqa balo" bo'lmasin (v1.3.0) |
 
 ---
 
@@ -189,6 +191,8 @@ dotnet build src/Ozbeca.App -c Release        # → src/Ozbeca.App/bin/Release/n
   Unicode'ni oddiy tugmalardan kechroq qayta ishlaydi; o'zining **avto-tuzatishi** bor (`tört` → `tort`).
 - Word Protected View'da Ctrl+C ishlamaydi; Explorer rename paste'dan keyin clipboard'ni qayta yozadi.
 - Toast sichqoncha yonida emas, **caret** yonida (user'da 2 monitor).
+- **UAC o'chiq kompyuterda** hamma oyna elevated ko'rinadi — `IsElevatedWindow` o'zimiz elevated bo'lsak false qaytaradi
+  (v1.2.0'da avto-yozish boshqa kompyuterda shu sabab jim o'chgan, Ctrl+Alt+O ishlagan). Oyna nega o'chiq — logda.
 - `settings.json` sinov skriptlari tomonidan almashtiriladi — skript oxirida tiklaydi.
 
 ---
@@ -204,6 +208,7 @@ dotnet build src/Ozbeca.App -c Release        # → src/Ozbeca.App/bin/Release/n
 - Juda tez yozishda (35 ms/harf) Notepad'da ~4% xato; oddiy tezlikda 0.
 - Telegram'da avto-yozish va Ctrl+V real sinalmagan (belgilab o'girish — ✅, user tasdiqlagan).
 - Google Docs sinalmagan (login kerak).
+- Pauza so'z o'rtasida bo'lsa, `Ishoq`/`ashob` maxsus qoidasi ishlamay qolishi mumkin (`Isho`+pauza → `Işo`).
 
 ---
 
