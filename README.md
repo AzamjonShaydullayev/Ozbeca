@@ -128,7 +128,9 @@ Brauzerda kod yozsangiz ham `user_name`, `print(choy)`, `shop.check`, `showChart
 
 ### Qayerda o'zi o'chiq turadi
 
-Terminallar (cmd, PowerShell, Windows Terminal), parol maydonlari, parol menejerlari, masofaviy ish stoli va administrator oynalarida yozish paytida o'girish ishlamaydi. Enter bosilganda ham o'girilmaydi — parollar ko'pincha Enter bilan tugaydi.
+Terminallar (cmd, PowerShell, Windows Terminal), parol maydonlari, parol menejerlari, masofaviy ish stoli va administrator oynalarida yozish paytida o'girish ishlamaydi.
+
+Probelsiz Enter bosilsa ham oxirgi so'z o'giriladi (`Yaxshimisan?` + Enter → `Yaxşimisan?`) — lekin faqat parol maydoni bo'lmasa. Oxirgi so'zdan keyin sichqoncha bilan **Yuborish** tugmasi bosilsa, o'sha so'z o'girilmaydi — probel yoki Enter bosing.
 
 ---
 
@@ -213,6 +215,12 @@ Batafsil natijalar: [docs/M4_SINOV.md](docs/M4_SINOV.md). Yozish paytida o'giris
 <summary><b>Yozayotganimda keraksiz so'z o'zgarib ketdi</b></summary>
 
 <kbd>Ctrl</kbd>+<kbd>Z</kbd> ni bosing — so'z qaytadi. Inglizcha yozayotgan bo'lsangiz (`check` → `çeck`), Ö belgisi ustida o'ng tugma → **Yozish paytida o'girish** ni vaqtincha o'chiring.
+</details>
+
+<details>
+<summary><b>Notepad'da "tört" o'zi "tort" bo'lib qoldi</b></summary>
+
+Bu Windows 11 Notepad'ning **o'z avto-tuzatishi**: u ba'zi so'zlarni inglizcha lug'atdagi so'zga "tuzatadi" (Özbeça o'chiq bo'lsa ham shunday bo'ladi). Notepad'da ⚙️ Sozlamalar → **Imlo tekshiruvi / Spelling** → **Avto-tuzatish / Autocorrect** ni o'chirib qo'ying.
 </details>
 
 <details>

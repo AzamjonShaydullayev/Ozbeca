@@ -82,7 +82,7 @@ public class TokenBufferTests
                     if (screen.Length > 0) screen.Length--;
                     break;
                 case '\n':
-                    b.ResetNewLine();
+                    if (b.TryCompleteAtEnter(out del, out rep)) { screen.Length -= del; screen.Append(rep); }
                     screen.Append('\n');
                     break;
                 case '"' when b.TryCompleteBeforeQuote(out del, out rep):
@@ -117,6 +117,18 @@ public class TokenBufferTests
         // Enter'dan keyin esa — ishlaydi.
         Assert.Equal("a \"choy\nb = \"çoy\" ", Simulate("a \"choy\nb = \"choy\" ", code: true, startAtLineStart: false));
     }
+
+    [Theory]
+    [InlineData("Yaxshimisan?\n", "Yaxşimisan?\n")]          // probelsiz Enter — oxirgi so'z ham o'giriladi
+    [InlineData("salom choy\nshahar\n", "salom çoy\nşahar\n")]
+    [InlineData("choy1990\n", "çoy1990\n")]                    // parol maydonini AutoType tekshiradi (UIA)
+    [InlineData("https://shop.uz/choy\n", "https://shop.uz/choy\n")]
+    [InlineData("maktab\n", "maktab\n")]
+    public void EnterConvertsLastWordInProse(string typed, string expected) => Assert.Equal(expected, Simulate(typed, code: false));
+
+    [Fact]
+    public void EnterInCodeModeIsJustNewLine() =>
+        Assert.Equal("x = \"choy\nshahar ", Simulate("x = \"choy\nshahar ", code: true));
 
     [Fact]
     public void ProseModeTreatsQuotesAsText() =>

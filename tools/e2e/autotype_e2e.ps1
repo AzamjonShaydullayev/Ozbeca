@@ -119,7 +119,11 @@ function Get-Expected([string]$typed) {
                 [void]$out.Append(' ')
             }
             "`b" { $tb.Backspace(); if ($out.Length) { [void]$out.Remove($out.Length - 1, 1) } }
-            "`n" { $tb.Reset(); [void]$out.Append("`n") }
+            "`n" {
+                $del = 0; $rep = ''
+                if ($tb.TryCompleteAtEnter([ref]$del, [ref]$rep)) { [void]$out.Remove($out.Length - $del, $del); [void]$out.Append($rep) }
+                [void]$out.Append("`n")
+            }
             ([char]0x2190) { $tb.Reset() }   # strelka: so'z unutiladi, matn o'zgarmaydi (kursor qaytadi)
             ([char]0x2192) { $tb.Reset() }
             default { $tb.Add($c); [void]$out.Append($c) }
@@ -156,6 +160,9 @@ $Cases = [System.Collections.Generic.List[string]]::new()
     "shop check short which ",
     "choyx`b shaharr`b qo'shiqq`b ",
     "choy`nshahar ",
+    "Yaxshimisan?`n",
+    "salom choy`nqalaysan shirin`n",
+    "Bugun shahar bo'ylab sayr qildik`n",
     ("sh$L$R" + "ahar choy "),
     "maktab kitob daftar olma non ",
     "To'g'ri yo'l, to'g'ri so'z, to'g'ri ish ",
@@ -167,7 +174,7 @@ $Cases = [System.Collections.Generic.List[string]]::new()
 ) | ForEach-Object { $Cases.Add($_) }   # `b (Backspace), `n (Enter), `` (backtick) PowerShell qatorlarida allaqachon belgi
 
 # HANDOFF/Core testlaridagi so'zlar — 5 tadan jumla qilib
-$words = "o'g'il qo'l ko'z yo'l to'rt bo'lim o'qituvchi o'quvchi ko'cha go'sht do'st to'y so'z o'rik o'n ko'p yo'q bo'sh qo'shni o'zbekcha to'g'ri o'g'ri bo'g'iz g'oz g'alaba g'arb g'ildirak tog' bog' sog' yog' bag'ir tog'lar bog'bon sog'lik yog'och chiroq choynak chaqaloq chumoli chiroyli kuch qilich bolacha ich chol chap uch sichqon qarshi shamol shaftoli shirin osh ish qush tosh yosh bosh kishi Toshkent Samarqand Buxoro Andijon Namangan e'tibor qal'a ra'no sur'at ming bilan Shoshilinch shanba chorva o'shanda g'ishtchi qo'shiqchi o'quvchilar".Split(' ')
+$words = "o'g'il qo'l ko'z yo'l to'qson bo'lim o'qituvchi o'quvchi ko'cha go'sht do'st to'y so'z o'rik o'n ko'p yo'q bo'sh qo'shni o'zbekcha to'g'ri o'g'ri bo'g'iz g'oz g'alaba g'arb g'ildirak tog' bog' sog' yog' bag'ir tog'lar bog'bon sog'lik yog'och chiroq choynak chaqaloq chumoli chiroyli kuch qilich bolacha ich chol chap uch sichqon qarshi shamol shaftoli shirin osh ish qush tosh yosh bosh kishi Toshkent Samarqand Buxoro Andijon Namangan e'tibor qal'a ra'no sur'at ming bilan Shoshilinch shanba chorva o'shanda g'ishtchi qo'shiqchi o'quvchilar".Split(' ')
 for ($i = 0; $i -lt $words.Count; $i += 5) { $Cases.Add((($words[$i..([Math]::Min($i + 4, $words.Count - 1))]) -join ' ') + ' ') }
 
 if ($Limit -gt 0) { $Cases = [System.Collections.Generic.List[string]]($Cases | Select-Object -First $Limit) }
@@ -306,6 +313,27 @@ try {
             Write-Host ("  {0}/{1}" -f $pass, $n)
             & $app.Stop
         }
+    }
+
+    # Parol maydoni: choy1990 + Enter o'zgarmasligi kerak (UIA IsPassword). Nusxa olib bo'lmaydi —
+    # sahifa Enter'da qiymatni oyna sarlavhasiga chiqaradi.
+    if (-not [E2E]::Aborted -and (-not $Only -or 'Chrome' -like "*$Only*")) {
+        Write-Host "== Chrome parol maydoni (o'girmasligi kerak)" -ForegroundColor Cyan
+        $html = Join-Path $Work 'e2e_pw.html'
+        [IO.File]::WriteAllText($html, "<!doctype html><meta charset=utf-8><title>e2e-pw</title><input id=f type=password style='font-size:18px'><script>f.focus();f.addEventListener('keydown',e=>{if(e.key==='Enter'){document.title='pw:'+f.value;e.preventDefault();}})</script>", [Text.UTF8Encoding]::new($true))
+        Start-Process $ChromeExe -ArgumentList "--user-data-dir=`"$ChromeProfile`"", '--no-first-run', '--new-window', "file:///$($html -replace '\\','/')"
+        Wait-Ms 4000; [void]$ws.AppActivate('e2e-pw'); Wait-Ms 700
+        foreach ($pw in @("choy1990`n", "shahar choy`n")) {
+            Clear-Field
+            [void][E2E]::Type($pw, $Delay, 30); Wait-Ms 1200
+            $window = [E2E]::FgTitle()
+            $exp = 'pw:' + $pw.TrimEnd("`n")
+            $good = $window -like "$exp*"
+            $rows.Add([pscustomobject]@{ App = 'Chrome parol maydoni'; Speed = 'oddiy'; Kind = 'parol'; Ok = $good; Interfered = ($window -notlike 'pw:*' -and $window -notlike 'e2e-pw*'); Typed = $pw; Expected = $exp; Got = $window; Window = $window })
+            Write-Host -NoNewline $(if ($good) { '.' } else { 'X' }) -ForegroundColor $(if ($good) { 'Green' } else { 'Red' })
+        }
+        Write-Host ''
+        Stop-Chrome
     }
 
     # VS Code: kod rejimi — faqat "..." ichi o'giriladi; kod, izoh va kalit so'zlar o'zgarmaydi.

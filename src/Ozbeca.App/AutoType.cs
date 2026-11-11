@@ -47,6 +47,9 @@ internal sealed class AutoType : IDisposable
     private IntPtr _lastWindow;
     private enum Mode { Off, Prose, Code }
     private Mode _mode;
+
+    // Fokusdagi maydon parolmi (UI Automation). null — hali bilmaymiz; sichqoncha, Tab, boshqa oyna — qayta tekshiriladi.
+    private bool? _focusPassword;
     private readonly byte[] _keyState = new byte[256];
     private readonly StringBuilder _chars = new(8);
 
@@ -94,7 +97,11 @@ internal sealed class AutoType : IDisposable
     private IntPtr OnMouse(int nCode, IntPtr wParam, IntPtr lParam)
     {
         int msg = wParam.ToInt32();
-        if (nCode >= 0 && (msg == WM_LBUTTONDOWN || msg == WM_RBUTTONDOWN || msg == WM_MBUTTONDOWN)) _word.Reset();
+        if (nCode >= 0 && (msg == WM_LBUTTONDOWN || msg == WM_RBUTTONDOWN || msg == WM_MBUTTONDOWN))
+        {
+            _word.Reset();
+            _focusPassword = null; // boshqa maydonga bosilgan bo'lishi mumkin
+        }
         return CallNextHookEx(_mouseHook, nCode, wParam, lParam);
     }
 
@@ -106,7 +113,9 @@ internal sealed class AutoType : IDisposable
     private static readonly IntPtr ReplayInput = new(0x0E8A0E8B);
     private const int WM_KEYUP = 0x101, WM_SYSKEYUP = 0x105;
     private const uint LLKHF_EXTENDED = 0x1;
-    private const int PendingTimeoutMs = 300;
+    // Saqlagich: o'zimiz yuborgan tugmalar shuncha vaqtda hook'dan o'tmasa — ushlanganlar qaytariladi.
+    // Ataylab keng: muddatidan oldin qaytarilgan tugma almashtirish orasiga tushib, backspace bilan o'chib ketardi.
+    private const int PendingTimeoutMs = 1500;
 
     private readonly List<(KBDLLHOOKSTRUCT Key, bool Up)> _held = new();
     private int _pending;          // hali hook'dan o'tmagan o'zimiz yuborgan tugmalar soni
@@ -131,16 +140,18 @@ internal sealed class AutoType : IDisposable
 
             if (injected && k.dwExtraInfo == OwnInput)
             {
-                if (_pending > 0 && --_pending == 0) FlushHeld();
+                if (_pending > 0) _pending--;
+                TryFlush();
                 return CallNextHookEx(_keyHook, nCode, wParam, lParam);
             }
 
             bool replay = injected && k.dwExtraInfo == ReplayInput;
             if (replay)
             {
-                if (_pending > 0 && --_pending == 0) FlushHeld(); // qayta yuborish paytida yana ushlanganlar
+                if (_pending > 0) _pending--;
+                TryFlush(); // qayta yuborish paytida yana ushlanganlar
             }
-            else if (_pending > 0 || _held.Count > 0) // navbatda kutayotganlar bo'lsa — ulardan oldin o'tmasin
+            else if (_pending > 0 || _settling > 0 || _held.Count > 0) // navbatda kutayotganlar bo'lsa — ulardan oldin o'tmasin
             {
                 _held.Add((k, up));
                 return new IntPtr(1); // keyinroq tartib bilan qaytariladi
@@ -171,9 +182,10 @@ internal sealed class AutoType : IDisposable
                 {
                     Log.Write("AutoType: kutish vaqti tugadi, ushlangan tugmalar qaytarildi");
                     _pending = 0;
+                    _settling = 0;
                     FlushHeld();
                 }
-                if (_pending == 0 && _held.Count == 0) _guard!.Stop();
+                if (_pending == 0 && _settling == 0 && _held.Count == 0) _guard!.Stop();
             };
         }
         _guard.Start();
@@ -206,16 +218,38 @@ internal sealed class AutoType : IDisposable
     /// </summary>
     private void SendDeferred(INPUT[] inputs, string what)
     {
-        BeginPending(inputs.Length, inputs.Length / 2 * PaceMs);
+        BeginPending(inputs.Length, inputs.Length / 2 * (PaceMs + 20)); // sekin kompyuter uchun zaxira bilan
+        _settling++;
         _sendQueue.Add((inputs, what));
     }
+
+    /// <summary>
+    /// Ushlangan tugmalarni qaytarish vaqti: o'zimiz yuborganlar hook'dan o'tgan (pending = 0) VA ilova ularni
+    /// qayta ishlab ulgurgan bo'lishi kerak (settling = 0). Windows 11 Notepad Unicode harflarni (ş, ç, ö)
+    /// oddiy tugmalardan kechroq qayta ishlaydi — tinchlanishsiz keyingi harf ulardan oldin kirib, yo'qolardi.
+    /// </summary>
+    private void TryFlush()
+    {
+        if (_pending == 0 && _settling == 0) FlushHeld();
+    }
+
+    private int _settling; // yuborilgan, lekin hali "tinchlanmagan" navbat elementlari
+    private const int SettleMs = 40;
 
     // Windows 11 Notepad kabi ilovalar bir zumda kelgan Unicode harflar tartibini almashtirib yuboradi
     // ("shahar" → "şaha r"). Shuning uchun har bir tugma (bosish+qo'yish) orasida kichik pauza — alohida
     // thread'da, UI va hook'ni bloklamaslik uchun. Navbat yagona: almashtirish va qayta yuborish tartibi saqlanadi.
-    private const int PaceMs = 4;
+    private const int PaceMs = 6;
+    private const int AfterDeleteMs = 30;
     private readonly System.Collections.Concurrent.BlockingCollection<(INPUT[] Inputs, string What)> _sendQueue = new();
     private Thread? _sender;
+
+    /// <summary>Aniq qisqa pauza: Thread.Sleep(4) Windows'da ~15 ms uxlaydi (taymer aniqligi).</summary>
+    private static void Pause(int ms)
+    {
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        while (sw.ElapsedMilliseconds < ms) Thread.Yield();
+    }
 
     private void SenderLoop()
     {
@@ -223,20 +257,31 @@ internal sealed class AutoType : IDisposable
         foreach (var (inputs, what) in _sendQueue.GetConsumingEnumerable())
         {
             int sent = 0;
+            bool prevWasDelete = false;
             for (int i = 0; i < inputs.Length; i += 2)
             {
                 int n = Math.Min(2, inputs.Length - i);
                 var pair = new INPUT[n];
                 Array.Copy(inputs, i, pair, 0, n);
+                bool isDelete = pair[0].U.ki.wVk == VK_BACK;
+                // Win11 Notepad backspace'lardan darhol keyin kelgan birinchi harfni ba'zan tashlab yuboradi
+                // ("tosh" → "oş") — o'chirish tugashini biroz kutamiz.
+                if (prevWasDelete && !isDelete) Pause(AfterDeleteMs);
+                prevWasDelete = isDelete;
                 sent += (int)SendInput((uint)n, pair, size);
-                Thread.Sleep(PaceMs);
+                Pause(PaceMs);
             }
-            if (sent == inputs.Length) continue;
+            bool ok = sent == inputs.Length;
+            if (ok && what != "ushlangan tugmalar") Pause(SettleMs); // ilova almashtirishni yozib ulgursin
             _dispatcher.BeginInvoke(new Action(() =>
             {
-                Log.Write($"AutoType: {what} to'liq yuborilmadi ({sent}/{inputs.Length})");
-                _pending = 0;
-                FlushHeld();
+                if (_settling > 0) _settling--;
+                if (!ok)
+                {
+                    Log.Write($"AutoType: {what} to'liq yuborilmadi ({sent}/{inputs.Length})");
+                    _pending = 0;
+                }
+                TryFlush();
             }));
         }
     }
@@ -250,6 +295,7 @@ internal sealed class AutoType : IDisposable
             _lastWindow = fg;
             _mode = WindowMode(fg);
             _word.CodeMode = _mode == Mode.Code;
+            _focusPassword = null;
             _word.Reset();
         }
         if (_mode == Mode.Off) return false;
@@ -286,11 +332,23 @@ internal sealed class AutoType : IDisposable
                 if (allowReplace) return CompleteWord(fg);
                 _word.Reset();
                 return false;
-            case VK_RETURN: // ataylab o'girilmaydi — parollar Enter bilan tugaydi
-            case 0x24:      // Home
+            case VK_RETURN:
+                // "Yaxshimisan?" + Enter — oxirgi so'z ham o'girilsin. Parol maydoni bo'lsa — tegmaymiz (pastda UIA).
+                if (allowReplace && _mode == Mode.Prose && !IsPasswordFocus(fg) &&
+                    _word.TryCompleteAtEnter(out int enterDel, out string enterWord))
+                {
+                    Replace(enterDel, enterWord, new[] { Key(VK_RETURN, false), Key(VK_RETURN, true) });
+                    return true; // Enter ushlandi — so'z almashgach o'zimiz yuboramiz
+                }
+                _word.ResetNewLine();
+                return false;
+            case 0x24: // Home
                 _word.ResetNewLine(); // kursor qator boshida — kod rejimida qo'shtirnoqdan tashqari ekani aniq
                 return false;
             case VK_TAB:
+                _focusPassword = null;
+                _word.Reset();
+                return false;
             case VK_ESCAPE:
             case VK_DELETE:
             case VK_INSERT:
@@ -308,7 +366,7 @@ internal sealed class AutoType : IDisposable
             // Kod rejimi: qo'shtirnoq yopilyapti — oldingi so'zni o'girib, keyin " ni o'zimiz yozamiz.
             if (ch == '"' && allowReplace && _word.TryCompleteBeforeQuote(out int del, out string word))
             {
-                SendReplacement(del, word, '"');
+                Replace(del, word, UnicodeKeys('"'));
                 return true;
             }
             _word.Add(ch);
@@ -321,28 +379,68 @@ internal sealed class AutoType : IDisposable
     {
         if (IsPasswordFocus(fg)) { _word.Reset(); return false; }
         if (!_word.TryComplete(out int deleteCount, out string replacement)) return false;
-        SendReplacement(deleteCount, replacement, ' ');
+        Replace(deleteCount, replacement, UnicodeKeys(' '));
         return true;
     }
 
-    /// <summary>Backspace × N, keyin yangi so'z va ushlangan belgi (Unicode — klaviatura tartibiga bog'liq emas).</summary>
-    private void SendReplacement(int deleteCount, string replacement, char trailing)
+    private static INPUT[] UnicodeKeys(char ch) => new[] { Unicode(ch, false), Unicode(ch, true) };
+
+    private static List<INPUT> ReplacementKeys(int deleteCount, string replacement, INPUT[] trailing)
     {
-        var inputs = new List<INPUT>(deleteCount * 2 + replacement.Length * 2 + 2);
-        for (int i = 0; i < deleteCount; i++)
-        {
-            inputs.Add(Key(VK_BACK, false));
-            inputs.Add(Key(VK_BACK, true));
-        }
-        foreach (char ch in replacement + trailing)
-        {
-            inputs.Add(Unicode(ch, false));
-            inputs.Add(Unicode(ch, true));
-        }
+        var keys = new List<INPUT>(deleteCount * 2 + replacement.Length * 2 + trailing.Length);
+        for (int i = 0; i < deleteCount; i++) { keys.Add(Key(VK_BACK, false)); keys.Add(Key(VK_BACK, true)); }
+        foreach (char ch in replacement) { keys.Add(Unicode(ch, false)); keys.Add(Unicode(ch, true)); }
+        keys.AddRange(trailing);
+        return keys;
+    }
+
+    /// <summary>
+    /// So'zni almashtiradi (Backspace × N + yangi so'z), keyin ushlangan tugmani (probel, ", Enter) yuboradi.
+    /// Parol maydonida — so'zga tegmaydi, faqat ushlangan tugma ketadi. Parol ekanini UI Automation bilan bilamiz
+    /// (Chrome, Telegram, WinUI ham); natija shu maydon uchun eslab qolinadi — keyingi so'zlar kutmaydi.
+    /// Tekshiruv paytida kelgan tugmalar ushlanadi (pending) va keyin tartib bilan qaytariladi.
+    /// </summary>
+    private void Replace(int deleteCount, string replacement, INPUT[] trailing)
+    {
 #if DEBUG
-        Log.Write($"[debug] almashtirish: del={deleteCount} -> '{replacement}' ({inputs.Count} tugma)");
+        Log.Write($"[debug] almashtirish: del={deleteCount} -> '{replacement}', parol={_focusPassword?.ToString() ?? "?"}");
 #endif
-        SendDeferred(inputs.ToArray(), "almashtirish");
+        if (_focusPassword == false)
+        {
+            SendDeferred(ReplacementKeys(deleteCount, replacement, trailing).ToArray(), "almashtirish");
+            return;
+        }
+
+        BeginPending(1, 1500); // haqiqiy son tekshiruvdan keyin aniqlanadi
+        System.Threading.Tasks.Task.Run(() =>
+        {
+            bool password = _focusPassword ?? FocusIsPasswordUia();
+            _dispatcher.BeginInvoke(new Action(() =>
+            {
+                _focusPassword = password;
+                var keys = password ? new List<INPUT>(trailing) : ReplacementKeys(deleteCount, replacement, trailing);
+                if (password) Log.Write("AutoType: parol maydoni — so'z o'girilmadi");
+                _pending += keys.Count - 1;
+                _pendingSince = Environment.TickCount + keys.Count / 2 * (PaceMs + 20);
+                _settling++;
+                _sendQueue.Add((keys.ToArray(), "almashtirish"));
+            }));
+        });
+    }
+
+    /// <summary>UIA: fokusdagi element parol maydonimi. Javob 400 ms da kelmasa yoki xato — xavfsiz tomonga: "parol".</summary>
+    private static bool FocusIsPasswordUia()
+    {
+        var t = System.Threading.Tasks.Task.Run(() =>
+        {
+            try
+            {
+                var el = System.Windows.Automation.AutomationElement.FocusedElement;
+                return el == null || el.Current.IsPassword;
+            }
+            catch (Exception) { return true; }
+        });
+        return !t.Wait(400) || t.Result;
     }
 
     private const int PasteRestoreDelayMs = 500;

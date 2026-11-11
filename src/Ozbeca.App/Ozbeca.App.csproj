@@ -27,6 +27,8 @@
 
   <ItemGroup>
     <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="UIAutomationClient" />  <!-- Enter'da parol maydonini aniqlash -->
+    <Reference Include="UIAutomationTypes" />
   </ItemGroup>
 
   <ItemGroup>

@@ -108,6 +108,20 @@ public sealed class TokenBuffer
         return true;
     }
 
+    /// <summary>
+    /// Enter bosildi ("Yaxshimisan?" + Enter → "Yaxşimisan?"). Oddiy matnda oxirgi so'z o'giriladi;
+    /// kod rejimida Enter — oddiy yangi qator, o'girilmaydi. Har holda yangi qator boshlanadi.
+    /// Parol maydoni emasligini chaqiruvchi tekshiradi (parol odatda Enter bilan tugaydi).
+    /// </summary>
+    public bool TryCompleteAtEnter(out int deleteCount, out string replacement)
+    {
+        deleteCount = 0;
+        replacement = "";
+        bool ok = !_codeMode && TryConvertWord(out deleteCount, out replacement);
+        ResetNewLine();
+        return ok;
+    }
+
     private bool TryConvertWord(out int deleteCount, out string replacement)
     {
         string word = _sb.ToString();
