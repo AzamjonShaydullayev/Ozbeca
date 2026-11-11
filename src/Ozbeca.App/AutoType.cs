@@ -327,6 +327,7 @@ internal sealed class AutoType : IDisposable
         {
             case VK_BACK:
                 _word.Backspace();
+                ArmPause();
                 return false;
             case VK_SPACE:
                 if (allowReplace) return CompleteWord(fg);
@@ -370,9 +371,38 @@ internal sealed class AutoType : IDisposable
                 return true;
             }
             _word.Add(ch);
+            ArmPause();
         }
         else _word.Reset();
         return false;
+    }
+
+    // ---- Pauza: so'z yozilib, biroz kutilsa — probel/Enter'ni kutmasdan o'giriladi ----
+    private const int PauseMs = 1000;
+    private System.Windows.Threading.DispatcherTimer? _pause;
+
+    /// <summary>Har harf/backspace'da qayta boshlanadi. Hook bilan bitta thread'da — tugma bilan poyga yo'q.</summary>
+    private void ArmPause()
+    {
+        if (_pause == null)
+        {
+            _pause = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(PauseMs) };
+            _pause.Tick += (_, _) => { _pause.Stop(); ConvertOnPause(); };
+        }
+        _pause.Stop();
+        _pause.Start();
+    }
+
+    private void ConvertOnPause()
+    {
+        if (!IsRunning || _mode == Mode.Off || _pending > 0 || _settling > 0 || _held.Count > 0) return;
+        IntPtr fg = GetForegroundWindow();
+        if (fg != _lastWindow) return; // boshqa oynaga o'tilgan — so'z u yerda emas
+        // Ushlab turilgan modifier bilan Backspace boshqa ma'no beradi (Ctrl+Backspace — butun so'zni o'chiradi).
+        if (InputSender.IsDown(VK_SHIFT) || InputSender.IsDown(VK_CONTROL) || InputSender.IsDown(VK_MENU) ||
+            InputSender.IsDown(VK_LWIN) || InputSender.IsDown(VK_RWIN) || IsPasswordFocus(fg)) return;
+        if (_word.TryConvertAtPause(out int del, out string word))
+            Replace(del, word, Array.Empty<INPUT>());
     }
 
     private bool CompleteWord(IntPtr fg)
@@ -531,8 +561,13 @@ internal sealed class AutoType : IDisposable
         }
         catch (ArgumentException) { return Mode.Off; }
         catch (InvalidOperationException) { return Mode.Off; }
-        if (BlockedProcesses.Contains(name) || ConvertEngine.IsTerminalWindow(hwnd) || ConvertEngine.IsElevatedWindow(hwnd))
+        string? off = BlockedProcesses.Contains(name) ? "istisno ro'yxatida" : ConvertEngine.IsTerminalWindow(hwnd) ? "terminal"
+            : ConvertEngine.IsElevatedWindow(hwnd) ? "administrator oynasi" : null;
+        if (off != null)
+        {
+            Log.Write($"AutoType: {name} — o'chiq ({off})");
             return Mode.Off;
+        }
         return CodeEditors.Contains(name) ? Mode.Code : Mode.Prose;
     }
 

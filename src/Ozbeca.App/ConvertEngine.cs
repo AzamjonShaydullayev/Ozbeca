@@ -66,7 +66,7 @@ internal sealed class ConvertEngine
         bool terminal = TerminalClasses.Contains(cls);
         Log.Write($"Hotkey: oyna 0x{hwnd:X} class={cls} terminal={terminal}");
 
-        if (!Compat.IsElevatedSelf && IsElevatedWindow(hwnd))
+        if (IsElevatedWindow(hwnd))
         {
             Say("Administrator huquqidagi oynada ishlamaydi");
             return;
@@ -187,9 +187,14 @@ internal sealed class ConvertEngine
         return GetClassName(hwnd, sb, sb.Capacity) > 0 ? sb.ToString() : "";
     }
 
-    /// <summary>UIPI: elevated oynaga oddiy dastur SendInput yubora olmaydi. Token ochilmasa — elevated deb hisoblaymiz.</summary>
+    /// <summary>
+    /// UIPI: elevated oynaga oddiy dastur SendInput yubora olmaydi. Token ochilmasa — elevated deb hisoblaymiz.
+    /// O'zimiz ham elevated bo'lsak — to'siq yo'q. UAC o'chiq kompyuterda HAMMA oyna elevated ko'rinadi:
+    /// bu tekshiruvsiz avto-yozish hamma joyda jim o'chib qolardi (Ctrl+Alt+O esa ishlardi).
+    /// </summary>
     internal static bool IsElevatedWindow(IntPtr hwnd)
     {
+        if (Compat.IsElevatedSelf) return false;
         GetWindowThreadProcessId(hwnd, out uint pid);
         IntPtr proc = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, pid);
         if (proc == IntPtr.Zero) return true;

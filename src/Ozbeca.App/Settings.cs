@@ -90,6 +90,16 @@ internal static class Autostart
         }
     }
 
+    /// <summary>Qaysi exe'ga bo'lsa ham yozuv bor (yangilashda yangi nusxaga ko'chiriladi).</summary>
+    public static bool Exists
+    {
+        get
+        {
+            using var key = Registry.CurrentUser.OpenSubKey(RunKey);
+            return key?.GetValue(Name) != null;
+        }
+    }
+
     /// <param name="exePath">o'rnatishda — yangi joydagi exe; aks holda joriy jarayon.</param>
     public static void Set(bool enabled, string? exePath = null)
     {

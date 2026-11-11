@@ -139,4 +139,8 @@ internal static class Native
     [DllImport("advapi32.dll", SetLastError = true)] public static extern bool OpenProcessToken(IntPtr process, uint access, out IntPtr token);
     [DllImport("advapi32.dll", SetLastError = true)]
     public static extern bool GetTokenInformation(IntPtr token, int infoClass, out int info, int length, out int returnLength);
+
+    // Process.MainModule boshqa bitlikdagi jarayonda xato beradi — yangilashda eski nusxa yo'lini shu bilan olamiz.
+    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+    public static extern bool QueryFullProcessImageName(IntPtr process, int flags, StringBuilder name, ref int size);
 }

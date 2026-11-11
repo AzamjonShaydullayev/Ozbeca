@@ -11,7 +11,7 @@ public partial class App : Application
     private const string ShowSettingsEvent = @"Local\Ozbeca.ShowSettings";
 
     private Mutex? _mutex;
-    private EventWaitHandle? _showEvent;
+    private EventWaitHandle? _showEvent, _exitEvent;
     private HotkeyService _hotkey = null!;
     private ConvertEngine _engine = null!;
     private WinForms.NotifyIcon _tray = null!;
@@ -25,6 +25,13 @@ public partial class App : Application
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+
+        // Yangi versiya ishga tushirildi — eski nusxani yopib, o'rnini egallaymiz (mutex'dan oldin: u eskisida).
+        try
+        {
+            if (Install.UpdateOlder()) { Shutdown(); return; }
+        }
+        catch (Exception ex) { Log.Write("Yangilashda xato: " + ex); }
 
         _mutex = new Mutex(true, @"Local\Ozbeca.SingleInstance", out bool created);
         if (!created)
@@ -47,12 +54,15 @@ public partial class App : Application
         }
 
         Settings = Settings.Load();
-        if (e.Args.Length > 0) Settings.Hotkey = e.Args[0]; // sinov uchun: Ozbeca.exe Ctrl+Alt+F10
+        bool updated = Install.Updated || e.Args.Contains(Install.UpdatedArg);
+        if (e.Args.Length > 0 && !updated) Settings.Hotkey = e.Args[0]; // sinov uchun: Ozbeca.exe Ctrl+Alt+F10
 
         if (Settings.FirstRun && e.Args.Length == 0 && RunFirstTimeSetup()) return; // o'rnatilgan nusxa ishga tushirildi
 
         _showEvent = new EventWaitHandle(false, EventResetMode.AutoReset, ShowSettingsEvent);
         ThreadPool.RegisterWaitForSingleObject(_showEvent, (_, _) => Dispatcher.BeginInvoke(() => ShowSettings()), null, -1, false);
+        _exitEvent = new EventWaitHandle(false, EventResetMode.AutoReset, Install.ExitEvent);
+        ThreadPool.RegisterWaitForSingleObject(_exitEvent, (_, _) => Dispatcher.BeginInvoke(() => Shutdown()), null, -1, true);
 
         _hotkey = new HotkeyService();
         _engine = new ConvertEngine(_hotkey.Handle);
@@ -65,7 +75,9 @@ public partial class App : Application
         ApplyAutoType();
 
         string? error = ApplyHotkeyState();
-        Log.Write($"Ishga tushdi, hotkey {Settings.Hotkey}, yoqilgan={Settings.Enabled}" + (error != null ? $" — {error}" : ""));
+        Log.Write($"Ishga tushdi {Theme.Version}, hotkey {Settings.Hotkey}, yoqilgan={Settings.Enabled}, avto-yozish={Settings.AutoType}, admin={Compat.IsElevatedSelf}" + (error != null ? $" — {error}" : ""));
+        if (updated && error == null)
+            _tray.ShowBalloonTip(5000, "Özbeça", $"{Theme.Version} versiyaga yangilandi. Sozlamalar saqlandi.", WinForms.ToolTipIcon.Info);
         if (error != null)
         {
             _tray.ShowBalloonTip(6000, "Özbeça", error + " Sozlamalarda boshqasini tanlang.", WinForms.ToolTipIcon.Warning);
@@ -79,6 +91,7 @@ public partial class App : Application
         _hotkey?.Dispose();
         _autoType?.Dispose();
         _showEvent?.Dispose();
+        _exitEvent?.Dispose();
         _mutex?.ReleaseMutex();
         _mutex?.Dispose();
         base.OnExit(e);

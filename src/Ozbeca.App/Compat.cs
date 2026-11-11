@@ -9,7 +9,7 @@ internal static class Compat
     public static readonly string ProcessPath = System.Diagnostics.Process.GetCurrentProcess().MainModule!.FileName;
 
     /// <summary>Environment.IsPrivilegedProcess o'rnida — dastur administrator sifatida ishga tushganmi.</summary>
-    public static bool IsElevatedSelf => new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator);
+    public static readonly bool IsElevatedSelf = new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator);
 
     public static int Clamp(int v, int min, int max) => v < min ? min : v > max ? max : v;
 }

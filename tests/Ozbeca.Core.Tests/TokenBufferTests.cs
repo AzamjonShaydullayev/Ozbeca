@@ -33,6 +33,31 @@ public class TokenBufferTests
     public void LeavesAlone(string typed) => Assert.False(Type(typed).ok);
 
     [Fact]
+    public void PauseConvertsAndWordContinues()
+    {
+        var b = new TokenBuffer();
+        string screen = "";
+        void Type(string s) { foreach (char c in s) { b.Add(c); screen += c; } }
+        void Apply(int del, string rep) => screen = screen.Substring(0, screen.Length - del) + rep;
+
+        Type("ishla");
+        Assert.True(b.TryConvertAtPause(out int d, out string r));
+        Apply(d, r);
+        Assert.Equal("işla", screen);
+        Assert.False(b.TryConvertAtPause(out _, out _)); // ikkinchi pauza — hech narsa yuborilmaydi
+
+        Type("sh");                                       // so'z davom etdi: ajralgan "s"+"h" ham ş bo'ladi
+        Assert.True(b.TryComplete(out d, out r));
+        Apply(d, r);
+        Assert.Equal("işlaş", screen);
+
+        var c = new TokenBuffer();
+        foreach (char ch in "maktab") c.Add(ch);
+        Assert.False(c.TryConvertAtPause(out _, out _));
+        Assert.Equal("maktab", c.Current);                // o'zgarmasa — so'z joyida qoladi
+    }
+
+    [Fact]
     public void BackspaceEditsWord()
     {
         var b = new TokenBuffer();

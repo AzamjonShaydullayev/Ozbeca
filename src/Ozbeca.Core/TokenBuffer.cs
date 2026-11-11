@@ -122,6 +122,21 @@ public sealed class TokenBuffer
         return ok;
     }
 
+    /// <summary>
+    /// Yozish to'xtadi (pauza): so'z tugamagan bo'lishi mumkin — o'giramiz, lekin u bufferda (o'girilgan holda)
+    /// qoladi: davomi yozilsa ("işla" + "sh") probelda butun so'z yana tekshiriladi. Idempotent — ikkinchi pauza
+    /// hech narsa yubormaydi.
+    /// </summary>
+    public bool TryConvertAtPause(out int deleteCount, out string replacement)
+    {
+        string word = _sb.ToString();
+        bool overflow = _overflow;
+        bool ok = TryConvertWord(out deleteCount, out replacement);
+        _sb.Append(ok ? replacement : word);
+        _overflow = overflow;
+        return ok;
+    }
+
     private bool TryConvertWord(out int deleteCount, out string replacement)
     {
         string word = _sb.ToString();
