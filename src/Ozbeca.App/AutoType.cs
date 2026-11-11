@@ -13,16 +13,25 @@ namespace Ozbeca.App;
 ///
 /// Xavfsizlik:
 /// - Enter'da o'girilmaydi: parol odatda Enter bilan tugaydi (choy1990 + Enter → çoy1990 bo'lib qolmasin).
-/// - Win32 parol maydoni, terminal, kod muharriri, parol menejeri, masofaviy ish stoli, admin oynada o'chiq.
+/// - Win32 parol maydoni, terminal, parol menejeri, masofaviy ish stoli, admin oynada o'chiq.
+/// - Kod muharrirlarida — kod rejimi: faqat qo'shtirnoq "…" ichidagi matn o'giriladi (TokenBuffer.CodeMode).
 /// - Sichqoncha bosilsa, strelka/Home/End/Tab/Esc yoki boshqa oyna — so'z unutiladi (noto'g'ri joyni almashtirmaslik uchun).
 /// </summary>
 internal sealed class AutoType : IDisposable
 {
+    /// <summary>Kod muharrirlari — kod rejimi (faqat "…" ichi), Ctrl+V o'girilmaydi.</summary>
+    private static readonly HashSet<string> CodeEditors = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "Code", "Code - Insiders", "VSCodium", "Cursor", "Windsurf", "Trae", "Kiro", "devenv", "rider64", "idea64",
+        "pycharm64", "webstorm64", "phpstorm64", "clion64", "goland64", "rubymine64", "datagrip64", "dataspell64",
+        "fleet", "studio64", "eclipse", "netbeans64", "sublime_text", "zed", "notepad++", "atom", "brackets",
+        "gvim", "neovide", "nvim-qt", "emacs", "runemacs", "lapce", "geany", "kate", "ssms", "azuredatastudio",
+        "HeidiSQL", "DBeaver", "Postman", "Insomnia",
+    };
+
+    /// <summary>Umuman o'chiq: buyruqlar, parollar, boshqa kompyuter.</summary>
     private static readonly HashSet<string> BlockedProcesses = new(StringComparer.OrdinalIgnoreCase)
     {
-        // kod muharrirlari (Enter/Tab avtoto'ldirish, kod buziladi)
-        "Code", "Code - Insiders", "Cursor", "devenv", "rider64", "idea64", "pycharm64", "webstorm64", "phpstorm64",
-        "clion64", "goland64", "studio64", "sublime_text", "zed",
         // terminallar
         "WindowsTerminal", "cmd", "powershell", "pwsh", "conhost", "putty", "mintty", "wsl",
         // parol menejerlari, masofaviy ish stoli, virtual mashinalar
@@ -36,7 +45,8 @@ internal sealed class AutoType : IDisposable
     private readonly LowLevelProc _keyProc, _mouseProc; // GC yig'ib olmasligi uchun maydonda
     private IntPtr _keyHook, _mouseHook;
     private IntPtr _lastWindow;
-    private bool _allowed;
+    private enum Mode { Off, Prose, Code }
+    private Mode _mode;
     private readonly byte[] _keyState = new byte[256];
     private readonly StringBuilder _chars = new(8);
 
@@ -238,10 +248,11 @@ internal sealed class AutoType : IDisposable
         if (fg != _lastWindow)
         {
             _lastWindow = fg;
-            _allowed = IsAllowedWindow(fg);
+            _mode = WindowMode(fg);
+            _word.CodeMode = _mode == Mode.Code;
             _word.Reset();
         }
-        if (!_allowed) return false;
+        if (_mode == Mode.Off) return false;
 
         int vk = (int)k.vkCode;
         // Modifier'lar, NumLock/ScrollLock/Pause, ovoz va media tugmalari kursorni siljitmaydi — so'zga ta'sir qilmaydi.
@@ -250,7 +261,7 @@ internal sealed class AutoType : IDisposable
             return false;
 
         // Ctrl+V: qo'yilayotgan matn (probel yoki yangi qatori bo'lsa) ham o'giriladi.
-        if (vk == VK_V && allowReplace && InputSender.IsDown(VK_CONTROL) && !InputSender.IsDown(VK_MENU) &&
+        if (vk == VK_V && allowReplace && _mode == Mode.Prose && InputSender.IsDown(VK_CONTROL) && !InputSender.IsDown(VK_MENU) &&
             !InputSender.IsDown(VK_LWIN) && !InputSender.IsDown(VK_RWIN) && !IsPasswordFocus(fg))
         {
             _word.Reset();
@@ -276,11 +287,14 @@ internal sealed class AutoType : IDisposable
                 _word.Reset();
                 return false;
             case VK_RETURN: // ataylab o'girilmaydi — parollar Enter bilan tugaydi
+            case 0x24:      // Home
+                _word.ResetNewLine(); // kursor qator boshida — kod rejimida qo'shtirnoqdan tashqari ekani aniq
+                return false;
             case VK_TAB:
             case VK_ESCAPE:
             case VK_DELETE:
             case VK_INSERT:
-            case >= 0x21 and <= 0x28: // PgUp, PgDn, End, Home, strelkalar
+            case >= 0x21 and <= 0x28: // PgUp, PgDn, End, strelkalar
                 _word.Reset();
                 return false;
         }
@@ -289,7 +303,16 @@ internal sealed class AutoType : IDisposable
 #if DEBUG
         Log.Write($"[debug] vk=0x{vk:X2} char={(c is char d ? d.ToString() : "null")} buf='{_word.Current}'");
 #endif
-        if (c is char ch && !char.IsControl(ch) && !char.IsWhiteSpace(ch)) _word.Add(ch);
+        if (c is char ch && !char.IsControl(ch) && !char.IsWhiteSpace(ch))
+        {
+            // Kod rejimi: qo'shtirnoq yopilyapti — oldingi so'zni o'girib, keyin " ni o'zimiz yozamiz.
+            if (ch == '"' && allowReplace && _word.TryCompleteBeforeQuote(out int del, out string word))
+            {
+                SendReplacement(del, word, '"');
+                return true;
+            }
+            _word.Add(ch);
+        }
         else _word.Reset();
         return false;
     }
@@ -298,15 +321,20 @@ internal sealed class AutoType : IDisposable
     {
         if (IsPasswordFocus(fg)) { _word.Reset(); return false; }
         if (!_word.TryComplete(out int deleteCount, out string replacement)) return false;
+        SendReplacement(deleteCount, replacement, ' ');
+        return true;
+    }
 
-        // Backspace × so'z uzunligi, keyin yangi so'z va probel (Unicode sifatida — klaviatura tartibiga bog'liq emas).
+    /// <summary>Backspace × N, keyin yangi so'z va ushlangan belgi (Unicode — klaviatura tartibiga bog'liq emas).</summary>
+    private void SendReplacement(int deleteCount, string replacement, char trailing)
+    {
         var inputs = new List<INPUT>(deleteCount * 2 + replacement.Length * 2 + 2);
         for (int i = 0; i < deleteCount; i++)
         {
             inputs.Add(Key(VK_BACK, false));
             inputs.Add(Key(VK_BACK, true));
         }
-        foreach (char ch in replacement + " ")
+        foreach (char ch in replacement + trailing)
         {
             inputs.Add(Unicode(ch, false));
             inputs.Add(Unicode(ch, true));
@@ -315,7 +343,6 @@ internal sealed class AutoType : IDisposable
         Log.Write($"[debug] almashtirish: del={deleteCount} -> '{replacement}' ({inputs.Count} tugma)");
 #endif
         SendDeferred(inputs.ToArray(), "almashtirish");
-        return true;
     }
 
     private const int PasteRestoreDelayMs = 500;
@@ -336,16 +363,21 @@ internal sealed class AutoType : IDisposable
             if (text != null && text.Any(char.IsWhiteSpace))
             {
                 List<(string, byte[])>? extras = null;
-                string conv;
-                if (ConvertEngine.TryTelegram(_clip, out var tgOld, out var tgNew, out var tgTags))
+                string? conv = null;
+                bool hasCode = text.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries).Any(CodeGuard.LooksLikeCode);
+                if (hasCode && _clip.ReadNamed(TelegramTags.TextFormat) != null)
+                {
+                    // Telegram'da kod qo'yilyapti — stillarni buzmaslik uchun umuman tegmaymiz (conv = null)
+                }
+                else if (ConvertEngine.TryTelegram(_clip, out var tgOld, out var tgNew, out var tgTags))
                 {
                     text = tgOld;
                     conv = tgNew;
                     extras = new() { (TelegramTags.TextFormat, Encoding.UTF8.GetBytes(tgNew)), (TelegramTags.TagsFormat, tgTags) };
                 }
-                else conv = Transliterator.ToNewAlphabet(text);
+                else conv = CodeGuard.ConvertProse(text); // kod parchasi bo'lsa — identifikatorlarga tegmaydi
 
-                if (conv != text)
+                if (conv != null && conv != text)
                 {
                     snapshot = _clip.Save();
                     ours = _clip.SetText(conv, extras);
@@ -388,19 +420,22 @@ internal sealed class AutoType : IDisposable
         return n == 1 ? _chars[0] : null;
     }
 
-    private static bool IsAllowedWindow(IntPtr hwnd)
+    private static Mode WindowMode(IntPtr hwnd)
     {
-        if (hwnd == IntPtr.Zero) return false;
+        if (hwnd == IntPtr.Zero) return Mode.Off;
         GetWindowThreadProcessId(hwnd, out uint pid);
-        if (pid == (uint)Process.GetCurrentProcess().Id) return false; // o'z oynalarimiz (hotkey maydoni)
+        if (pid == (uint)Process.GetCurrentProcess().Id) return Mode.Off; // o'z oynalarimiz (hotkey maydoni)
+        string name;
         try
         {
             using var p = Process.GetProcessById((int)pid);
-            if (BlockedProcesses.Contains(p.ProcessName)) return false;
+            name = p.ProcessName;
         }
-        catch (ArgumentException) { return false; }
-        catch (InvalidOperationException) { return false; }
-        return !ConvertEngine.IsTerminalWindow(hwnd) && !ConvertEngine.IsElevatedWindow(hwnd);
+        catch (ArgumentException) { return Mode.Off; }
+        catch (InvalidOperationException) { return Mode.Off; }
+        if (BlockedProcesses.Contains(name) || ConvertEngine.IsTerminalWindow(hwnd) || ConvertEngine.IsElevatedWindow(hwnd))
+            return Mode.Off;
+        return CodeEditors.Contains(name) ? Mode.Code : Mode.Prose;
     }
 
     /// <summary>Klassik Win32 parol maydoni (ES_PASSWORD). Brauzerlardagi parol maydonida probel kam bo'ladi.</summary>

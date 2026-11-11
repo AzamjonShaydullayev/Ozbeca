@@ -16,7 +16,8 @@ param(
     [int]$FastDelay = 35,      # tez yozuvchi
     [string]$Exe = '',
     [switch]$DryRun,           # ilovalarni ochmasdan: jumlalar va kutilgan natijalarni ko'rsatadi
-    [int]$Limit = 0            # 0 — hammasi; aks holda faqat birinchi N jumla (tez tekshiruv uchun)
+    [int]$Limit = 0,           # 0 — hammasi; aks holda faqat birinchi N jumla (tez tekshiruv uchun)
+    [string]$Only = ''         # faqat shu ilova(lar), masalan: -Only VS   yoki   -Only Notepad
 )
 $ErrorActionPreference = 'Stop'
 $OutputEncoding = [Console]::OutputEncoding = [Text.Encoding]::UTF8
@@ -87,6 +88,26 @@ if (-not (Test-Path $Exe)) { Write-Host "XATO: $Exe topilmadi. Avval: dotnet bui
 
 # ---------------- Kutilgan natija: dasturning o'z kodi ----------------
 [void][Reflection.Assembly]::LoadFrom($Exe)
+function Get-ExpectedCode([string]$typed) {
+    $tb = New-Object Ozbeca.Core.TokenBuffer
+    $tb.CodeMode = $true                       # oyna almashganda — holat noma'lum (Enter'gacha hech narsa o'girilmaydi)
+    $out = New-Object System.Text.StringBuilder
+    foreach ($c in $typed.ToCharArray()) {
+        $del = 0; $rep = ''
+        if ($c -eq ' ') {
+            if ($tb.TryComplete([ref]$del, [ref]$rep)) { [void]$out.Remove($out.Length - $del, $del); [void]$out.Append($rep) }
+            [void]$out.Append(' ')
+        }
+        elseif ($c -eq "`n") { $tb.ResetNewLine(); [void]$out.Append("`n") }
+        elseif ($c -eq "`b") { $tb.Backspace(); if ($out.Length) { [void]$out.Remove($out.Length - 1, 1) } }
+        elseif ($c -eq '"' -and $tb.TryCompleteBeforeQuote([ref]$del, [ref]$rep)) {
+            [void]$out.Remove($out.Length - $del, $del); [void]$out.Append($rep).Append('"')
+        }
+        else { $tb.Add($c); [void]$out.Append($c) }
+    }
+    return $out.ToString()
+}
+
 function Get-Expected([string]$typed) {
     $tb = New-Object Ozbeca.Core.TokenBuffer
     $out = New-Object System.Text.StringBuilder
@@ -234,6 +255,7 @@ $rows = [System.Collections.Generic.List[object]]::new()
 $sw = [Diagnostics.Stopwatch]::StartNew()
 try {
     foreach ($app in $Apps) {
+        if ($Only -and $app.Name -notlike "*$Only*") { continue }
         foreach ($speed in @(@{ N = 'oddiy'; D = $Delay }, @{ N = 'tez'; D = $FastDelay })) {
             if ($speed.N -eq 'tez' -and $app.Relaxed) { continue }   # Word'da faqat oddiy tezlik
             if ([E2E]::Aborted) { break }
@@ -286,17 +308,40 @@ try {
         }
     }
 
-    # VS Code: avto-yozish O'CHIQ bo'lishi kerak (kod muharriri)
+    # VS Code: kod rejimi — faqat "..." ichi o'giriladi; kod, izoh va kalit so'zlar o'zgarmaydi.
+    # .js fayl: VS Code qo'shtirnoq/qavslarni o'zi yopadi va yopuvchi belgi yozilganda ustidan yozadi.
     $code = Join-Path $env:LOCALAPPDATA 'Programs\Microsoft VS Code\Code.exe'
-    if ((Test-Path $code) -and -not [E2E]::Aborted) {
-        Write-Host "== VS Code (o'girmasligi kerak)" -ForegroundColor Cyan
-        $f = Join-Path $Work "e2e_vscode_$Stamp.txt"; [IO.File]::WriteAllText($f, '')
-        Start-Process $code -ArgumentList '-n', "`"$f`""; Wait-Ms 7000; [void]$ws.AppActivate("e2e_vscode_$Stamp"); Wait-Ms 800
-        $typed = "choy shahar o'zbek "
-        [void][E2E]::Type($typed, $Delay, 30); Wait-Ms 700
-        $got = Read-All
-        $good = (Normalize $got $false) -eq (Normalize $typed $false)
-        $rows.Add([pscustomobject]@{ App = 'VS Code (o''chiq)'; Speed = 'oddiy'; Kind = 'yozish'; Interfered = $false; Ok = $good; Typed = $typed; Expected = $typed; Got = $got; Window = [E2E]::FgTitle() })
+    $CodeCases = @(
+        "`nconsole.log(`"Bugun choy ichdik`");`n",
+        "`nlet msg = `"Toshkent shahri, O'zbekiston`";`n",
+        "`nconst shahar_id = 5; // choy izoh`n",
+        "`ntry { push(); } catch (e) { match(); }`n",
+        "`nalert(`"shirin choy`" + name);`n",
+        "x = `"choy shahar`";`n"            # Enter'siz boshlanadi: holat noma'lum — o'girilmasligi kerak
+    )
+    if ((Test-Path $code) -and -not [E2E]::Aborted -and (-not $Only -or 'VS Code' -like "*$Only*")) {
+        Write-Host "== VS Code (kod rejimi: faqat qo'shtirnoq ichi)" -ForegroundColor Cyan
+        $f = Join-Path $Work "e2e_vscode_$Stamp.js"; [IO.File]::WriteAllText($f, '')
+        Start-Process $code -ArgumentList '-n', "`"$f`""; Wait-Ms 8000
+        $title = "e2e_vscode_$Stamp"
+        $pass = 0
+        foreach ($typed in $CodeCases) {
+            if ([E2E]::EscDown()) { break }
+            [void]$ws.AppActivate($title); Wait-Ms 300
+            Clear-Field
+            # Oyna faollashganda holat noma'lum bo'lishi uchun: sichqonchasiz — boshqa oynaga o'tib-qaytish o'rniga
+            # har keys "`n" bilan boshlanadi (oxirgisidan tashqari)
+            [void][E2E]::Type($typed, $Delay, 30); Wait-Ms 800
+            $window = [E2E]::FgTitle()
+            $got = Read-All
+            $exp = Get-ExpectedCode $typed
+            $good = (Normalize $got $false).Trim() -eq (Normalize $exp $false).Trim()
+            $interfered = $window -notlike "*$title*"
+            if ($good) { $pass++ }
+            $rows.Add([pscustomobject]@{ App = 'VS Code (kod rejimi)'; Speed = 'oddiy'; Kind = 'yozish'; Interfered = $interfered; Ok = $good; Typed = $typed; Expected = $exp; Got = $got; Window = $window })
+            Write-Host -NoNewline $(if ($good) { '.' } elseif ($interfered) { '?' } else { 'X' }) -ForegroundColor $(if ($good) { 'Green' } elseif ($interfered) { 'Yellow' } else { 'Red' })
+        }
+        Write-Host ("  {0}/{1}" -f $pass, $CodeCases.Count)
         [E2E]::Chord(1, 0x53); Wait-Ms 400; [E2E]::Chord(5, 0x57); Wait-Ms 1000   # Ctrl+S, Ctrl+Shift+W
     }
 }
