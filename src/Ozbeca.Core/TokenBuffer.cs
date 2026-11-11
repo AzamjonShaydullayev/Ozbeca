@@ -27,6 +27,11 @@ public sealed class TokenBuffer
     private StringBuilder? _raw;
     private readonly StringBuilder _line = new(); // qator boshidan beri yozilgan (kod rejimi uchun)
     private bool _overflow;
+    // Qaytarish (TryUndo): oxirgi probelda so'z o'girilgan bo'lsa — ekrandagi va user yozgan ko'rinishi.
+    // Faqat keyingi tugmagacha yashaydi: darhol Backspace bosilsa so'z asliga qaytadi.
+    private string? _undoFrom, _undoTo;
+    private string? _undone;                      // hozirgina qaytarilgan so'z — probeli o'chirilsa bufferga qaytadi
+    private string? _keep;                        // user o'girishni rad etgan so'z: o'zgarmaguncha qayta o'girilmaydi
     private bool _lineKnown;                      // qator boshidan beri hamma narsani ko'rdikmi
     private bool _inString;
     private bool _codeMode;
@@ -61,6 +66,8 @@ public sealed class TokenBuffer
 
     public void Backspace()
     {
+        string? undone = _undone;
+        ForgetUndo();
         if (_raw != null)
         {
             // Asl va ekrandagi oxirgi harf bir xil bo'lsa — ikkalasidan o'chadi; aks holda (ş ↔ sh) asl shaklni unutamiz.
@@ -68,6 +75,13 @@ public sealed class TokenBuffer
             else _raw = null;
         }
         if (_sb.Length > 0) _sb.Length--;
+        else if (undone != null && !_overflow)
+        {
+            // Qaytarilgan so'zdan keyingi probel o'chirildi — so'z yana qo'lda: xatosi tuzatilsa odatdagidek
+            // o'giriladi, o'zgarmasa — tegilmaydi (user uni shu holicha xohladi).
+            _sb.Append(undone);
+            _keep = undone;
+        }
         else _overflow = true; // undan oldingi matnni bilmaymiz — bu so'zni o'girmaymiz
 
         if (_line.Length == 0) { _lineKnown = false; return; }
@@ -79,6 +93,7 @@ public sealed class TokenBuffer
     /// <summary>Probel/Enter bo'lmagan, ko'rinadigan belgi.</summary>
     public void Add(char c)
     {
+        ForgetUndo();
         AppendLine(c);
         if (_codeMode && c == '"' && !IsEscaped(_line.Length - 1))
         {
@@ -98,9 +113,34 @@ public sealed class TokenBuffer
     /// </summary>
     public bool TryComplete(out int deleteCount, out string replacement)
     {
+        string screen = _sb.ToString();
+        string typed = _raw?.ToString() ?? screen;
+        bool overflow = _overflow;
         bool ok = TryConvertWord(out deleteCount, out replacement);
         AppendLine(' ');
+        // Ekrandagi so'z user yozganidan farq qiladi (hozir yoki oldinroq pauzada o'girilgan) — qaytarish mumkin.
+        string final = ok ? replacement : screen;
+        if (!overflow && final != typed) { _undoFrom = final; _undoTo = typed; }
         return ok;
+    }
+
+    /// <summary>
+    /// Backspace bosildi. Undan oldingi tugma so'zni o'girgan probel bo'lsa — o'girish qaytariladi:
+    /// chaqiruvchi deleteCount ta belgini o'chirib, replacement ni (asl so'z + probel) yozadi va Backspace'ni yutadi.
+    /// Qaytarilgan so'z o'sha ko'rinishida qayta o'girilmaydi. false — odatdagidek Backspace() chaqirilsin.
+    /// </summary>
+    public bool TryUndo(out int deleteCount, out string replacement)
+    {
+        deleteCount = 0;
+        replacement = "";
+        if (_undoFrom == null || _undoTo == null) return false;
+        string from = _undoFrom, to = _undoTo;
+        ClearWord();
+        deleteCount = from.Length + 1; // so'z + probel
+        replacement = to + " ";
+        ReplaceLineEnd(deleteCount, replacement);
+        _undone = to;
+        return true;
     }
 
     /// <summary>
@@ -139,14 +179,19 @@ public sealed class TokenBuffer
     /// </summary>
     public bool TryConvertAtPause(out int deleteCount, out string replacement)
     {
+        deleteCount = 0;
+        replacement = "";
+        if (_sb.Length == 0) return false; // so'z yo'q (probeldan keyin) — holatga, jumladan qaytarish imkoniga tegmaymiz
         string screen = _sb.ToString();
         string? raw = _raw?.ToString();
+        string? keep = _keep;
         bool overflow = _overflow;
         // Lug'atsiz: so'z hali tugamagan bo'lishi mumkin ("yoq" + "imli" — yo'q emas). Lug'at probelda ishlaydi.
         bool ok = TryConvertWord(out deleteCount, out replacement, dictionary: false);
         _sb.Append(ok ? replacement : screen);
         if (ok || raw != null) _raw = new StringBuilder(raw ?? screen);
         _overflow = overflow;
+        _keep = keep;
         return ok;
     }
 
@@ -155,10 +200,11 @@ public sealed class TokenBuffer
         string screen = _sb.ToString();
         string word = _raw?.ToString() ?? screen; // lug'at asl yozilgan so'zni tekshiradi
         bool overflow = _overflow;
+        bool kept = _keep != null && word == _keep; // user shu so'zning o'girilishini hozirgina qaytargan
         ClearWord();
         deleteCount = 0;
         replacement = "";
-        if (overflow || word.Length == 0) return false;
+        if (overflow || kept || word.Length == 0) return false;
         if (_codeMode && !InString) return false;        // kod: faqat qo'shtirnoq ichi
         if (CodeGuard.LooksLikeCode(word)) return false; // kod yozilyapti — tegmaymiz
 
@@ -166,15 +212,19 @@ public sealed class TokenBuffer
         if (converted == screen) return false;
         deleteCount = screen.Length;
         replacement = converted;
+        ReplaceLineEnd(deleteCount, converted);
+        return true;
+    }
 
-        // Qatordagi so'zni ham almashtiramiz — keyingi backspace'lar ekrandagi matn bilan mos kelsin.
+    /// <summary>Qator oxiridagi matnni ham almashtiramiz — keyingi backspace'lar ekrandagi matn bilan mos kelsin.</summary>
+    private void ReplaceLineEnd(int deleteCount, string text)
+    {
         if (_line.Length >= deleteCount)
         {
             _line.Length -= deleteCount;
-            foreach (char ch in converted) AppendLine(ch);
+            foreach (char ch in text) AppendLine(ch);
         }
         else _lineKnown = false;
-        return true;
     }
 
     private void ClearWord()
@@ -182,7 +232,11 @@ public sealed class TokenBuffer
         _sb.Clear();
         _raw = null;
         _overflow = false;
+        _keep = null;
+        ForgetUndo();
     }
+
+    private void ForgetUndo() => _undoFrom = _undoTo = _undone = null;
 
     private void AppendLine(char c)
     {

@@ -147,7 +147,7 @@ Hech narsa qilish shart emas — odatdagidek yozing:
 | `Yaxshimisan?` + Enter | `Yaxşimisan?` |
 | Ctrl+V: `Bog'da choy ichdik` | `Boğda çoy içdik` |
 
-- So'z o'zgarishini istamasangiz — <kbd>Ctrl</kbd>+<kbd>Z</kbd>.
+- So'z o'zgarishini istamasangiz — darhol <kbd>Backspace</kbd>: so'z yozganingizdek qaytadi (`çeck` → `check`) va qayta o'girilmaydi.
 - Vaqtincha o'chirish: <img src="docs/icon.png" width="14" alt="Ö"> belgisi ustida o'ng tugma → **Yozish paytida o'girish**.
 
 ### ⚡ Tayyor matnni o'girish
@@ -254,7 +254,7 @@ Batafsil: [docs/M4_SINOV.md](docs/M4_SINOV.md).
 <summary><b>Keraksiz so'z o'zgarib ketdi</b></summary>
 <br>
 
-<kbd>Ctrl</kbd>+<kbd>Z</kbd> — so'z qaytadi. Inglizcha yozayotgan bo'lsangiz (`check` → `çeck`), Ö belgisi ustida o'ng tugma → **Yozish paytida o'girish** ni vaqtincha o'chiring yoki sozlamalarda **Qaysi dasturlarda** faqat kerakli dasturlarni belgilang.
+So'z o'zgargan zahoti <kbd>Backspace</kbd> ni bosing — u yozganingizdek qaytadi va qayta o'girilmaydi. Ko'p inglizcha yozayotgan bo'lsangiz (`check` → `çeck`), Ö belgisi ustida o'ng tugma → **Yozish paytida o'girish** ni vaqtincha o'chiring yoki sozlamalarda **Qaysi dasturlarda** faqat kerakli dasturlarni belgilang.
 </details>
 
 <details>

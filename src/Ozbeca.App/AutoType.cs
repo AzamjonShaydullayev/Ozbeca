@@ -381,6 +381,12 @@ internal sealed class AutoType : IDisposable
         {
             case VK_BACK:
                 if (_dead != null) { ResetWord(); return false; } // dead key bekor qilindi — nima o'chganini bilmaymiz
+                // O'girilgan so'zdan keyin darhol Backspace — o'girish qaytadi (check → çeck → check), Backspace yutiladi.
+                if (_word.TryUndo(out int undoDel, out string undoText))
+                {
+                    Replace(undoDel, undoText, Array.Empty<INPUT>());
+                    return true;
+                }
                 _word.Backspace();
                 ArmPause();
                 return false;

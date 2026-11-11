@@ -159,6 +159,102 @@ public class TokenBufferTests
     public void ProseModeTreatsQuotesAsText() =>
         Assert.Equal("Bu \"çoy\" şirin ", Simulate("Bu \"choy\" shirin ", code: false));
 
+    // ---- Backspace bilan qaytarish ----
+
+    /// <summary>Ekran modeli: probel — so'z tugadi, '\b' — Backspace (AutoType kabi avval TryUndo).</summary>
+    private sealed class Typist
+    {
+        public readonly TokenBuffer B = new();
+        public string Screen = "";
+
+        public Typist Type(string keys)
+        {
+            foreach (char c in keys)
+            {
+                if (c == ' ')
+                {
+                    if (B.TryComplete(out int del, out string rep)) Swap(del, rep);
+                    Screen += ' ';
+                }
+                else if (c == '\b')
+                {
+                    if (B.TryUndo(out int del, out string rep)) Swap(del, rep);
+                    else { B.Backspace(); Screen = Screen.Substring(0, Screen.Length - 1); }
+                }
+                else { B.Add(c); Screen += c; }
+            }
+            return this;
+        }
+
+        public Typist Pause()
+        {
+            if (B.TryConvertAtPause(out int del, out string rep)) Swap(del, rep);
+            return this;
+        }
+
+        private void Swap(int del, string rep) => Screen = Screen.Substring(0, Screen.Length - del) + rep;
+    }
+
+    [Theory]
+    [InlineData("check \b", "check ")]                 // o'girildi (çeck) → Backspace → asliga qaytdi, probel joyida
+    [InlineData("ozbek \b", "ozbek ")]                 // lug'at tuzatishi ham qaytadi
+    [InlineData("Men check \b", "Men check ")]
+    [InlineData("check \b\b", "check")]                // ikkinchi Backspace — odatdagidek probelni o'chiradi
+    [InlineData("check \b\b ", "check ")]              // qaytarilgan so'z qayta o'girilmaydi
+    [InlineData("check \bqildim ", "check qildim ")]   // keyingi so'zlar odatdagidek
+    [InlineData("check \bchoy ", "check çoy ")]
+    [InlineData("shahr \b\b\bar ", "şahar ")]          // qaytarib, xatosi tuzatilgan so'z — o'giriladi
+    [InlineData("check \b\b\bk ", "check ")]           // o'chirib, o'sha harfni qayta yozdi — hamon rad etilgan so'z
+    [InlineData("maktab \b", "maktab")]                // o'girilmagan so'z — oddiy Backspace
+    [InlineData("choy n\b\b", "çoy")]                  // orada boshqa tugma bosildi — qaytarish yo'q
+    [InlineData("choy \b\b\b ", "ço ")]                // qaytarilgan so'z qisqartirildi — endi boshqa so'z, o'giriladi
+    public void BackspaceUndoesConversion(string keys, string expected) => Assert.Equal(expected, new Typist().Type(keys).Screen);
+
+    [Fact]
+    public void UndoRestoresWhatWasTypedBeforePause()
+    {
+        // Sekin yozuvchi: pauzada "organiş", probelda lug'at bilan "örganiş" — Backspace user yozganini qaytaradi.
+        var t = new Typist().Type("organish").Pause();
+        Assert.Equal("organiş", t.Screen);
+        Assert.Equal("örganiş ", t.Type(" ").Screen);
+        Assert.Equal("organish ", t.Type("\b").Screen);
+
+        // Pauzada o'girilib, probelda o'zgarmagan so'z ham qaytadi.
+        t = new Typist().Type("check").Pause().Type(" ");
+        Assert.Equal("çeck ", t.Screen);
+        Assert.Equal("check ", t.Type("\b").Screen);
+    }
+
+    [Fact]
+    public void PauseDoesNotBreakUndo()
+    {
+        // Probeldan keyin pauza taymeri ishlasa ham qaytarish imkoni qoladi.
+        Assert.Equal("check ", new Typist().Type("check ").Pause().Type("\b").Screen);
+        // Qaytarilgan so'z pauzada ham qayta o'girilmaydi; o'zgartirilsa — o'giriladi.
+        var t = new Typist().Type("check \b\b").Pause();
+        Assert.Equal("check", t.Screen);
+        Assert.Equal("çecks", t.Type("s").Pause().Screen);
+    }
+
+    [Fact]
+    public void UndoIsForgottenOnReset()
+    {
+        var t = new Typist().Type("check ");
+        t.B.Reset(); // sichqoncha, boshqa oyna
+        Assert.False(t.B.TryUndo(out _, out _));
+    }
+
+    [Fact]
+    public void UndoWorksInsideCodeString()
+    {
+        var t = new Typist();
+        t.B.CodeMode = true;
+        t.B.ResetNewLine();
+        Assert.Equal("x = \"çoy ", t.Type("x = \"choy ").Screen);
+        Assert.Equal("x = \"choy ", t.Type("\b").Screen);
+        Assert.True(t.B.InString);
+    }
+
     [Fact]
     public void ResetForgetsAndCompleteClears()
     {
