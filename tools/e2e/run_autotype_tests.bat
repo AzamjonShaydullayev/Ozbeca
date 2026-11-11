@@ -1,14 +1,13 @@
 @echo off
-chcp 65001 >nul
-title Ozbeca — avto-yozish sinovi
+title Ozbeca - avto-yozish sinovi
 cd /d "%~dp0..\.."
 
 echo.
 echo  ============================================================
-echo   Ozbeca — "yozish paytida o'girish" sinovi
+echo   Ozbeca - "yozish paytida o'girish" sinovi
 echo  ============================================================
-echo   * Notepad, Chrome va Word o'zi ochiladi, matnlar o'zi yoziladi.
-echo   * Sinov ~25-35 daqiqa davom etadi.
+echo   * Notepad, Chrome, Word va VS Code o'zi ochiladi, matnlar o'zi yoziladi.
+echo   * Sinov taxminan 25-35 daqiqa davom etadi.
 echo   * Bu vaqtda klaviatura va sichqonchaga TEGMANG.
 echo   * Klaviatura tartibi ENG (inglizcha) bo'lsin.
 echo   * To'xtatish uchun: Esc
