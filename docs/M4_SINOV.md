@@ -29,6 +29,18 @@ Sinovlar avtomatik skript bilan o'tkazildi. Har sinovda noyob matn ishlatildi (`
 
 **Terminal xavfsizligi:** `ping -t` ishlab turganda hotkey bosilsa, dastur faqat Ctrl+Insert va Shift+Insert yuboradi. Ping to'xtamadi (Windows Terminal ✓, cmd ✓).
 
+### v1.1.0 (.NET Framework 4.8, ~0.1 MB) — qayta sinov, 2026-11-11
+
+Jadvaldagi hamma ilovalar yangi exe bilan qayta sinaldi: Notepad, Word, Excel (2 rejim), Chrome (input, textarea), VS Code (tanlov bor va yo'q), Windows Terminal, cmd, Explorer. Natijalar avvalgidek ✓.
+
+O'rnatish oynasi toza holatdan sinaldi. Exe'ga "internetdan yuklangan" belgisi qo'yilgan holda ham tekshirildi:
+- dastur `%LocalAppData%\Programs\Ozbeca` ga ko'chiriladi va o'sha belgi nusxadan olib tashlanadi;
+- `Özbeça.lnk` yorliqlari ish stoli va Start menyusida yaratiladi;
+- avtomatik ishga tushirish yoqiladi;
+- yorliq bosilsa, ishlab turgan nusxada sozlamalar ochiladi.
+
+Bu sinovda topilgan xato: .NET Framework'ning `File.Delete` funksiyasi `fayl:Zone.Identifier` yo'lini qabul qilmaydi, shuning uchun o'rnatish to'xtab qolardi. Windows'ning `DeleteFile` funksiyasiga o'tildi.
+
 ## Sinov davomida topilgan va tuzatilgan xatolar
 
 1. **Word — himoyalangan ko'rinish (Protected View).** Bu rejimda Ctrl+C umuman ishlamaydi, shuning uchun dastur "Matn belgilanmagan" der edi. Xatoni user topdi.

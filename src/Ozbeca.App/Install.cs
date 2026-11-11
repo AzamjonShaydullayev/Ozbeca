@@ -29,7 +29,7 @@ internal static class Install
         File.Copy(Compat.ProcessPath!, Exe, overwrite: true);
         // Internetdan yuklangan belgisi (Zone.Identifier) nusxaga ham o'tadi — user faylni allaqachon ochgan,
         // qayta SmartScreen so'ramasligi uchun olib tashlaymiz (installerlar ham shunday qiladi).
-        try { File.Delete(Exe + ":Zone.Identifier"); } catch (IOException) { }
+        Native.DeleteFile(Exe + ":Zone.Identifier"); // oqim bo'lmasa — shunchaki false qaytaradi
     }
 
     /// <summary>
