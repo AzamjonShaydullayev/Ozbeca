@@ -2,7 +2,7 @@
 
 > **Yangi chatda birinchi bo'lib shu faylni to'liq o'qing.** Unda loyihaning joriy holati, qabul qilingan
 > qarorlar (va ularning sababi), ish tartibi, sinov usullari va oldingi sessiyalarda o'rganilgan saboqlar bor.
-> Oxirgi yangilanish: **2026-11-11**: v1.3.0 dan keyin tutuqsiz so'zlar lug'ati qo'shildi (release hali chiqmagan).
+> Oxirgi yangilanish: **2026-11-11**, v1.4.0 release chiqqandan keyin (lug'at + tez yozish tuzatishlari).
 
 ---
 
@@ -11,13 +11,13 @@
 | | |
 |---|---|
 | **Nima** | Windows uchun tray dasturi: o'zbekcha matnni 2026-yilgi yangi lotin alifbosiga (Ö Ğ Ş Ç) o'giradi |
-| **Oxirgi versiya** | **v1.3.0** — https://github.com/AzamjonShaydullayev/Ozbeca/releases/tag/v1.3.0 |
+| **Oxirgi versiya** | **v1.4.0** — https://github.com/AzamjonShaydullayev/Ozbeca/releases/tag/v1.4.0 (exe 249 KB, `484ad9e`) |
 | **Repo** | https://github.com/AzamjonShaydullayev/Ozbeca (**ochiq**), branch `main`, lokal: `D:\projects\ozbeca` |
 | **Platforma** | C#, WPF, **.NET Framework 4.8** (Windows 10/11 ichida bor) — bitta `Ozbeca.exe`, ~135 KB |
 | **Testlar** | 422 unit test (xUnit, .NET 8) + real ilovalarda E2E: 402/408 |
 | **Bosqichlar** | M1–M5 (asl reja) tugadi; undan keyin: avto-yozish, Ctrl+V, kod rejimi, premium UI, o'rnatish oynasi; v1.3.0 — pauzada o'girish, o'zini yangilash, UAC tuzatishi |
-| **Foydalanuvchining kompyuteri** | **v1.3.0 o'rnatilgan va ishlab turibdi** (`%LocalAppData%\Programs\Ozbeca`, sinov paytida v1.2.0 dan yangilangan; build commit `de2555e`'dan oldingi — release exe bilan bir xil kod) |
-| **Kutilayotgan fikr** | User v1.3.0 ni **boshqa kompyuterga** beradi (u yerda v1.2.0'da avto-yozish ishlamagan, Ctrl+Alt+O ishlagan). Ishlamasa — o'sha kompyuterning `%AppData%\Ozbeca\ozbeca.log` ini so'rang |
+| **Foydalanuvchining kompyuteri** | **v1.3.0 o'rnatilgan** (`%LocalAppData%\Programs\Ozbeca`). v1.4.0 ni ochsa — o'zi yangilanadi |
+| **Kutilayotgan fikr** | User v1.4.0 ni **boshqa kompyuterga** beradi (Telegram'da tez yozish, Ctrl+V+Enter, `to'g'irlaç` muammolari). Ishlamasa — o'sha kompyuterning `%AppData%\Ozbeca\ozbeca.log` i va klaviatura layouti (US-International?) so'ralsin |
 
 Ishlash yo'llari:
 1. **Belgilab o'girish:** matnni belgilab <kbd>Ctrl+Alt+O</kbd> (clipboard orqali almashtirish).
@@ -286,6 +286,6 @@ dotnet build src/Ozbeca.App -c Release        # → src/Ozbeca.App/bin/Release/n
 4. **Microsoft Store** (MSIX, bepul individual akkaunt) — ko'k SmartScreen oynasisiz o'rnatish; user akkaunti kerak.
 5. Excel/Telegram uchun E2E kengaytirish; Win10 (Mica'siz) ko'rinishini tekshirish; qorong'i mavzuda skrinshot.
 6. Yangi imlo qoidalari e'lon qilinsa — `ng`, tutuq va boshqa qoidalarni qayta tekshirish.
-7. **v1.4.0 release** (lug'at + yakka o' + tuzatishlar) — user ruxsati bilan. `<Version>` 1.4.0 ga oshiriladi.
+7. ~~v1.4.0 release~~ — ✅ chiqdi (2026-11-11). Keyingi release'da `<Version>` ni 1.4.1/1.5.0 ga oshiring.
 8. Lug'at qamrovini real yozishmalarda baholash: user qaysi so'zlar tuzatilmaganini aytsa — sababini tekshirib, kerak bo'lsa
    korpusni kengaytirish (masalan, boshqa Leipzig korpuslari).
