@@ -37,6 +37,25 @@ public class TransliteratorTests
     [InlineData("maktab", "maktab")]
     public void Required(string input, string expected) => Assert.Equal(expected, T(input));
 
+    // https'siz havolalar ham buzilmasin (Telegram'da t.me/... juda ko'p uchraydi).
+    [Theory]
+    [InlineData("Kanal: t.me/shahar_yangiliklari", "Kanal: t.me/shahar_yangiliklari")]
+    [InlineData("shahar.uz saytida choy", "shahar.uz saytida çoy")]
+    [InlineData("kun.uz/news/shahar ni o'qi", "kun.uz/news/shahar ni öqi")]
+    [InlineData("Instagram.com/choyxona, youtu.be/shch", "Instagram.com/choyxona, youtu.be/shch")]
+    [InlineData("(chat.shahar.uz)", "(chat.shahar.uz)")]
+    [InlineData("shahar.uz.", "shahar.uz.")]
+    // Havola emas: nuqtadan keyin probelsiz yozilgan gap, fayl nomi, kasr son.
+    [InlineData("choy ichdim.Shahar katta", "çoy içdim.Şahar katta")]
+    [InlineData("shahar.docx", "şahar.docx")]
+    [InlineData("3.5 choy", "3.5 çoy")]
+    [InlineData("ish.uzoq", "iş.uzoq")]
+    public void BareLinksAreProtected(string input, string expected)
+    {
+        Assert.Equal(expected, T(input));
+        Assert.Equal(expected, T(T(input))); // idempotent
+    }
+
     [Fact]
     public void MultilineKeepsCrLf()
     {

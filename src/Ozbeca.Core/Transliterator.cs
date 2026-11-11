@@ -23,9 +23,12 @@ public static class Transliterator
     /// </summary>
     private static readonly string[] SHStems = { "ishoq", "ashob" };
 
-    // Tegilmaydigan qismlar: URL, email, @username, #hashtag. Email @username'dan oldin turishi shart.
+    // Tegilmaydigan qismlar: URL, email, https'siz havola (t.me/shahar, kun.uz/choy), @username, #hashtag.
+    // Email @username'dan va domendan oldin turishi shart. Domen — faqat tanish zona bilan: "tugadi.Keyin" havola emas.
     private static readonly Regex Protected = new(
-        @"(?:https?://|www\.)\S+|[\w.+-]+@[\w-]+(?:\.[\w-]+)+|[@#]\w+", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+        @"(?:https?://|www\.)\S+|[\w.+-]+@[\w-]+(?:\.[\w-]+)+" +
+        @"|(?<![\w.@-])(?:[\w-]+\.)+(?:uz|com|org|net|ru|me|io|info|biz|edu|gov|tv|app|dev|ai|co|kz|tj|kg|tm|tr|uk|us|de|be|ly)(?![\w-])(?:[/?#]\S*)?" +
+        @"|[@#]\w+", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
     /// <summary>
     /// Tutuqsiz yozilgan so'zlarni lug'at bo'yicha tuzatish (ozbek → özbek, togri → toğri). Sozlamalardan o'chiriladi.
