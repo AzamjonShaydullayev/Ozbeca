@@ -55,3 +55,33 @@ Bu sinovda topilgan xato: .NET Framework'ning `File.Delete` funksiyasi `fayl:Zon
 - **Terminallar:** konvertatsiya qilingan matn belgilangan joy o'rniga emas, kursor turgan joyga qo'yiladi. Terminal kiritish qatoridagi matnni almashtirib bo'lmaydi.
 - **Word'dagi aralash format:** qalin, kursiv yoki rangli qismlar bitta formatga tushadi (HANDOFF 5.1).
 - **Himoyalangan ko'rinishni aniqlash** sarlavha matniga bog'liq: ingliz, rus va o'zbek tillari qo'llab-quvvatlanadi. Boshqa tildagi Office'da umumiy xabar chiqadi.
+
+## Yozish paytida o'girish — v1.2.0 (2026-11-11)
+
+Avtomatik sinov: [`tools/e2e/run_autotype_tests.bat`](../tools/e2e). Unda odamga o'xshab, harfma-harf va Shift bilan yoziladi.
+- 55 ta jumla, ikki tezlikda: 90 ms va 35 ms.
+- Ctrl+V bilan 6 xil matn.
+- Parol maydoni.
+- VS Code kod rejimi.
+
+Kutilgan natija dasturning o'z kodi bilan hisoblanadi.
+
+| Ilova | Oddiy (90 ms) | Juda tez (35 ms) | Ctrl+V |
+|---|---|---|---|
+| Notepad | 55 / 55 | 53 / 55 | 6 / 6 |
+| Chrome textarea | 55 / 55 | 55 / 55 | 6 / 6 |
+| Chrome input | 51 / 51 | 51 / 51 | 5 / 5 |
+| Word | 55 / 55 * | — | 6 / 6 |
+| Chrome parol maydoni (o'girmasligi kerak) | 2 / 2 | | |
+| VS Code (faqat qo'shtirnoq ichi) | 6 / 6 | | |
+
+\* Word'dagi 4 ta mos kelmaslik skriptning o'zida edi: Word nusxa olganda oxiriga bo'sh paragraf va "aqlli probel" qo'shadi. O'girishning o'zi to'g'ri ishlagan, skript tuzatildi.
+
+**Sinov paytida topilgan va tuzatilgan xatolar:**
+- Hook ichida yuborilgan tugmalar hook'dan o'tmaydi, shuning uchun almashtirish hook tugagach yuboriladi.
+- Almashtirish paytida foydalanuvchining keyingi harflari undan oldin kirib qolardi. Endi ular ushlab turiladi va keyin tartib bilan qaytariladi.
+- Windows 11 Notepad tez kelgan Unicode harflarning tartibini almashtirardi, o'chirishdan keyingi birinchi harfni esa tashlab yuborardi. Endi aniq pauzalar va "tinchlanish" vaqti bor.
+- `Thread.Sleep(4)` Windows'da ~15 ms uxlaydi va saqlagich muddatidan oldin ishlab ketardi.
+- Parol maydonida probelli parol buzilishi mumkin edi. Endi UI Automation bilan tekshiriladi.
+
+**Ma'lum holat:** Windows 11 Notepad'ning o'z avto-tuzatishi ba'zi so'zlarni o'zgartiradi (`tört` → `tort`). Bu Özbeça yopiq holda ham sodir bo'ladi.

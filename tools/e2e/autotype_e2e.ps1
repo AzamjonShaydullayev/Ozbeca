@@ -234,6 +234,8 @@ function Normalize([string]$s, [bool]$relaxed) {
     if ($relaxed) {   # Word: aqlli tirnoqlar va gap boshidagi katta harf (Word'ning o'z avto-tuzatishi)
         $s = $s -replace '[\u2018\u2019]', "'" -replace '[\u201C\u201D]', '"'
         $s = $s.ToLowerInvariant()
+        # Word nusxa olganda oxiriga bo'sh paragraf qo'shadi va "aqlli probel" bilan probelni ikkilantiradi
+        $s = ($s -replace '[ \t]+', ' ' -replace ' ?\n ?', "`n").Trim()
     }
     return $s
 }
