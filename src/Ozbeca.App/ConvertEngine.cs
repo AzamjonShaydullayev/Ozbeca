@@ -62,11 +62,11 @@ internal sealed class ConvertEngine
     {
         IntPtr hwnd = GetForegroundWindow();
         if (hwnd == IntPtr.Zero) return;
-        string cls = ClassName(hwnd);
+        string cls = ClassNameOf(hwnd);
         bool terminal = TerminalClasses.Contains(cls);
         Log.Write($"Hotkey: oyna 0x{hwnd:X} class={cls} terminal={terminal}");
 
-        if (!Compat.IsElevatedSelf && IsElevated(hwnd))
+        if (!Compat.IsElevatedSelf && IsElevatedWindow(hwnd))
         {
             Say("Administrator huquqidagi oynada ishlamaydi");
             return;
@@ -178,14 +178,16 @@ internal sealed class ConvertEngine
         return ReadOnlyTitleMarkers.Any(m => title.IndexOf(m, StringComparison.OrdinalIgnoreCase) >= 0);
     }
 
-    private static string ClassName(IntPtr hwnd)
+    internal static bool IsTerminalWindow(IntPtr hwnd) => TerminalClasses.Contains(ClassNameOf(hwnd));
+
+    internal static string ClassNameOf(IntPtr hwnd)
     {
         var sb = new StringBuilder(256);
         return GetClassName(hwnd, sb, sb.Capacity) > 0 ? sb.ToString() : "";
     }
 
     /// <summary>UIPI: elevated oynaga oddiy dastur SendInput yubora olmaydi. Token ochilmasa — elevated deb hisoblaymiz.</summary>
-    private static bool IsElevated(IntPtr hwnd)
+    internal static bool IsElevatedWindow(IntPtr hwnd)
     {
         GetWindowThreadProcessId(hwnd, out uint pid);
         IntPtr proc = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, pid);

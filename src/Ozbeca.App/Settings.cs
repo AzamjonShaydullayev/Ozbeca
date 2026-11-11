@@ -15,6 +15,9 @@ internal sealed class Settings
     [DataMember] public bool ShowToast { get; set; } = true;
     [DataMember] public int RestoreDelayMs { get; set; } = 400;
 
+    /// <summary>Yozish paytida avtomatik o'girish (probel bosilganda). Standart — yoqilgan (user qarori, 2026-11-11).</summary>
+    [DataMember] public bool AutoType { get; set; } = true;
+
     // DataContract konstruktorni chaqirmaydi — faylda yo'q maydonlar standart qiymatda qolsin.
     [OnDeserializing]
     private void SetDefaults(StreamingContext _)
@@ -23,6 +26,7 @@ internal sealed class Settings
         Enabled = true;
         ShowToast = true;
         RestoreDelayMs = 400;
+        AutoType = true;
     }
 
     /// <summary>settings.json hali yo'q — birinchi ishga tushirish (o'rnatish oynasi ko'rsatiladi).</summary>

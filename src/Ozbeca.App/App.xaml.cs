@@ -1,4 +1,4 @@
-using System.Windows;
+﻿using System.Windows;
 using WinForms = System.Windows.Forms;
 
 namespace Ozbeca.App;
@@ -15,7 +15,8 @@ public partial class App : Application
     private HotkeyService _hotkey = null!;
     private ConvertEngine _engine = null!;
     private WinForms.NotifyIcon _tray = null!;
-    private WinForms.ToolStripMenuItem _enabledItem = null!, _autostartItem = null!;
+    private WinForms.ToolStripMenuItem _enabledItem = null!, _autostartItem = null!, _autoTypeItem = null!;
+    private readonly AutoType _autoType = new();
     private ToastWindow? _toast;
     private SettingsWindow? _settingsWindow;
 
@@ -60,6 +61,7 @@ public partial class App : Application
         ApplyDelay();
 
         CreateTray();
+        ApplyAutoType();
 
         string? error = ApplyHotkeyState();
         Log.Write($"Ishga tushdi, hotkey {Settings.Hotkey}, yoqilgan={Settings.Enabled}" + (error != null ? $" — {error}" : ""));
@@ -74,6 +76,7 @@ public partial class App : Application
     {
         if (_tray != null) { _tray.Visible = false; _tray.Dispose(); }
         _hotkey?.Dispose();
+        _autoType.Dispose();
         _showEvent?.Dispose();
         _mutex?.ReleaseMutex();
         _mutex?.Dispose();
@@ -155,6 +158,20 @@ public partial class App : Application
         return mods == (Native.MOD_CONTROL | Native.MOD_ALT) && letterOrDigit ? AltGrWarning : null;
     }
 
+    /// <summary>Hook faqat ikkala sozlama yoqilganda o'rnatiladi.</summary>
+    private void ApplyAutoType()
+    {
+        if (Settings.Enabled && Settings.AutoType) _autoType.Start();
+        else _autoType.Stop();
+    }
+
+    internal void SetAutoType(bool on)
+    {
+        Settings.AutoType = on;
+        Settings.Save();
+        ApplyAutoType();
+    }
+
     internal void SuspendHotkey() => _hotkey.Unregister();
     internal string? ResumeHotkey() => ApplyHotkeyState();
     internal void ApplyDelay() => _engine.RestoreDelayMs = Settings.RestoreDelayMs;
@@ -169,14 +186,19 @@ public partial class App : Application
             Settings.Enabled = _enabledItem.Checked;
             Settings.Save();
             string? error = ApplyHotkeyState();
+            ApplyAutoType();
             if (error != null) _tray.ShowBalloonTip(5000, "Özbeça", error, WinForms.ToolTipIcon.Warning);
         };
+
+        _autoTypeItem = new WinForms.ToolStripMenuItem("Yozish paytida o'girish") { CheckOnClick = true };
+        _autoTypeItem.Click += (_, _) => SetAutoType(_autoTypeItem.Checked);
 
         _autostartItem = new WinForms.ToolStripMenuItem("Windows bilan birga ishga tushirish") { CheckOnClick = true };
         _autostartItem.Click += (_, _) => Autostart.Set(_autostartItem.Checked);
 
         var menu = new WinForms.ContextMenuStrip();
         menu.Items.Add(_enabledItem);
+        menu.Items.Add(_autoTypeItem);
         menu.Items.Add("Sozlamalar…", null, (_, _) => ShowSettings());
         menu.Items.Add(_autostartItem);
         menu.Items.Add(new WinForms.ToolStripSeparator());
@@ -184,6 +206,8 @@ public partial class App : Application
         menu.Opening += (_, _) =>
         {
             _enabledItem.Checked = Settings.Enabled;
+            _autoTypeItem.Checked = Settings.AutoType;
+            _autoTypeItem.Enabled = Settings.Enabled;
             _autostartItem.Checked = Autostart.IsEnabled;
         };
 
