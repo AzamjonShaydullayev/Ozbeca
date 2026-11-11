@@ -25,7 +25,6 @@ public partial class SettingsWindow : Window
         ToastToggle.IsChecked = app.Settings.ShowToast;
         ApostropheToggle.IsChecked = app.Settings.RestoreApostrophes;
         AutostartToggle.IsChecked = Autostart.IsEnabled;
-        DelayBox.Text = app.Settings.RestoreDelayMs.ToString();
         VersionText.Text = "Versiya " + Theme.Version;
         ShowHotkey(app.Settings.Hotkey);
         UpdateStatus();
@@ -142,17 +141,6 @@ public partial class SettingsWindow : Window
     }
 
     private void AutostartToggle_Click(object sender, RoutedEventArgs e) => Autostart.Set(AutostartToggle.IsChecked == true);
-
-    private void DelayBox_LostFocus(object sender, KeyboardFocusChangedEventArgs e)
-    {
-        if (int.TryParse(DelayBox.Text, out int ms))
-        {
-            _app.Settings.RestoreDelayMs = Compat.Clamp(ms, 0, 5000);
-            _app.ApplyDelay();
-            _app.Settings.Save();
-        }
-        DelayBox.Text = _app.Settings.RestoreDelayMs.ToString();
-    }
 
     private void Guide_Click(object sender, RoutedEventArgs e) => Open(RepoUrl + "#readme");
     private void Github_Click(object sender, RoutedEventArgs e) => Open(RepoUrl);

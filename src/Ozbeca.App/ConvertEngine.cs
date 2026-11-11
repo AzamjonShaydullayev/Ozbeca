@@ -28,6 +28,7 @@ internal sealed class ConvertEngine
     };
 
     private const int CopyTimeoutMs = 600;
+    private const int OfficeRestoreDelayMs = 1000;
 
     private readonly ClipboardSwap _clip;
     private int _busy;
@@ -125,7 +126,8 @@ internal sealed class ConvertEngine
         if (!sent) Log.Write("SendInput: paste yuborilmadi");
 
         // Office kabi ilovalar clipboard'ni kechroq o'qiydi — shuning uchun darhol tiklanmaydi.
-        Thread.Sleep(RestoreDelayMs);
+        // Office'da avtomatik ko'proq kutiladi (UI'da sozlama yo'q; settings.json'dagi qiymat — eng kami).
+        Thread.Sleep(office ? Math.Max(RestoreDelayMs, OfficeRestoreDelayMs) : RestoreDelayMs);
         // Explorer kabi ba'zilari paste'dan keyin o'sha matnni clipboard'ga qayta yozadi (sequence o'zgaradi).
         // Matn hamon biznikiga teng bo'lsa — bu userning yangi ma'lumoti emas, tiklash xavfsiz.
         if (ClipboardSwap.Sequence == ours || _clip.ReadText() == converted) _clip.Restore(snapshot);

@@ -176,13 +176,12 @@ Sozlamalarni ochish: soat yonidagi **Ö** belgisini yoki ish stolidagi **Özbeç
 
 <p align="center"><img src="docs/settings.png" width="680" alt="Sozlamalar oynasi"></p>
 
-- **Yoqilgan** (yuqori o'ng burchakda) — dasturni butunlay vaqtincha o'chiradi.
-- **Tezkor tugma** — **O'zgartirish** ni bosib, yangi kombinatsiyani bosing. U darhol tekshiriladi: boshqa dastur egallagan bo'lsa, ogohlantirish chiqadi.
-- **Yozilgan so'zni o'zi o'girsin** — yozish paytida avtomatik o'girish.
-- **Tutuqsiz so'zlarni tuzatish** — `ozbek` → `özbek` kabi. Lug'atda ~9 000 so'z bor, ular ochiq o'zbekcha matnlardan olingan. Ikki ma'noli so'zlar (`qol`, `ot`, `bor`) lug'atga kiritilmagan.
-- **O'girilganda xabar ko'rsatish** — "Özbeça ✓" xabari.
-- **Kompyuter yoqilganda ishga tushirish.**
-- **Clipboard'ni tiklash kechikishi** — biror ilovada matn qo'yilmay qolsa, oshiring (masalan, 400 → 800).
+- **Özbeça yoqilgan** (chap paneldagi tugma) — dasturni butunlay vaqtincha o'chiradi.
+- **Belgilab o'girish** — **O'zgartirish** ni bosib, yangi kombinatsiyani bosing. U darhol tekshiriladi: boshqa dastur egallagan bo'lsa, ogohlantirish chiqadi.
+- **Yozish paytida** — yozish paytida avtomatik o'girish.
+- **Tutuqsiz so'zlar** — `ozbek` → `özbek` kabi. Lug'atda ~9 000 so'z bor, ular ochiq o'zbekcha matnlardan olingan. Ikki ma'noli so'zlar (`qol`, `ot`, `bor`) lug'atga kiritilmagan.
+- **Xabar ko'rsatish** — "Özbeça ✓" xabari.
+- **Windows bilan** — kompyuter yoqilganda ishga tushadi.
 
 **Tray menyusi** (Ö belgisi ustida o'ng tugma): Yoqilgan · Yozish paytida o'girish · Kompyuter yoqilganda ishga tushirish · Sozlamalar… · Chiqish.
 
