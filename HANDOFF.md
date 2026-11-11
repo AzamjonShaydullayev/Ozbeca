@@ -195,6 +195,9 @@ dotnet build src/Ozbeca.App -c Release        # → src/Ozbeca.App/bin/Release/n
 - Oxirgi to'liq natija (v1.2.0): **402/408** — Notepad tez 53/55, Word 4 ta (skript artefakti, tuzatildi). Batafsil: `docs/M4_SINOV.md`.
 
 **Muhim shartlar:**
+- ⛔ **User ish stolida E2E yurgizmang** (user, 2026-11-11: "ishlashimga xalaqit qilyapsan"). Sinov klaviatura/sichqonchani
+  10–25 daqiqa egallaydi. Avval mantiqni unit test bilan tekshiring; real sinov faqat **Windows Sandbox / VM** ichida.
+  Bu kompyuterda Sandbox hali yoqilmagan (`WindowsSandbox.exe` yo'q) — yoqishni user o'zi qiladi.
 - Sinov faqat **faol** Windows sessiyasida ishlaydi: `query session` → `Active`. User masofadan ulanib, sessiya `Disc`
   bo'lsa — hech qanday oynaga bosib bo'lmaydi va hamma test "yiqiladi" (bu dastur xatosi emas).
 - Sinov paytida user klaviatura/sichqonchaga tegmasligi kerak; avval userdan so'rang. Skript "aralashuv"ni (boshqa oyna
