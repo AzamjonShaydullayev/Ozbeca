@@ -42,6 +42,13 @@ public static class Transliterator
     public static string ToNewAlphabet(string input, bool dictionary) => Convert(input, null, dictionary);
 
     /// <summary>
+    /// Matn bo'laklab (so'zma-so'z) o'girilganda: quoteOpen — bu bo'lakdan oldin ochilgan, hali yopilmagan
+    /// tirnoq bor ('Yaxshi | tong'). Chiqishda — bo'lak oxiridagi holat, keyingi bo'lakka beriladi.
+    /// </summary>
+    public static string ToNewAlphabet(string input, bool dictionary, ref bool quoteOpen) =>
+        Convert(input, null, dictionary, ref quoteOpen);
+
+    /// <summary>
     /// O'giradi va pozitsiyalar xaritasini qaytaradi: map[i] — kirishdagi i-belgi chiqishda qayerdan boshlanadi,
     /// map[input.Length] — chiqish uzunligi. Stil (qalin, emoji) oraliqlarini yangi matnga ko'chirish uchun.
     /// Kirish NFC bo'lmasa (ajralgan belgilar) xarita null — chaqiruvchi formatsiz yo'lga o'tadi.
@@ -56,6 +63,12 @@ public static class Transliterator
 
     private static string Convert(string input, int[]? map, bool dictionary)
     {
+        bool quoteOpen = false;
+        return Convert(input, map, dictionary, ref quoteOpen);
+    }
+
+    private static string Convert(string input, int[]? map, bool dictionary, ref bool quoteOpen)
+    {
         if (string.IsNullOrEmpty(input))
         {
             if (map != null) map[0] = 0;
@@ -63,18 +76,96 @@ public static class Transliterator
         }
 
         string text = input.Normalize(NormalizationForm.FormC);
+        HashSet<int>? closing = ClosingQuotes(text, ref quoteOpen);
         var sb = new StringBuilder(text.Length);
         int pos = 0;
         foreach (Match m in Protected.Matches(text))
         {
-            ConvertSegment(text, pos, m.Index, sb, map, dictionary);
+            ConvertSegment(text, pos, m.Index, sb, map, dictionary, closing);
             for (int k = 0; k < m.Length && map != null; k++) map[m.Index + k] = sb.Length + k;
             sb.Append(m.Value);
             pos = m.Index + m.Length;
         }
-        ConvertSegment(text, pos, text.Length, sb, map, dictionary);
+        ConvertSegment(text, pos, text.Length, sb, map, dictionary, closing);
         if (map != null) map[text.Length] = sb.Length;
         return sb.ToString();
+    }
+
+    /// <summary>
+    /// So'z oxiridagi g' ikki ma'noli: ğ harfi (bog') yoki g + yopuvchi tirnoq ('Yaxshi tong'). Tirnoq deb olinadi,
+    /// agar undan oldin shu qatorda tirnoq ochilgan (oldida harf yo'q, keyin harf: 'Yaxshi) va yopilmagan bo'lsa:
+    /// - "ng'" — darhol yopuvchi (o'zbekchada ngʻ bilan tugaydigan so'z yo'q: tong, rang, ming);
+    /// - boshqa g' (tog', bog') — keyinroq aniq yopuvchi tirnoq kelmasagina ('Tog' baland' — g' harf, tirnoq oxirida);
+    ///   bir nechta bo'lsa — oxirgisi tirnoq.
+    /// Qaytadi: yopuvchi tirnoq deb topilgan g' dagi tirnoq indekslari. Harfga qo'shilib ketadigan tutuqlar (o' → ö,
+    /// g' → ğ) tirnoq hisoblanmaydi va o'rnida harf turgandek ko'riladi — natija ustidan qayta o'tilsa ham shu chiqadi.
+    /// </summary>
+    private static HashSet<int>? ClosingQuotes(string s, ref bool open)
+    {
+        HashSet<int>? closing = null;
+        int candidate = -1;    // ochiq tirnoq ichidagi oxirgi ikki ma'noli g'
+        bool prevGone = false; // oldingi belgi — harfga qo'shilib ketgan tutuq
+
+        for (int i = 0; i < s.Length; i++)
+        {
+            char c = s[i];
+            bool gone = prevGone;
+            prevGone = false;
+            if (c == '\n') { Resolve(ref open, ref candidate, ref closing); open = false; continue; } // tirnoq qatordan qatorga o'tmaydi
+            if (!IsA(c)) continue;
+            char prev = i > 0 ? s[i - 1] : '\0', next = i + 1 < s.Length ? s[i + 1] : '\0';
+            bool letterAfter = IsLetter(next), wordBefore = gone || IsLetter(prev) || char.IsDigit(prev);
+
+            if (prev is 'o' or 'O')
+            {
+                char p = i > 1 ? s[i - 2] : '\0';
+                if (letterAfter || !IsLetter(p) && !IsA(p)) { prevGone = true; continue; } // 2-qoida: ö
+            }
+            if (prev is 'g' or 'G')
+            {
+                if (!letterAfter && open && !IsA(next))
+                {
+                    if (i > 1 && s[i - 2] is 'n' or 'N')
+                    {
+                        (closing ??= new HashSet<int>()).Add(i); // tong' — yopuvchi; oldingi g' lar harf
+                        open = false;
+                        candidate = -1;
+                    }
+                    else candidate = i;
+                }
+                else prevGone = true; // 3-qoida: ğ
+                continue;
+            }
+
+            if (open && prev is '.' or ',' or '!' or '?' or '…')
+            {
+                open = false; // 'Yaxshi tong!' — tinish belgisidan keyingi tirnoq yopuvchi; oldingi g' lar harf
+                candidate = -1;
+            }
+            else if (!wordBefore && !IsA(prev) && letterAfter)
+            {
+                Resolve(ref open, ref candidate, ref closing); // 'tog' 'salom' — oldingisi shu yerda yopilgan
+                open = true;
+            }
+            else if (open && wordBefore && !letterAfter && !IsA(next))
+            {
+                open = false; // aniq yopuvchi ('kino') — oldingi g' lar harf
+                candidate = -1;
+            }
+        }
+        Resolve(ref open, ref candidate, ref closing);
+        return closing;
+    }
+
+    /// <summary>Ochiq tirnoq yopilmay qoldi: oxirgi ikki ma'noli g' — o'sha yopuvchi tirnoq.</summary>
+    private static void Resolve(ref bool open, ref int candidate, ref HashSet<int>? closing)
+    {
+        if (open && candidate >= 0)
+        {
+            (closing ??= new HashSet<int>()).Add(candidate);
+            open = false;
+        }
+        candidate = -1;
     }
 
     private static bool IsA(char c) => Apostrophes.IndexOf(c) >= 0;
@@ -82,7 +173,7 @@ public static class Transliterator
     // ʻ (U+02BB) va ʼ (U+02BC) Unicode'da "modifier letter" — ularni harf deb hisoblamaymiz.
     private static bool IsLetter(char c) => char.IsLetter(c) && !IsA(c);
 
-    private static void ConvertSegment(string s, int start, int end, StringBuilder sb, int[]? map, bool dictionary)
+    private static void ConvertSegment(string s, int start, int end, StringBuilder sb, int[]? map, bool dictionary, HashSet<int>? closing)
     {
         int segOut = sb.Length;
         char At(int k) => k >= start && k < end ? s[k] : '\0';
@@ -125,9 +216,9 @@ public static class Transliterator
                 continue;
             }
 
-            // 3. g + A → ğ, so'z oxirida ham — lekin so'z ochuvchi tirnoq bilan boshlangan bo'lsa ('tong'),
-            //    oxiridagi A yopuvchi tirnoq deb olinadi (user qarori, 2026-11-10).
-            if ((c == 'g' || c == 'G') && IsA(n1) && (IsLetter(n2) || !OpensWithQuote(s, start, i)))
+            // 3. g + A → ğ, so'z oxirida ham — lekin undan oldin tirnoq ochilgan bo'lsa ('tong', 'Yaxshi tong'),
+            //    oxiridagi A yopuvchi tirnoq deb olinadi (user qarori, 2026-11-10; ibora uchun — ClosingQuotes).
+            if ((c == 'g' || c == 'G') && IsA(n1) && (IsLetter(n2) || closing == null || !closing.Contains(i + 1)))
             {
                 sb.Append(c == 'g' ? 'ğ' : 'Ğ');
                 i += 2;
@@ -226,14 +317,5 @@ public static class Transliterator
             if (i + stem.Length <= end && string.Compare(s, i, stem, 0, stem.Length, StringComparison.OrdinalIgnoreCase) == 0)
                 return stem.Length;
         return null;
-    }
-
-    /// <summary>gIdx dagi harf turgan so'z A-belgi bilan ochilganmi (oldida harf bo'lmagan tirnoq)?</summary>
-    private static bool OpensWithQuote(string s, int start, int gIdx)
-    {
-        int k = gIdx - 1;
-        while (k >= start && (IsLetter(s[k]) || IsA(s[k]))) k--;
-        int first = k + 1; // so'z (harf/tirnoq ketma-ketligi) boshi
-        return first < gIdx && IsA(s[first]);
     }
 }

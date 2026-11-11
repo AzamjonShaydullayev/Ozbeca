@@ -49,6 +49,7 @@ public static class CodeGuard
     {
         if (string.IsNullOrEmpty(text)) return text ?? string.Empty;
         var sb = new StringBuilder(text.Length);
+        bool quoteOpen = false; // 'Yaxshi tong' — tirnoq bir so'zda ochilib, boshqasida yopiladi
         int i = 0;
         while (i < text.Length)
         {
@@ -56,13 +57,15 @@ public static class CodeGuard
             if (char.IsWhiteSpace(text[i]))
             {
                 while (j < text.Length && char.IsWhiteSpace(text[j])) j++;
+                if (text.IndexOf('\n', i, j - i) >= 0) quoteOpen = false; // tirnoq qatordan qatorga o'tmaydi
                 sb.Append(text, i, j - i);
             }
             else
             {
                 while (j < text.Length && !char.IsWhiteSpace(text[j])) j++;
                 string token = text.Substring(i, j - i);
-                sb.Append(LooksLikeCode(token) ? token : Transliterator.ToNewAlphabet(token));
+                sb.Append(LooksLikeCode(token) ? token
+                    : Transliterator.ToNewAlphabet(token, Transliterator.RestoreApostrophes, ref quoteOpen));
             }
             i = j;
         }

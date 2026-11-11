@@ -37,6 +37,41 @@ public class TransliteratorTests
     [InlineData("maktab", "maktab")]
     public void Required(string input, string expected) => Assert.Equal(expected, T(input));
 
+    // Tirnoq ichidagi ibora: oxiridagi g' — ğ emas, g + yopuvchi tirnoq (user xabari, 2026-11-11: 'Yaxshi tong' → tonğ edi).
+    [Theory]
+    [InlineData("'Yaxshi tong'", "'Yaxşi tong'")]
+    [InlineData("U 'Yaxshi tong' dedi", "U 'Yaxşi tong' dedi")]
+    [InlineData("‘Yaxshi tong’", "‘Yaxşi tong’")]
+    [InlineData("'Yaxshi tong!'", "'Yaxşi tong!'")]
+    [InlineData("'Yaxshi tong', dedi u", "'Yaxşi tong', dedi u")]
+    [InlineData("('Yaxshi tong')", "('Yaxşi tong')")]
+    [InlineData("'tong'", "'tong'")]                                        // bitta so'z — avvalgidek
+    [InlineData("'Tog' baland'", "'Toğ baland'")]                           // keyinroq aniq yopuvchi bor — g' harf
+    [InlineData("'Bog'da tong'", "'Boğda tong'")]
+    [InlineData("'tog' va bog'", "'toğ va bog'")]                           // ikki nomzod — oxirgisi tirnoq
+    [InlineData("U 'salom' dedi, bog' katta", "U 'salom' dedi, boğ katta")] // tirnoq yopilgan — keyingi g' harf
+    [InlineData("'Yaxshi tong' va tog'", "'Yaxşi tong' va toğ")]
+    [InlineData("bog' va tog'", "boğ va toğ")]                              // tirnoq ochilmagan
+    [InlineData("'Yaxshi\ntog'", "'Yaxşi\ntoğ")]                            // tirnoq qatordan qatorga o'tmaydi
+    [InlineData("'Salom!' bog'", "'Salom!' boğ")]
+    public void QuotedPhraseEndingWithG(string input, string expected)
+    {
+        Assert.Equal(expected, T(input));
+        Assert.Equal(expected, T(T(input))); // idempotent
+    }
+
+    [Fact]
+    public void QuoteStateCarriesAcrossPieces()
+    {
+        // So'zma-so'z o'girishda (yozish paytida, Ctrl+V) tirnoq holati bo'lakdan bo'lakka o'tadi.
+        bool open = false;
+        Assert.Equal("'Yaxşi", Transliterator.ToNewAlphabet("'Yaxshi", true, ref open));
+        Assert.True(open);
+        Assert.Equal("tong'", Transliterator.ToNewAlphabet("tong'", true, ref open));
+        Assert.False(open);
+        Assert.Equal("tonğ", Transliterator.ToNewAlphabet("tong'", true, ref open)); // endi tirnoq yo'q — harf
+    }
+
     // https'siz havolalar ham buzilmasin (Telegram'da t.me/... juda ko'p uchraydi).
     [Theory]
     [InlineData("Kanal: t.me/shahar_yangiliklari", "Kanal: t.me/shahar_yangiliklari")]

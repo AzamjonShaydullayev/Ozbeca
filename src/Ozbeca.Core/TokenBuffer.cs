@@ -32,6 +32,7 @@ public sealed class TokenBuffer
     private string? _undoFrom, _undoTo;
     private string? _undone;                      // hozirgina qaytarilgan so'z — probeli o'chirilsa bufferga qaytadi
     private string? _keep;                        // user o'girishni rad etgan so'z: o'zgarmaguncha qayta o'girilmaydi
+    private bool _quoteOpen;                      // oldingi so'zlarda tirnoq ochilgan va yopilmagan ('Yaxshi tong')
     private bool _lineKnown;                      // qator boshidan beri hamma narsani ko'rdikmi
     private bool _inString;
     private bool _codeMode;
@@ -52,6 +53,7 @@ public sealed class TokenBuffer
     public void Reset()
     {
         ClearWord();
+        _quoteOpen = false;
         _line.Clear();
         _lineKnown = false;
         _inString = false;
@@ -208,7 +210,11 @@ public sealed class TokenBuffer
         if (_codeMode && !InString) return false;        // kod: faqat qo'shtirnoq ichi
         if (CodeGuard.LooksLikeCode(word)) return false; // kod yozilyapti — tegmaymiz
 
-        string converted = dictionary ? Transliterator.ToNewAlphabet(word) : Transliterator.ToNewAlphabet(word, dictionary: false);
+        // Oldingi so'zlarda ochilgan tirnoq: 'Yaxshi + tong' — oxirgi ' harf (ğ) emas, yopuvchi tirnoq.
+        // Pauzada so'z hali tugamagan — tirnoq holatini o'zgartirmaymiz.
+        bool quote = _quoteOpen;
+        string converted = Transliterator.ToNewAlphabet(word, dictionary && Transliterator.RestoreApostrophes, ref quote);
+        if (dictionary) _quoteOpen = quote;
         if (converted == screen) return false;
         deleteCount = screen.Length;
         replacement = converted;

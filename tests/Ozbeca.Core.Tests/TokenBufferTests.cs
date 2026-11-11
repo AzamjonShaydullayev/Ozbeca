@@ -210,6 +210,27 @@ public class TokenBufferTests
     [InlineData("choy \b\b\b ", "ço ")]                // qaytarilgan so'z qisqartirildi — endi boshqa so'z, o'giriladi
     public void BackspaceUndoesConversion(string keys, string expected) => Assert.Equal(expected, new Typist().Type(keys).Screen);
 
+    // Yozish paytida: tirnoq bir so'zda ochilib, boshqasida yopiladi ('Yaxshi tong' → tonğ bo'lib qolardi).
+    [Theory]
+    [InlineData("'Yaxshi tong' ", "'Yaxşi tong' ")]
+    [InlineData("U 'Yaxshi tong' dedi ", "U 'Yaxşi tong' dedi ")]
+    [InlineData("'Yaxshi tong' bog' ", "'Yaxşi tong' boğ ")]     // tirnoq yopilgach g' yana harf
+    [InlineData("'tong' bog' ", "'tong' boğ ")]
+    [InlineData("'salom' tog' ", "'salom' toğ ")]
+    [InlineData("bog' tong' ", "boğ tonğ ")]                     // tirnoq ochilmagan
+    public void QuotedPhraseWhileTyping(string keys, string expected) => Assert.Equal(expected, new Typist().Type(keys).Screen);
+
+    [Fact]
+    public void QuoteStateSurvivesPauseAndIsForgottenOnReset()
+    {
+        // Pauza tirnoq holatini o'zgartirmaydi: tong' pauzada ham, probelda ham tirnoq bo'lib qoladi.
+        Assert.Equal("'Yaxşi tong' ", new Typist().Type("'Yaxshi tong'").Pause().Type(" ").Screen);
+        // Sichqoncha / boshqa oyna — oldingi matnni bilmaymiz: g' yana harf.
+        var t = new Typist().Type("'Yaxshi ");
+        t.B.Reset();
+        Assert.Equal("'Yaxşi tonğ ", t.Type("tong' ").Screen);
+    }
+
     [Fact]
     public void UndoRestoresWhatWasTypedBeforePause()
     {

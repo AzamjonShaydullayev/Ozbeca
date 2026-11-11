@@ -47,6 +47,8 @@ public class CodeGuardTests
     [InlineData("var shahar_choy = getChoy(); // shirin choy", "var shahar_choy = getChoy(); // şirin çoy")]
     [InlineData("if (x) { choy(); }", "if (x) { choy(); }")]
     [InlineData("shahar.uz saytida choy", "shahar.uz saytida çoy")]
+    [InlineData("U 'Yaxshi tong' dedi, bog' katta", "U 'Yaxşi tong' dedi, boğ katta")]  // tirnoq so'zdan so'zga o'tadi
+    [InlineData("'Yaxshi\r\ntog' baland", "'Yaxşi\r\ntoğ baland")]                      // lekin qatordan qatorga emas
     [InlineData("", "")]
     public void ConvertProse(string input, string expected) => Assert.Equal(expected, CodeGuard.ConvertProse(input));
 
