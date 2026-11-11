@@ -22,6 +22,7 @@ public partial class SettingsWindow : Window
         EnabledToggle.IsChecked = app.Settings.Enabled;
         AutoTypeToggle.IsChecked = app.Settings.AutoType;
         ToastToggle.IsChecked = app.Settings.ShowToast;
+        ApostropheToggle.IsChecked = app.Settings.RestoreApostrophes;
         AutostartToggle.IsChecked = Autostart.IsEnabled;
         DelayBox.Text = app.Settings.RestoreDelayMs.ToString();
         VersionText.Text = "Versiya " + Theme.Version;
@@ -125,6 +126,13 @@ public partial class SettingsWindow : Window
     // ---- Qolgan sozlamalar ----
 
     private void AutoTypeToggle_Click(object sender, RoutedEventArgs e) => _app.SetAutoType(AutoTypeToggle.IsChecked == true);
+
+    private void ApostropheToggle_Click(object sender, RoutedEventArgs e)
+    {
+        _app.Settings.RestoreApostrophes = ApostropheToggle.IsChecked == true;
+        Ozbeca.Core.Transliterator.RestoreApostrophes = _app.Settings.RestoreApostrophes;
+        _app.Settings.Save();
+    }
 
     private void ToastToggle_Click(object sender, RoutedEventArgs e)
     {

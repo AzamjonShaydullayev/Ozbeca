@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -26,7 +27,16 @@ public static class Transliterator
     private static readonly Regex Protected = new(
         @"(?:https?://|www\.)\S+|[\w.+-]+@[\w-]+(?:\.[\w-]+)+|[@#]\w+", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
-    public static string ToNewAlphabet(string input) => Convert(input, null);
+    /// <summary>
+    /// Tutuqsiz yozilgan so'zlarni lug'at bo'yicha tuzatish (ozbek → özbek, togri → toğri). Sozlamalardan o'chiriladi.
+    /// Faqat bir ma'noli so'zlar — WordList.
+    /// </summary>
+    public static bool RestoreApostrophes { get; set; } = true;
+
+    public static string ToNewAlphabet(string input) => Convert(input, null, RestoreApostrophes);
+
+    /// <param name="dictionary">false — lug'atsiz (masalan, pauzada: so'z hali tugamagan, "yoq|imli").</param>
+    public static string ToNewAlphabet(string input, bool dictionary) => Convert(input, null, dictionary);
 
     /// <summary>
     /// O'giradi va pozitsiyalar xaritasini qaytaradi: map[i] — kirishdagi i-belgi chiqishda qayerdan boshlanadi,
@@ -36,12 +46,12 @@ public static class Transliterator
     public static string ToNewAlphabet(string input, out int[]? map)
     {
         input ??= string.Empty;
-        if (!input.IsNormalized(NormalizationForm.FormC)) { map = null; return Convert(input, null); }
+        if (!input.IsNormalized(NormalizationForm.FormC)) { map = null; return Convert(input, null, RestoreApostrophes); }
         map = new int[input.Length + 1];
-        return Convert(input, map);
+        return Convert(input, map, RestoreApostrophes);
     }
 
-    private static string Convert(string input, int[]? map)
+    private static string Convert(string input, int[]? map, bool dictionary)
     {
         if (string.IsNullOrEmpty(input))
         {
@@ -54,12 +64,12 @@ public static class Transliterator
         int pos = 0;
         foreach (Match m in Protected.Matches(text))
         {
-            ConvertSegment(text, pos, m.Index, sb, map);
+            ConvertSegment(text, pos, m.Index, sb, map, dictionary);
             for (int k = 0; k < m.Length && map != null; k++) map[m.Index + k] = sb.Length + k;
             sb.Append(m.Value);
             pos = m.Index + m.Length;
         }
-        ConvertSegment(text, pos, text.Length, sb, map);
+        ConvertSegment(text, pos, text.Length, sb, map, dictionary);
         if (map != null) map[text.Length] = sb.Length;
         return sb.ToString();
     }
@@ -69,10 +79,11 @@ public static class Transliterator
     // ʻ (U+02BB) va ʼ (U+02BC) Unicode'da "modifier letter" — ularni harf deb hisoblamaymiz.
     private static bool IsLetter(char c) => char.IsLetter(c) && !IsA(c);
 
-    private static void ConvertSegment(string s, int start, int end, StringBuilder sb, int[]? map)
+    private static void ConvertSegment(string s, int start, int end, StringBuilder sb, int[]? map, bool dictionary)
     {
         int segOut = sb.Length;
         char At(int k) => k >= start && k < end ? s[k] : '\0';
+        HashSet<int>? missing = dictionary ? MissingApostrophes(s, start, end) : null;
 
         int i = start;
         while (i < end)
@@ -90,6 +101,14 @@ public static class Transliterator
                 for (int k = 0; k < len && map != null; k++) map[i + k] = sb.Length + (k < 2 ? k : k + 1);
                 sb.Append(s, i, 2).Append(Tutuq).Append(s, i + 2, len - 2);
                 i += len;
+                continue;
+            }
+
+            // 1a. Lug'at: tutuqsiz yozilgan o/g (ozbek, togri) — bitta belgi bitta belgiga, xarita o'zgarmaydi.
+            if (missing != null && missing.Contains(i))
+            {
+                sb.Append(c switch { 'o' => 'ö', 'O' => 'Ö', 'g' => 'ğ', _ => 'Ğ' });
+                i++;
                 continue;
             }
 
@@ -131,6 +150,68 @@ public static class Transliterator
             sb.Append(c);
             i++;
         }
+    }
+
+    /// <summary>
+    /// Segmentdagi so'zlarni lug'atdan qidiradi va tutuqi tushib qolgan o/g indekslarini qaytaradi
+    /// (Ozbekiston → {0}, to'gri → {2}). So'z = harf va tutuqlar ketma-ketligi; chetdagi tirnoqlar olinmaydi.
+    /// </summary>
+    private static HashSet<int>? MissingApostrophes(string s, int start, int end)
+    {
+        HashSet<int>? result = null;
+        int i = start;
+        while (i < end)
+        {
+            if (!IsLetter(s[i]) && !IsA(s[i])) { i++; continue; }
+            int a = i;
+            while (i < end && (IsLetter(s[i]) || IsA(s[i]))) i++;
+            int b = i;
+            while (a < b && IsA(s[a])) a++;                                              // ochuvchi tirnoq
+            while (b > a && IsA(s[b - 1]) && !(b - 2 >= a && (s[b - 2] == 'g' || s[b - 2] == 'G'))) b--; // yopuvchi (bog' emas)
+            if (b - a >= 3) MarkWord(s, a, b, ref result);
+        }
+        return result;
+    }
+
+    private static void MarkWord(string s, int a, int b, ref HashSet<int>? result)
+    {
+        var key = new StringBuilder(b - a);
+        for (int k = a; k < b; k++)
+        {
+            char c = char.ToLowerInvariant(s[k]);
+            if (IsA(c))
+            {
+                if (key.Length > 0 && (key[key.Length - 1] == 'o' || key[key.Length - 1] == 'g')) continue;
+                key.Append('\'');
+            }
+            else if (c >= 'a' && c <= 'z') key.Append(c);
+            else return; // boshqa harf (ö, ş, kirill) — lug'at so'zi emas
+        }
+        string? form = WordList.Lookup(key.ToString());
+        if (form == null) return;
+
+        // Yozilgan so'zni to'g'ri shakl bilan yonma-yon yurib, tutuqi tushib qolgan o/g larni topamiz.
+        List<int>? marks = null;
+        int j = 0;
+        for (int k = a; k < b; k++)
+        {
+            char c = char.ToLowerInvariant(s[k]);
+            if (IsA(c))
+            {
+                if (j < form.Length && form[j] == '\'') { j++; continue; }
+                return;
+            }
+            if (j >= form.Length || form[j] != c) return;
+            j++;
+            if ((c == 'o' || c == 'g') && j < form.Length && form[j] == '\'' && !(k + 1 < b && IsA(s[k + 1])))
+            {
+                (marks ??= new List<int>()).Add(k);
+                j++;
+            }
+        }
+        if (j != form.Length || marks == null) return;
+        result ??= new HashSet<int>();
+        result.UnionWith(marks);
     }
 
     /// <summary>Ko'rinishi bir xil boshqa belgilar: ș/Ș (U+0219/U+0218, vergulli) → ş/Ş.</summary>

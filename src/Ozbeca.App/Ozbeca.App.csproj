@@ -2,7 +2,7 @@
 
   <!--
     .NET Framework 4.8 — Windows 10/11 ichida allaqachon bor: foydalanuvchi hech narsa o'rnatmaydi,
-    exe esa ~0.1 MB (self-contained .NET 8 da 68 MB edi).
+    exe esa ~0.25 MB, shundan ~0.1 MB tutuqsiz so'zlar lug'ati (self-contained .NET 8 da 68 MB edi).
   -->
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
@@ -23,6 +23,7 @@
   <ItemGroup>
     <!-- Core kodi exe ichiga kiradi — alohida DLL bo'lmasin (bitta fayl). -->
     <Compile Include="..\Ozbeca.Core\*.cs" Link="Core\%(Filename)%(Extension)" />
+    <EmbeddedResource Include="..\Ozbeca.Core\words.txt" LogicalName="Ozbeca.words.txt" Link="Core\words.txt" />
   </ItemGroup>
 
   <ItemGroup>

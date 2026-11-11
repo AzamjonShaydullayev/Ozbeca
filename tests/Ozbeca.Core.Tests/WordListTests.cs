@@ -1,0 +1,79 @@
+using Ozbeca.Core;
+
+namespace Ozbeca.Core.Tests;
+
+/// <summary>Tutuqsiz yozilgan so'zlar lug'ati (ozbek → özbek) — faqat bir ma'noli so'zlar.</summary>
+public class WordListTests
+{
+    private static string T(string s) => Transliterator.ToNewAlphabet(s, dictionary: true);
+
+    [Theory]
+    [InlineData("ozbek", "özbek")]
+    [InlineData("Ozbekiston", "Özbekiston")]
+    [InlineData("OZBEKISTON", "ÖZBEKISTON")]
+    [InlineData("ozbekistonda", "özbekistonda")]
+    [InlineData("kop", "köp")]
+    [InlineData("togri", "töğri")]
+    [InlineData("to'gri", "töğri")]              // faqat g' tushib qolgan
+    [InlineData("tog'ri", "töğri")]              // faqat o' tushib qolgan
+    [InlineData("ogil", "öğil")]
+    [InlineData("bolgan boladi boldi", "bölgan böladi böldi")]
+    [InlineData("garbiy Fargona", "ğarbiy Farğona")]
+    [InlineData("boyicha korinadi", "böyiça körinadi")]
+    [InlineData("Men Ozbekistonda yashayman, bu togri.", "Men Özbekistonda yaşayman, bu töğri.")]
+    [InlineData("'ozbek'", "'özbek'")]            // tirnoq ichida ham
+    public void FixesMissingApostrophe(string input, string expected) => Assert.Equal(expected, T(input));
+
+    // Ikki ma'noli: tutuqsiz shakli ham haqiqiy so'z — tegilmaydi.
+    [Theory]
+    [InlineData("qol")]       // qol / qo'l
+    [InlineData("ot otdi")]   // ot / o't
+    [InlineData("bor")]       // bor / bo'r
+    [InlineData("oz")]        // oz / o'z
+    [InlineData("tort")]      // tort / to'rt
+    [InlineData("yoq soz")]   // yoq / yo'q, soz / so'z
+    [InlineData("bola olim")] // bola / bo'la, olim / o'lim
+    public void LeavesAmbiguousWords(string input) => Assert.Equal(input, T(input));
+
+    [Fact]
+    public void SpoonIsNotSong() => Assert.Equal("qoşiq", T("qoshiq")); // qoshiq (qoshiq) ≠ qo'shiq — faqat sh → ş
+
+    [Theory]
+    [InlineData("song bug yoga boom")]               // inglizcha so'zlar
+    [InlineData("kino maktab dengiz")]
+    public void LeavesOtherWords(string input) => Assert.Equal(input, T(input));
+
+    [Fact]
+    public void CanBeTurnedOff() => Assert.Equal("ozbek", Transliterator.ToNewAlphabet("ozbek", dictionary: false));
+
+    [Fact]
+    public void KeepsUrlsAndMentions() =>
+        Assert.Equal("https://ozbek.uz @ozbek özbek", T("https://ozbek.uz @ozbek ozbek"));
+
+    [Fact]
+    public void MapStaysOneToOne()
+    {
+        // Telegram stillari uchun: o → ö bitta belgi bitta belgiga.
+        string text = Transliterator.ToNewAlphabet("ozbek kop", out var map);
+        Assert.Equal("özbek köp", text);
+        Assert.NotNull(map);
+        for (int i = 0; i <= 9; i++) Assert.Equal(i, map![i]);
+    }
+
+    [Theory]
+    [InlineData("ozbek togri bolgan")]
+    [InlineData("OZBEKISTON")]
+    public void Idempotent(string input) => Assert.Equal(T(input), T(T(input)));
+
+    [Fact]
+    public void PauseDoesNotUseDictionary()
+    {
+        // "yoq" + pauza + "imli" — so'z hali tugamagan, pauzada lug'at ishlamaydi.
+        var b = new TokenBuffer();
+        foreach (char c in "kop") b.Add(c);
+        Assert.False(b.TryConvertAtPause(out _, out _));
+        Assert.True(b.TryComplete(out int del, out string rep)); // probelda — ishlaydi
+        Assert.Equal(3, del);
+        Assert.Equal("köp", rep);
+    }
+}

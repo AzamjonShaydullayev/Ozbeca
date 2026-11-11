@@ -18,6 +18,9 @@ internal sealed class Settings
     /// <summary>Yozish paytida avtomatik o'girish (probel bosilganda). Standart — yoqilgan (user qarori, 2026-11-11).</summary>
     [DataMember] public bool AutoType { get; set; } = true;
 
+    /// <summary>Tutuqsiz so'zlarni lug'at bo'yicha tuzatish (ozbek → özbek). Standart — yoqilgan (user qarori, 2026-11-11).</summary>
+    [DataMember] public bool RestoreApostrophes { get; set; } = true;
+
     // DataContract konstruktorni chaqirmaydi — faylda yo'q maydonlar standart qiymatda qolsin.
     [OnDeserializing]
     private void SetDefaults(StreamingContext _)
@@ -27,6 +30,7 @@ internal sealed class Settings
         ShowToast = true;
         RestoreDelayMs = 400;
         AutoType = true;
+        RestoreApostrophes = true;
     }
 
     /// <summary>settings.json hali yo'q — birinchi ishga tushirish (o'rnatish oynasi ko'rsatiladi).</summary>

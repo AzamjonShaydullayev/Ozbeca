@@ -131,13 +131,14 @@ public sealed class TokenBuffer
     {
         string word = _sb.ToString();
         bool overflow = _overflow;
-        bool ok = TryConvertWord(out deleteCount, out replacement);
+        // Lug'atsiz: so'z hali tugamagan bo'lishi mumkin ("yoq" + "imli" — yo'q emas). Lug'at probelda ishlaydi.
+        bool ok = TryConvertWord(out deleteCount, out replacement, dictionary: false);
         _sb.Append(ok ? replacement : word);
         _overflow = overflow;
         return ok;
     }
 
-    private bool TryConvertWord(out int deleteCount, out string replacement)
+    private bool TryConvertWord(out int deleteCount, out string replacement, bool dictionary = true)
     {
         string word = _sb.ToString();
         bool overflow = _overflow;
@@ -148,7 +149,7 @@ public sealed class TokenBuffer
         if (_codeMode && !InString) return false;        // kod: faqat qo'shtirnoq ichi
         if (CodeGuard.LooksLikeCode(word)) return false; // kod yozilyapti — tegmaymiz
 
-        string converted = Transliterator.ToNewAlphabet(word);
+        string converted = dictionary ? Transliterator.ToNewAlphabet(word) : Transliterator.ToNewAlphabet(word, dictionary: false);
         if (converted == word) return false;
         deleteCount = word.Length;
         replacement = converted;

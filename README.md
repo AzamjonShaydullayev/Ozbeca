@@ -141,7 +141,8 @@ Probelsiz Enter bosilsa ham oxirgi so'z o'giriladi (`Yaxshimisan?` + Enter → `
 - **Tutuq belgisining hamma xilini taniydi:** `'` `` ` `` `’` `‘` `ʻ` `ʼ` `´` `′`. Kim qanday yozgan bo'lsa ham, `o'`, `o‘`, `o`` va boshqalar `ö` ga aylanadi.
 - **Kerakmas joyga tegmaydi.** Havolalar, email, `@username` va `#hashtag` o'zgarmaydi. Tirnoqni tutuq deb adashtirmaydi: `'kino'` va `'tong'` shundayligicha qoladi.
 - **Clipboard'ingiz buzilmaydi.** Oldin nima nusxalagan bo'lsangiz, o'girishdan keyin o'sha joyida qoladi. Win+V tarixiga ortiqcha narsa tushmaydi.
-- **Yengil.** Bitta 0.1 MB fayl, internetga ulanmaydi, administrator huquqi so'ramaydi.
+- **Tutuqsiz yozilganini ham tuzatadi.** `ozbek`, `togri`, `kop` → `özbek`, `töğri`, `köp`. Faqat bir ma'noli so'zlar: `qol` (qol/qo'l), `ot` (ot/o't), `bor` (bor/bo'r) kabilarga tegilmaydi.
+- **Yengil.** Bitta ~0.25 MB fayl, internetga ulanmaydi, administrator huquqi so'ramaydi.
 
 ---
 
@@ -156,6 +157,9 @@ Probelsiz Enter bosilsa ham oxirgi so'z o'giriladi (`Yaxshimisan?` + Enter → `
 | `ma'no`, `san'at`, `she'r` | `maʼno`, `sanʼat`, `şeʼr` | harflar orasidagi tutuq → rasmiy **ʼ** |
 | `Is'hoq`, `as'hob` | `Isʼhoq`, `asʼhob` | s va h alohida tovush bo'lsa, ş bo'lmaydi |
 | `Ishoq`, `ashob` | `Isʼhoq`, `asʼhob` | tutuqsiz yozilgani ham tuzatiladi |
+| `ozbek`, `togri`, `Fargona` | `özbek`, `töğri`, `Farğona` | tutuqsiz yozilgan so'z — lug'at bo'yicha tuzatiladi |
+| `qol`, `ot`, `bor`, `yoq` | o'zgarmaydi | ikki ma'noli (qol/qo'l, ot/o't) — qaysi biri ekanini bilib bo'lmaydi |
+| `o' harfi` | `ö harfi` | yakka o' ham |
 | `tong`, `keng`, `dengiz` | o'zgarmaydi | **ng** o'z holicha qoladi |
 | `Bu 'kino' edi`, `'tong'` | o'zgarmaydi | tirnoq tutuq deb olinmaydi |
 | `https://shop.uz/choy`, `info@shahar.uz` | o'zgarmaydi | havola va email |
@@ -175,6 +179,7 @@ Sozlamalarni ochish: soat yonidagi **Ö** belgisini yoki ish stolidagi **Özbeç
 - **Yoqilgan** (yuqori o'ng burchakda) — dasturni butunlay vaqtincha o'chiradi.
 - **Tezkor tugma** — **O'zgartirish** ni bosib, yangi kombinatsiyani bosing. U darhol tekshiriladi: boshqa dastur egallagan bo'lsa, ogohlantirish chiqadi.
 - **Yozilgan so'zni o'zi o'girsin** — yozish paytida avtomatik o'girish.
+- **Tutuqsiz so'zlarni tuzatish** — `ozbek` → `özbek` kabi. Lug'atda ~9 000 so'z bor, ular ochiq o'zbekcha matnlardan olingan. Ikki ma'noli so'zlar (`qol`, `ot`, `bor`) lug'atga kiritilmagan.
 - **O'girilganda xabar ko'rsatish** — "Özbeça ✓" xabari.
 - **Kompyuter yoqilganda ishga tushirish.**
 - **Clipboard'ni tiklash kechikishi** — biror ilovada matn qo'yilmay qolsa, oshiring (masalan, 400 → 800).
@@ -284,7 +289,9 @@ Terminal kiritilgan matnni almashtirishga imkon bermaydi — o'girilgan matn kur
 
 ## 🛠️ Dasturchilar uchun
 
-C#, WPF, **.NET Framework 4.8** — u Windows 10/11 tarkibida bor, shuning uchun exe ~0.1 MB. O'girish mantig'i alohida, Windows'ga bog'liq bo'lmagan `netstandard2.0` kutubxonada va 380 dan ortiq unit test bilan himoyalangan; bu kod exe ichiga kompilyatsiya qilinadi.
+C#, WPF, **.NET Framework 4.8** — u Windows 10/11 tarkibida bor, shuning uchun exe ~0.25 MB. O'girish mantig'i alohida, Windows'ga bog'liq bo'lmagan `netstandard2.0` kutubxonada va 420 dan ortiq unit test bilan himoyalangan; bu kod exe ichiga kompilyatsiya qilinadi.
+
+Tutuqsiz so'zlar lug'ati (`src/Ozbeca.Core/words.txt`) `tools/wordlist/build_wordlist.py` bilan yasalgan. Manba — [Leipzig Corpora Collection](https://wortschatz.uni-leipzig.de/) (uzb_community_2017, uzb_wikipedia_2021_100K, CC BY 4.0). Ikki ma'noli so'zlarni chiqarib tashlash uchun [uz-hunspell](https://github.com/uzbek-net/uz-hunspell) faqat tekshiruvda ishlatiladi.
 
 ```
 src/Ozbeca.Core/         Transliterator (qoidalar), TokenBuffer (yozish paytida, kod rejimi),
@@ -293,6 +300,7 @@ src/Ozbeca.App/          AutoType (klaviatura hook'i), ConvertEngine (hotkey), C
                          sozlamalar, o'rnatish oynasi, toast, tray
 tests/Ozbeca.Core.Tests/ xUnit testlar (.NET 8)
 tools/e2e/               real ilovalarda avtomatik sinov: run_autotype_tests.bat
+tools/wordlist/          tutuqsiz so'zlar lug'atini yasash (korpusdan)
 tools/                   ikonka va README rasmlarini yasash
 ```
 

@@ -70,6 +70,8 @@ public partial class App : Application
         _autoType = new AutoType(_hotkey.Handle);
         _engine.Notify += msg => Dispatcher.BeginInvoke(() => Toast(msg));
         ApplyDelay();
+        Ozbeca.Core.Transliterator.RestoreApostrophes = Settings.RestoreApostrophes;
+        ThreadPool.QueueUserWorkItem(_ => Ozbeca.Core.Transliterator.ToNewAlphabet("ozbek")); // lug'atni oldindan yuklash
 
         CreateTray();
         ApplyAutoType();

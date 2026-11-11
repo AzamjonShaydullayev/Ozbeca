@@ -95,6 +95,15 @@
         <Border Style="{StaticResource Group}">
             <StackPanel>
                 <Border Style="{StaticResource Row}">
+                    <CheckBox x:Name="ApostropheToggle" Style="{StaticResource Toggle}" Click="ApostropheToggle_Click">
+                        <StackPanel>
+                            <TextBlock Text="Tutuqsiz so'zlarni tuzatish" Style="{StaticResource RowTitle}" />
+                            <TextBlock Style="{StaticResource RowHint}"
+                                       Text="ozbek → özbek, togri → toğri. Faqat bir ma'noli so'zlar: ot, qol, bor kabilarga tegilmaydi." />
+                        </StackPanel>
+                    </CheckBox>
+                </Border>
+                <Border Style="{StaticResource Row}">
                     <CheckBox x:Name="ToastToggle" Style="{StaticResource Toggle}" Click="ToastToggle_Click">
                         <StackPanel>
                             <TextBlock Text="O'girilganda xabar ko'rsatish" Style="{StaticResource RowTitle}" />

@@ -2,7 +2,7 @@
 
 > **Yangi chatda birinchi bo'lib shu faylni to'liq o'qing.** Unda loyihaning joriy holati, qabul qilingan
 > qarorlar (va ularning sababi), ish tartibi, sinov usullari va oldingi sessiyalarda o'rganilgan saboqlar bor.
-> Oxirgi yangilanish: **2026-11-11**, v1.3.0 release chiqqandan keyin.
+> Oxirgi yangilanish: **2026-11-11**: v1.3.0 dan keyin tutuqsiz so'zlar lug'ati qo'shildi (release hali chiqmagan).
 
 ---
 
@@ -14,7 +14,7 @@
 | **Oxirgi versiya** | **v1.3.0** — https://github.com/AzamjonShaydullayev/Ozbeca/releases/tag/v1.3.0 |
 | **Repo** | https://github.com/AzamjonShaydullayev/Ozbeca (**ochiq**), branch `main`, lokal: `D:\projects\ozbeca` |
 | **Platforma** | C#, WPF, **.NET Framework 4.8** (Windows 10/11 ichida bor) — bitta `Ozbeca.exe`, ~135 KB |
-| **Testlar** | 385 unit test (xUnit, .NET 8) + real ilovalarda E2E: 402/408 |
+| **Testlar** | 422 unit test (xUnit, .NET 8) + real ilovalarda E2E: 402/408 |
 | **Bosqichlar** | M1–M5 (asl reja) tugadi; undan keyin: avto-yozish, Ctrl+V, kod rejimi, premium UI, o'rnatish oynasi; v1.3.0 — pauzada o'girish, o'zini yangilash, UAC tuzatishi |
 | **Foydalanuvchining kompyuteri** | **v1.3.0 o'rnatilgan va ishlab turibdi** (`%LocalAppData%\Programs\Ozbeca`, sinov paytida v1.2.0 dan yangilangan; build commit `de2555e`'dan oldingi — release exe bilan bir xil kod) |
 | **Kutilayotgan fikr** | User v1.3.0 ni **boshqa kompyuterga** beradi (u yerda v1.2.0'da avto-yozish ishlamagan, Ctrl+Alt+O ishlagan). Ishlamasa — o'sha kompyuterning `%AppData%\Ozbeca\ozbeca.log` ini so'rang |
@@ -59,10 +59,12 @@ Asl qarorlar (D1–D6) va keyin o'zgarganlari. **User bilan kelishilmagan o'z qa
 | D13 | Ctrl+V: faqat bo'shliq bor matn (bitta so'z = ehtimol parol); kodga o'xshash tokenlar o'zgarmaydi | xavfsizlik |
 | D14 | Telegram stillari (qalin, chiziqli, premium emoji) saqlanadi | user topgan muammo |
 | D15 | Birinchi ishga tushirishda **o'rnatish oynasi**: `%LocalAppData%\Programs\Ozbeca` ga ko'chirish, yorliqlar, autostart, avto-yozish | user so'rovi; installer yo'q, admin kerak emas |
-| D16 | Exe hajmi 0.1 MB qoladi (sun'iy kattalashtirilmaydi) | user "virusga o'xshaydi" degandi, tushuntirilgach rozi bo'ldi |
+| D16 | Exe hajmi sun'iy kattalashtirilmaydi (0.1 MB; v1.4.0 dan lug'at bilan ~0.25 MB) | user "virusga o'xshaydi" degandi, tushuntirilgach rozi bo'ldi |
 | D17 | Ko'k SmartScreen oynasi qoladi, README'da tushuntiriladi | imzo pullik; Azure Artifact Signing individual uchun faqat AQSh/Kanada; Microsoft Store (bepul, MSIX) — kelajak uchun variant |
 | D18 | Repo **ochiq**, commitlarda GitHub **noreply** pochta | user so'rovi; shaxsiy pochta ochiq repoda ko'rinmasin |
 | D19 | **Pauzada o'girish:** so'z yozilib 1 s (`AutoType.PauseMs`) kutilsa — probel/Enter'siz o'giriladi; so'z bufferda qoladi | user so'rovi (v1.3.0) |
+| D21 | **Tutuqsiz so'zlar lug'ati** (`ozbek` → `özbek`, o' va g'): ochiq korpusdan, **faqat bir ma'noli so'zlar**; sozlamada toggle, standart yoqilgan; yozish paytida (probel/Enter), Ctrl+Alt+O, Ctrl+V. **Pauzada ishlamaydi** (`yoq`+`imli`) | user so'rovi: "aniq ishlashi kerak"; manba/qamrov/toggle'ni user tanladi (2026-11-11) |
+| D22 | Yakka `o'` → `ö` (`o' harfi`); so'z oxiridagi `kino'` va `'o'` tirnoq bo'lib qoladi | user: "o' desam ö bo'lmayapti" |
 | D20 | **Yangilash:** yangi exe ishga tushsa eski nusxa yopiladi (`Local\Ozbeca.Exit`, eskilarida Kill), o'rnatilgan exe almashtiriladi, `--updated` bilan qayta ishga tushadi | user: "eskini o'chir, boshqa balo" bo'lmasin (v1.3.0) |
 
 ---
@@ -75,6 +77,8 @@ Ozbeca.sln
 │   ├─ Transliterator.cs        ToNewAlphabet(text) va ToNewAlphabet(text, out map) — pozitsiyalar xaritasi
 │   ├─ TokenBuffer.cs           avto-yozish: probelgacha token; CodeMode (qo'shtirnoq ichi), TryCompleteAtEnter, TryConvertAtPause
 │   ├─ CodeGuard.cs             LooksLikeCode(token), ConvertProse(text) — kodga tegmaslik
+│   ├─ WordList.cs              tutuqsiz so'zlar lug'ati: words.txt (EmbeddedResource "Ozbeca.words.txt", Lazy yuklanadi)
+│   ├─ words.txt                ~9 100 to'g'ri shakl (o'zbekiston, to'g'ri...) — tools/wordlist/build_wordlist.py yasaydi
 │   ├─ TelegramTags.cs          application/x-td-field-text + x-td-field-tags (QDataStream BE) — stillarni surish
 │   └─ Polyfills.cs             IsExternalInit (record'lar uchun)
 ├─ src/Ozbeca.App/             net48 WPF (+WinForms faqat NotifyIcon uchun)
@@ -92,13 +96,16 @@ Ozbeca.sln
 │   └─ Log.cs                   %AppData%\Ozbeca\ozbeca.log (1 MB dan oshsa qayta boshlanadi)
 ├─ tests/Ozbeca.Core.Tests/    xUnit, net8.0
 ├─ tools/e2e/                  real ilovalarda avto-yozish sinovi (run_autotype_tests.bat → autotype_e2e.ps1)
+├─ tools/wordlist/             build_wordlist.py — lug'atni korpusdan qayta yasash (manbalar fayl boshida)
 ├─ tools/make_icon.py, make_demo.py — ikonka va README rasmlari
 └─ docs/                       M4_SINOV.md (sinov natijalari), README rasmlari
 ```
 
 ### 3.1 O'girish qoidalari (Transliterator) — tartib
 0. NFC. 1. Himoya: URL (`http(s)://`, `www.`), email, `@user`, `#tag` — tegilmaydi.
-2. `o`+A+harf → `ö` (A = `' ` ’ ‘ ʻ ʼ ´ ′ ＇`). 3. `g`+A → `ğ` (so'z oxirida ham; `'tong'` istisno).
+1a. Lug'at (`RestoreApostrophes`): so'z (harf+tutuq, chetdagi tirnoqsiz) kaliti — kichik harf, o/g dan keyingi
+    tutuqlarsiz — `WordList`'da bo'lsa, tutuqi tushgan o/g → ö/ğ (1 belgi → 1 belgi, xarita buzilmaydi).
+2. `o`+A+harf yoki yakka `o'` (oldida harf/tirnoq yo'q) → `ö` (A = `' ` ’ ‘ ʻ ʼ ´ ′ ＇`). 3. `g`+A → `ğ` (so'z oxirida ham; `'tong'` istisno).
 4. Tutuqsiz `Ishoq`/`ashob` (so'z boshi) → `Isʼhoq`/`asʼhob`. 5. harf+A+harf → `ʼ` (`Is'hoq` → `Isʼhoq`).
 6. `sh`/`ch` → `ş`/`ç` (bosh harf birinchi harfga qarab). 7. `ng` o'zgarmaydi. 8. `ș` → `ş`.
 Idempotent: `f(f(x)) == f(x)`. `ʻ`/`ʼ` .NET'da `char.IsLetter == true` — `IsLetter` ularni chiqarib tashlaydi.
@@ -150,12 +157,26 @@ tray'da "arvoh" belgi sichqoncha ustiga borguncha qoladi) → o'rnatilgan bo'lsa
 ko'chiriladi. Yangisi balloon chiqaradi: "X versiyaga yangilandi". `--updated` argumenti hotkey sifatida o'qilmaydi.
 **Versiya solishtiruvi FileVersion bo'yicha** — har release'da `<Version>` ni oshirish SHART, aks holda yangilanmaydi.
 
+### 3.5 Tutuqsiz so'zlar lug'ati (WordList, v1.4.0 uchun)
+Lug'at `tools/wordlist/build_wordlist.py` bilan qayta yasaladi (manbalar fayl boshida, repoga qo'shilmaydi).
+So'z **faqat bir ma'noli** bo'lsa olinadi:
+1. **Korpus (Leipzig):** "toza" gaplar — kamida 2 ta to'g'ri o'/g' so'zi bor va `bolgan`/`ozbek` kabi aniq xato shakllar yo'q.
+   Toza gapdagi tutuqsiz so'z haqiqiy so'z deb olinadi. So'zning o'zi (`clean/full > 3%` va `> 6`) va o'zak oilasi
+   (`qol` → `qoldi`, `qolgan`) tekshiriladi. Shuning uchun `qol`, `ot`, `bor`, `oz`, `yoq`, `soz` lug'atda yo'q.
+2. Inglizcha top-10k bilan to'qnashuv chiqariladi: `bug`, `song`, `yoga`.
+3. **Hunspell `uz_UZ.dic` (GPL)**, faqat chiqarib tashlash uchun ishlatiladi. Tutuqsiz lemma bo'lsa chiqariladi (`qoshiq`,
+   `yol`, `orta`). Lemma + o'z turkumidagi qo'shimcha bo'lsa ham chiqariladi: `/X` fe'l: `ot` + `di`.
+- Qo'shimchalar **tartib bilan** tekshiriladi: yasovchi → ko'plik → egalik → kelishik → yuklama, fe'l uchun esa
+  nisbat → ma → shakl → shaxs. Busiz `or + tasida` kabi tasodifiy bo'linishlar `o'rtasida`'ni ham tashlab yuborardi.
+- Kod: `MissingApostrophes` so'zni kalitga aylantiradi va to'g'ri shakl bilan yonma-yon yuradi (`to'gri`: faqat g').
+  Pauzada lug'at **ishlamaydi**, chunki so'z hali tugamagan bo'lishi mumkin. U probel yoki Enter'da ishlaydi.
+
 ---
 
 ## 4. Sinov
 
 ```bash
-dotnet test                                   # 392 unit test
+dotnet test                                   # 422 unit test
 dotnet build src/Ozbeca.App -c Release        # → src/Ozbeca.App/bin/Release/net48/Ozbeca.exe
 ```
 
@@ -186,7 +207,7 @@ dotnet build src/Ozbeca.App -c Release        # → src/Ozbeca.App/bin/Release/n
 - **Git:** har mantiqiy o'zgarishdan keyin **commit + push** (so'ramasdan), o'zbekcha "nima va nega" xabar.
   `git config` faqat repo ichida — **hech qachon `--global` emas** (Faktura GitLab buziladi). Attribution qatorlari yo'q.
 - **GitHub Release** — ommaviy amal: auto-mode bloklaydi, **har safar user ruxsatini so'rang** ("Ha, yarat" degach).
-  Release'ga faqat `Ozbeca.exe` (net48, ~135 KB). Versiya: `src/Ozbeca.App/Ozbeca.App.csproj` → `<Version>`.
+  Release'ga faqat `Ozbeca.exe` (net48, ~250 KB lug'at bilan). Versiya: `src/Ozbeca.App/Ozbeca.App.csproj` → `<Version>`.
   Release'dan oldin exe'ni **commit'dan keyin** qayta build qiling (ProductVersion'da commit hash bo'ladi).
 - **Obsidian jurnal:** muhim o'zgarishlar `C:\Users\user\Documents\Brain\Claude\logs\task_log.md` ga.
 - User'ning kompyuterida sinov o'rnatishlarini qoldirmang: `%LocalAppData%\Programs\Ozbeca`, `%AppData%\Ozbeca`,
@@ -212,6 +233,10 @@ dotnet build src/Ozbeca.App -c Release        # → src/Ozbeca.App/bin/Release/n
 - **UAC o'chiq kompyuterda** hamma oyna elevated ko'rinadi — `IsElevatedWindow` o'zimiz elevated bo'lsak false qaytaradi
   (v1.2.0'da avto-yozish boshqa kompyuterda shu sabab jim o'chgan, Ctrl+Alt+O ishlagan). Oyna nega o'chiq — logda.
 - `settings.json` sinov skriptlari tomonidan almashtiriladi — skript oxirida tiklaydi.
+- Lug'at yasashda faqat nisbat (tutuqsiz/tutuqli) yetarli emas: `qol` korpusda yalang'och holda kam uchraydi (8 marta),
+  lekin `qoldi`/`qolgan` minglab. O'zak oilasi va toza gaplar kerak. Leipzig `words.txt` ham yetarli emas, `sentences.txt` kerak.
+- Oxiridagi tutuqni olib tashlashda `bog'`/`tog'` saqlansin, chunki g' dan keyingi tutuq — harf.
+- Debug build'da yozilgan tugmalar logga yozilmasin (README va'dasi) — `[debug]` loglar olib tashlangan.
 
 ---
 
@@ -227,6 +252,10 @@ dotnet build src/Ozbeca.App -c Release        # → src/Ozbeca.App/bin/Release/n
 - Telegram'da avto-yozish va Ctrl+V real sinalmagan (belgilab o'girish — ✅, user tasdiqlagan).
 - Google Docs sinalmagan (login kerak).
 - Pauza so'z o'rtasida bo'lsa, `Ishoq`/`ashob` maxsus qoidasi ishlamay qolishi mumkin (`Isho`+pauza → `Işo`).
+- Lug'at: ikki ma'noli so'zlar ataylab tuzatilmaydi. Masalan `yo'q`, `yo'l`, `so'z`, `o'z`, `o'rta`, `qo'l`, `to'rt`:
+  ularning tutuqsiz shakli ham haqiqiy so'z (`yoq`, `yol`, `soz`, `oz`, `orta`, `qol`, `tort`).
+- Lug'atda korpusda uchramagan qo'shimchali shakllar yo'q (~9 100 shakl). Yangi alifbo bilan aralash yozilgan so'zlar ham
+  tuzatilmaydi (`boşlangich` — `ş` bor).
 
 ---
 
@@ -241,3 +270,6 @@ dotnet build src/Ozbeca.App -c Release        # → src/Ozbeca.App/bin/Release/n
 4. **Microsoft Store** (MSIX, bepul individual akkaunt) — ko'k SmartScreen oynasisiz o'rnatish; user akkaunti kerak.
 5. Excel/Telegram uchun E2E kengaytirish; Win10 (Mica'siz) ko'rinishini tekshirish; qorong'i mavzuda skrinshot.
 6. Yangi imlo qoidalari e'lon qilinsa — `ng`, tutuq va boshqa qoidalarni qayta tekshirish.
+7. **v1.4.0 release** (lug'at + yakka o' + tuzatishlar) — user ruxsati bilan. `<Version>` 1.4.0 ga oshiriladi.
+8. Lug'at qamrovini real yozishmalarda baholash: user qaysi so'zlar tuzatilmaganini aytsa — sababini tekshirib, kerak bo'lsa
+   korpusni kengaytirish (masalan, boshqa Leipzig korpuslari).
