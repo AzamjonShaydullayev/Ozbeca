@@ -21,7 +21,10 @@ public sealed class TokenBuffer
 
     private const int MaxLine = 512;
 
-    private readonly StringBuilder _sb = new();   // joriy so'z
+    private readonly StringBuilder _sb = new();   // joriy so'z — ekranda qanday turgan bo'lsa
+    // Pauzada o'girilgan so'zning asl (user yozgan) ko'rinishi. Lug'at faqat eski harflarni taniydi:
+    // pauzada "organish" → "organiş" bo'lsa, probelda lug'at "organish"ni tekshirishi kerak (→ "örganiş").
+    private StringBuilder? _raw;
     private readonly StringBuilder _line = new(); // qator boshidan beri yozilgan (kod rejimi uchun)
     private bool _overflow;
     private bool _lineKnown;                      // qator boshidan beri hamma narsani ko'rdikmi
@@ -58,6 +61,12 @@ public sealed class TokenBuffer
 
     public void Backspace()
     {
+        if (_raw != null)
+        {
+            // Asl va ekrandagi oxirgi harf bir xil bo'lsa — ikkalasidan o'chadi; aks holda (ş ↔ sh) asl shaklni unutamiz.
+            if (_sb.Length > 0 && _raw.Length > 0 && _raw[_raw.Length - 1] == _sb[_sb.Length - 1]) _raw.Length--;
+            else _raw = null;
+        }
         if (_sb.Length > 0) _sb.Length--;
         else _overflow = true; // undan oldingi matnni bilmaymiz — bu so'zni o'girmaymiz
 
@@ -80,6 +89,7 @@ public sealed class TokenBuffer
         if (_overflow) return;
         if (_sb.Length >= MaxLength) { _overflow = true; return; }
         _sb.Append(c);
+        _raw?.Append(c);
     }
 
     /// <summary>
@@ -129,18 +139,21 @@ public sealed class TokenBuffer
     /// </summary>
     public bool TryConvertAtPause(out int deleteCount, out string replacement)
     {
-        string word = _sb.ToString();
+        string screen = _sb.ToString();
+        string? raw = _raw?.ToString();
         bool overflow = _overflow;
         // Lug'atsiz: so'z hali tugamagan bo'lishi mumkin ("yoq" + "imli" — yo'q emas). Lug'at probelda ishlaydi.
         bool ok = TryConvertWord(out deleteCount, out replacement, dictionary: false);
-        _sb.Append(ok ? replacement : word);
+        _sb.Append(ok ? replacement : screen);
+        if (ok || raw != null) _raw = new StringBuilder(raw ?? screen);
         _overflow = overflow;
         return ok;
     }
 
     private bool TryConvertWord(out int deleteCount, out string replacement, bool dictionary = true)
     {
-        string word = _sb.ToString();
+        string screen = _sb.ToString();
+        string word = _raw?.ToString() ?? screen; // lug'at asl yozilgan so'zni tekshiradi
         bool overflow = _overflow;
         ClearWord();
         deleteCount = 0;
@@ -150,8 +163,8 @@ public sealed class TokenBuffer
         if (CodeGuard.LooksLikeCode(word)) return false; // kod yozilyapti — tegmaymiz
 
         string converted = dictionary ? Transliterator.ToNewAlphabet(word) : Transliterator.ToNewAlphabet(word, dictionary: false);
-        if (converted == word) return false;
-        deleteCount = word.Length;
+        if (converted == screen) return false;
+        deleteCount = screen.Length;
         replacement = converted;
 
         // Qatordagi so'zni ham almashtiramiz — keyingi backspace'lar ekrandagi matn bilan mos kelsin.
@@ -167,6 +180,7 @@ public sealed class TokenBuffer
     private void ClearWord()
     {
         _sb.Clear();
+        _raw = null;
         _overflow = false;
     }
 

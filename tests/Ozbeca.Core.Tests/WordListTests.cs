@@ -76,4 +76,33 @@ public class WordListTests
         Assert.Equal(3, del);
         Assert.Equal("köp", rep);
     }
+
+    [Fact]
+    public void DictionaryWorksAfterPauseConversion()
+    {
+        // "organish" + pauza (→ "organiş") + probel — lug'at asl so'zni tekshiradi: "örganiş".
+        var b = new TokenBuffer();
+        string screen = "";
+        void Type(string s) { foreach (char c in s) { b.Add(c); screen += c; } }
+        void Apply(int del, string rep) => screen = screen.Substring(0, screen.Length - del) + rep;
+
+        Type("organish");
+        Assert.True(b.TryConvertAtPause(out int d, out string r));
+        Apply(d, r);
+        Assert.Equal("organiş", screen);
+        Assert.True(b.TryComplete(out d, out r));
+        Apply(d, r);
+        Assert.Equal("örganiş", screen);
+
+        // Pauzadan keyin backspace bilan tuzatish: oxirgi harf ikkalasida bir xil — asl shakl saqlanadi.
+        screen = "";
+        Type("organishx");
+        Assert.True(b.TryConvertAtPause(out d, out r));
+        Apply(d, r);
+        b.Backspace();
+        screen = screen.Substring(0, screen.Length - 1);
+        Assert.True(b.TryComplete(out d, out r));
+        Apply(d, r);
+        Assert.Equal("örganiş", screen);
+    }
 }
