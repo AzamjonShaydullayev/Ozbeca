@@ -4,7 +4,7 @@ using static Ozbeca.App.Native;
 
 namespace Ozbeca.App;
 
-/// <summary>Hotkey bosilgandagi to'liq oqim (HANDOFF 5-bo'lim). Ish alohida STA thread'da.</summary>
+/// <summary>Hotkey bosilgandagi to'liq oqim. Ish alohida STA thread'da.</summary>
 internal sealed class ConvertEngine
 {
     // Terminalda Ctrl+C jarayonni to'xtatadi — Ctrl+Insert / Shift+Insert ishlatiladi.

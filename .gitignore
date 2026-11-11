@@ -1,9 +1,42 @@
+# --- Build natijalari ---
 bin/
 obj/
+publish/
+TestResults/
+
+# --- IDE ---
 .vs/
 .vscode/
+.idea/
 *.user
-TestResults/
-publish/
+*.suo
+
+# --- Rasmlar: faqat docs/ dagilari (README uchun) ---
 *.png
 !docs/**/*.png
+
+# --- Faqat o'zimiz uchun (ichki eslatmalar, AI yordamchi fayllari) ---
+HANDOFF.md
+CLAUDE.md
+AGENTS.md
+.claude/
+notes/
+*.local.md
+
+# --- Maxfiy: kalitlar, sertifikatlar, muhit o'zgaruvchilari ---
+.env
+.env.*
+*.pfx
+*.p12
+*.snk
+*.pem
+*.key
+*.cer
+secrets*.json
+
+# --- Loglar va vaqtinchalik fayllar ---
+*.log
+*.tmp
+*.bak
+Thumbs.db
+desktop.ini

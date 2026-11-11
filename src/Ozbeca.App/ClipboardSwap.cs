@@ -6,7 +6,7 @@ using static Ozbeca.App.Native;
 namespace Ozbeca.App;
 
 /// <summary>
-/// Win32 clipboard: saqlash / tiklash / matn o'qish-yozish. Userning clipboard'i muqaddas (HANDOFF 9).
+/// Win32 clipboard: saqlash / tiklash / matn o'qish-yozish. Userning clipboard'i muqaddas.
 /// Barcha usullar o'zi ochib-yopadi; band bo'lsa qisqa pauzalar bilan qayta urinadi.
 /// </summary>
 internal sealed class ClipboardSwap

@@ -53,7 +53,7 @@ Bu sinovda topilgan xato: .NET Framework'ning `File.Delete` funksiyasi `fayl:Zon
 ## Ma'lum cheklovlar
 
 - **Terminallar:** konvertatsiya qilingan matn belgilangan joy o'rniga emas, kursor turgan joyga qo'yiladi. Terminal kiritish qatoridagi matnni almashtirib bo'lmaydi.
-- **Word'dagi aralash format:** qalin, kursiv yoki rangli qismlar bitta formatga tushadi (HANDOFF 5.1).
+- **Word'dagi aralash format:** qalin, kursiv yoki rangli qismlar bitta formatga tushadi.
 - **Himoyalangan ko'rinishni aniqlash** sarlavha matniga bog'liq: ingliz, rus va o'zbek tillari qo'llab-quvvatlanadi. Boshqa tildagi Office'da umumiy xabar chiqadi.
 
 ## Yozish paytida o'girish — v1.2.0 (2026-11-11)

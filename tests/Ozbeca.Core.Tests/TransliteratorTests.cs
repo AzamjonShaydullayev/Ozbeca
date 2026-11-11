@@ -6,7 +6,7 @@ public class TransliteratorTests
 {
     private static string T(string s) => Transliterator.ToNewAlphabet(s);
 
-    // HANDOFF 4.3 — majburiy holatlar
+    // Majburiy holatlar
     [Theory]
     [InlineData("O'zbekiston", "Özbekiston")]
     [InlineData("o‘zbek", "özbek")]

@@ -11,7 +11,7 @@ Yasaydi (docs/):
   settings.png, welcome.png, apps.png — docs/raw/ dagi oyna rasmlari, Windows 11 oyna ramkasida
 
 Ishlatish: python tools/make_readme_art.py   (Pillow kerak; Windows shriftlari: Segoe UI Variable, Segoe Fluent Icons)
-docs/raw/*.png — ilova oynalarining ekrandan tashqarida olingan rasmlari (HANDOFF, 6-bo'lim).
+docs/raw/*.png — ilova oynalarining ekrandan tashqarida olingan rasmlari (PowerShell: exe'ni LoadFrom qilib, RenderTargetBitmap).
 """
 from pathlib import Path
 

@@ -174,7 +174,7 @@ $Cases = [System.Collections.Generic.List[string]]::new()
     "s h c h o ' g ' "
 ) | ForEach-Object { $Cases.Add($_) }   # `b (Backspace), `n (Enter), `` (backtick) PowerShell qatorlarida allaqachon belgi
 
-# HANDOFF/Core testlaridagi so'zlar — 5 tadan jumla qilib
+# Core testlaridagi so'zlar — 5 tadan jumla qilib
 $words = "o'g'il qo'l ko'z yo'l to'qson bo'lim o'qituvchi o'quvchi ko'cha go'sht do'st to'y so'z o'rik o'n ko'p yo'q bo'sh qo'shni o'zbekcha to'g'ri o'g'ri bo'g'iz g'oz g'alaba g'arb g'ildirak tog' bog' sog' yog' bag'ir tog'lar bog'bon sog'lik yog'och chiroq choynak chaqaloq chumoli chiroyli kuch qilich bolacha ich chol chap uch sichqon qarshi shamol shaftoli shirin osh ish qush tosh yosh bosh kishi Toshkent Samarqand Buxoro Andijon Namangan e'tibor qal'a ra'no sur'at ming bilan Shoshilinch shanba chorva o'shanda g'ishtchi qo'shiqchi o'quvchilar".Split(' ')
 for ($i = 0; $i -lt $words.Count; $i += 5) { $Cases.Add((($words[$i..([Math]::Min($i + 4, $words.Count - 1))]) -join ' ') + ' ') }
 

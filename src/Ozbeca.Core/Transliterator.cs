@@ -5,7 +5,7 @@ using System.Text.RegularExpressions;
 
 namespace Ozbeca.Core;
 
-/// <summary>Eski/aralash o'zbek lotin matnini 2026-yilgi yangi alifboga o'giradi (HANDOFF 4-bo'lim).</summary>
+/// <summary>Eski/aralash o'zbek lotin matnini 2026-yilgi yangi alifboga o'giradi.</summary>
 public static class Transliterator
 {
     /// <summary>Rasmiy tutuq belgisi U+02BC — O'RQ-1184 (21.10.2026) 1-modda jadvalidan tasdiqlangan (lex.uz/docs/8548754).</summary>
