@@ -197,6 +197,21 @@ public sealed class TokenBuffer
         return ok;
     }
 
+    /// <summary>
+    /// Harf qo'shilgandan keyin: pauzada o'girilgan so'z davomi bilan manzil yoki kodga aylandi
+    /// (şerzod + @ → sherzod@gmail.com, şop + .uz, şerzod + _99) — probelni kutmay, yozilganidek qaytariladi.
+    /// So'z bufferda qoladi. Oddiy so'z davomi ("işla" + "sh") bu yerda o'zgarmaydi — u pauza yoki probelda o'giriladi.
+    /// </summary>
+    public bool TryRestoreTyped(out int deleteCount, out string replacement)
+    {
+        deleteCount = 0;
+        replacement = "";
+        if (_raw == null) return false;
+        string raw = _raw.ToString();
+        if (raw == _sb.ToString() || !CodeGuard.LooksLikeCode(raw)) return false;
+        return TryConvertAtPause(out deleteCount, out replacement);
+    }
+
     private bool TryConvertWord(out int deleteCount, out string replacement, bool dictionary = true)
     {
         string screen = _sb.ToString();
@@ -208,13 +223,22 @@ public sealed class TokenBuffer
         replacement = "";
         if (overflow || kept || word.Length == 0) return false;
         if (_codeMode && !InString) return false;        // kod: faqat qo'shtirnoq ichi
-        if (CodeGuard.LooksLikeCode(word)) return false; // kod yozilyapti — tegmaymiz
 
-        // Oldingi so'zlarda ochilgan tirnoq: 'Yaxshi + tong' — oxirgi ' harf (ğ) emas, yopuvchi tirnoq.
-        // Pauzada so'z hali tugamagan — tirnoq holatini o'zgartirmaymiz.
-        bool quote = _quoteOpen;
-        string converted = Transliterator.ToNewAlphabet(word, dictionary && Transliterator.RestoreApostrophes, ref quote);
-        if (dictionary) _quoteOpen = quote;
+        string converted;
+        if (CodeGuard.LooksLikeCode(word))
+        {
+            // Kod yoki manzil yozilyapti — tegmaymiz. Boshi pauzada o'girilib ulgurgan bo'lsa
+            // (şerzod + @gmail.com) — yozilganidek qaytaramiz.
+            converted = word;
+        }
+        else
+        {
+            // Oldingi so'zlarda ochilgan tirnoq: 'Yaxshi + tong' — oxirgi ' harf (ğ) emas, yopuvchi tirnoq.
+            // Pauzada so'z hali tugamagan — tirnoq holatini o'zgartirmaymiz.
+            bool quote = _quoteOpen;
+            converted = Transliterator.ToNewAlphabet(word, dictionary && Transliterator.RestoreApostrophes, ref quote);
+            if (dictionary) _quoteOpen = quote;
+        }
         if (converted == screen) return false;
         deleteCount = screen.Length;
         replacement = converted;

@@ -181,10 +181,18 @@ public class TokenBufferTests
                     if (B.TryUndo(out int del, out string rep)) Swap(del, rep);
                     else { B.Backspace(); Screen = Screen.Substring(0, Screen.Length - 1); }
                 }
-                else { B.Add(c); Screen += c; }
+                else
+                {
+                    B.Add(c);
+                    Screen += c;
+                    if (Eager && B.TryRestoreTyped(out int del, out string rep)) Swap(del, rep);
+                }
             }
             return this;
         }
+
+        /// <summary>false — AutoType qaytarishni keyingi harfga qoldirgan holat (Shift bosilgan, dead key).</summary>
+        public bool Eager = true;
 
         public Typist Pause()
         {
@@ -229,6 +237,39 @@ public class TokenBufferTests
         var t = new Typist().Type("'Yaxshi ");
         t.B.Reset();
         Assert.Equal("'Yaxşi tonğ ", t.Type("tong' ").Screen);
+    }
+
+    // Pauzada o'girilgan so'z davomi bilan manzil yoki kodga aylansa — yozilganidek qaytadi
+    // (user xabari, 2026-11-11: şerzod + pauza + @gmail.com → şerzod@gmail.com bo'lib qolardi).
+    [Theory]
+    [InlineData("sherzod", "@gmail.com ", "sherzod@gmail.com ")]
+    [InlineData("sherzod", "@", "sherzod@")]                       // @ yozilgan zahoti
+    [InlineData("shop", ".uz ", "shop.uz ")]
+    [InlineData("shop", ".", "şop.")]                              // hali gap oxiri bo'lishi mumkin
+    [InlineData("sherzod", "_99 ", "sherzod_99 ")]
+    [InlineData("show", "Chart() ", "showChart() ")]
+    [InlineData("https", "://shop.uz/choy ", "https://shop.uz/choy ")]
+    [InlineData("ishla", "sh ", "işlaş ")]                         // oddiy so'z davomi — avvalgidek
+    [InlineData("Shahar", ", ", "Şahar, ")]
+    [InlineData("organish", " ", "örganiş ")]
+    public void PauseConvertedWordThatBecomesAddressIsRestored(string first, string rest, string expected)
+    {
+        Assert.Equal(expected, new Typist().Type(first).Pause().Type(rest).Screen);
+        // AutoType qaytarishni kechiktirsa ham (Shift bosilgan) — probelda yoki keyingi pauzada to'g'rilanadi.
+        var late = new Typist { Eager = false };
+        late.Type(first).Pause().Type(rest);
+        Assert.Equal(expected, late.Pause().Screen);
+    }
+
+    [Fact]
+    public void RestoredAddressStaysAsTyped()
+    {
+        var t = new Typist().Type("sherzod").Pause().Type("@gmail.com").Pause();
+        Assert.Equal("sherzod@gmail.com", t.Screen);
+        Assert.Equal("sherzod@gmail.com ", t.Type(" ").Screen);
+        Assert.Equal("sherzod@gmail.com", t.Type("\b").Screen); // qaytaradigan narsa yo'q — oddiy Backspace
+        // Manzil o'chirilib, oddiy so'zga aylansa — yana o'giriladi.
+        Assert.Equal("şerzod ", new Typist().Type("sherzod").Pause().Type("@\b ").Screen);
     }
 
     [Fact]

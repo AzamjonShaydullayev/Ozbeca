@@ -434,10 +434,12 @@ internal sealed class AutoType : IDisposable
             PrefetchPassword();
             return false;
         }
+        bool composed = false;
         if (typed != null && _dead is char dead)
         {
             _dead = null;
             typed = Compose(dead, typed);
+            composed = true;
         }
 
         if (typed != null && typed.All(ch => !char.IsControl(ch) && !char.IsWhiteSpace(ch)))
@@ -450,6 +452,15 @@ internal sealed class AutoType : IDisposable
             }
             foreach (char ch in typed) _word.Add(ch);
             PrefetchPassword();
+            // Pauzada o'girilgan so'z davomi bilan manzil/kodga aylandi (şerzod + @gmail.com) — yozilganidek qaytaramiz.
+            // Bu tugma ushlanadi va so'z bilan birga o'zimiz yozamiz (tartib aniq bo'lsin). Shift/AltGr bosilgan paytda
+            // emas (@ — Shift+2; Shift/Ctrl+Backspace boshqa ma'no beradi) va dead key'dan keyin emas — keyingi harfda.
+            if (!composed && !altGr && !InputSender.IsDown(VK_SHIFT) && _word.TryRestoreTyped(out int backDel, out string backText))
+            {
+                string before = backText.Substring(0, backText.Length - typed.Length);
+                Replace(backDel - typed.Length, before, typed.SelectMany(UnicodeKeys).ToArray());
+                return true;
+            }
             ArmPause();
         }
         else
