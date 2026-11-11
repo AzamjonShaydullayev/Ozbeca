@@ -13,9 +13,9 @@
 | **Nima** | Windows uchun tray dasturi: o'zbekcha matnni 2026-yilgi yangi lotin alifbosiga (Ö Ğ Ş Ç) o'giradi |
 | **Oxirgi versiya** | **v1.4.0** — https://github.com/AzamjonShaydullayev/Ozbeca/releases/tag/v1.4.0 (exe 249 KB, `484ad9e`) |
 | **Repo** | https://github.com/AzamjonShaydullayev/Ozbeca (**ochiq**), branch `main`, lokal: `D:\projects\ozbeca` |
-| **Platforma** | C#, WPF, **.NET Framework 4.8** (Windows 10/11 ichida bor) — bitta `Ozbeca.exe`, ~135 KB |
-| **Testlar** | 422 unit test (xUnit, .NET 8) + real ilovalarda E2E: 402/408 |
-| **Bosqichlar** | M1–M5 (asl reja) tugadi; undan keyin: avto-yozish, Ctrl+V, kod rejimi, premium UI, o'rnatish oynasi; v1.3.0 — pauzada o'girish, o'zini yangilash, UAC tuzatishi |
+| **Platforma** | C#, WPF, **.NET Framework 4.8** (Windows 10/11 ichida bor) — bitta `Ozbeca.exe`, ~250 KB (shundan ~100 KB lug'at) |
+| **Testlar** | 422 unit test (xUnit, .NET 8) + E2E: Chrome **333/333** (v1.4.0, 15–90 ms); Notepad'da tez yozishda Notepad'ning o'zi harf yo'qotadi (6-bo'lim) |
+| **Bosqichlar** | M1–M5 (asl reja) tugadi; undan keyin: avto-yozish, Ctrl+V, kod rejimi, premium UI, o'rnatish oynasi; v1.3.0 — pauzada o'girish, o'zini yangilash, UAC tuzatishi; **v1.4.0 — tutuqsiz so'zlar lug'ati, yakka o', tez yozish / dead key / UIA tuzatishlari** |
 | **Foydalanuvchining kompyuteri** | **v1.3.0 o'rnatilgan** (`%LocalAppData%\Programs\Ozbeca`). v1.4.0 ni ochsa — o'zi yangilanadi |
 | **Kutilayotgan fikr** | User v1.4.0 ni **boshqa kompyuterga** beradi (Telegram'da tez yozish, Ctrl+V+Enter, `to'g'irlaç` muammolari). Ishlamasa — o'sha kompyuterning `%AppData%\Ozbeca\ozbeca.log` i va klaviatura layouti (US-International?) so'ralsin |
 
@@ -63,9 +63,12 @@ Asl qarorlar (D1–D6) va keyin o'zgarganlari. **User bilan kelishilmagan o'z qa
 | D17 | Ko'k SmartScreen oynasi qoladi, README'da tushuntiriladi | imzo pullik; Azure Artifact Signing individual uchun faqat AQSh/Kanada; Microsoft Store (bepul, MSIX) — kelajak uchun variant |
 | D18 | Repo **ochiq**, commitlarda GitHub **noreply** pochta | user so'rovi; shaxsiy pochta ochiq repoda ko'rinmasin |
 | D19 | **Pauzada o'girish:** so'z yozilib 1 s (`AutoType.PauseMs`) kutilsa — probel/Enter'siz o'giriladi; so'z bufferda qoladi | user so'rovi (v1.3.0) |
+| D20 | **Yangilash:** yangi exe ishga tushsa eski nusxa yopiladi (`Local\Ozbeca.Exit`, eskilarida Kill), o'rnatilgan exe almashtiriladi, `--updated` bilan qayta ishga tushadi | user: "eskini o'chir, boshqa balo" bo'lmasin (v1.3.0) |
 | D21 | **Tutuqsiz so'zlar lug'ati** (`ozbek` → `özbek`, o' va g'): ochiq korpusdan, **faqat bir ma'noli so'zlar**; sozlamada toggle, standart yoqilgan; yozish paytida (probel/Enter), Ctrl+Alt+O, Ctrl+V. **Pauzada ishlamaydi** (`yoq`+`imli`) | user so'rovi: "aniq ishlashi kerak"; manba/qamrov/toggle'ni user tanladi (2026-11-11) |
 | D22 | Yakka `o'` → `ö` (`o' harfi`); so'z oxiridagi `kino'` va `'o'` tirnoq bo'lib qoladi | user: "o' desam ö bo'lmayapti" |
-| D20 | **Yangilash:** yangi exe ishga tushsa eski nusxa yopiladi (`Local\Ozbeca.Exit`, eskilarida Kill), o'rnatilgan exe almashtiriladi, `--updated` bilan qayta ishga tushadi | user: "eskini o'chir, boshqa balo" bo'lmasin (v1.3.0) |
+| D23 | README: **bitta yirik "Yuklab olish" tugmasi** (`docs/download.svg`, firuza gradient), kulrang shields badge'lari yo'q | user: "bitta ajralib, chiroyli, qorayib turmasin" |
+| D24 | **E2E user ish stolida yurgizilmaydi** — unit test yoki Windows Sandbox/VM | user: "ishlashimga xalaqit qilyapsan" (2026-11-11) |
+| D25 | Tez yozishda ushlab-qaytarilgan tugmalar **ham o'giriladi**; UIA javob bermasa so'z o'tkazib yuboriladi, maydon "parol" deb eslanmaydi | user: boshqa kompyuterda Telegram'da "tez yozsa, Ctrl+V + Enter qilsa ishlamay qolyapti" |
 
 ---
 
@@ -125,18 +128,28 @@ tiklash (sequence bizniki bo'lsa **yoki matn hamon biznikiga teng** bo'lsa — E
 - **Trigger:** probel (so'z + probel almashtiriladi), Enter (faqat Prose, UIA bilan parol emasligi tekshirilgach),
   kod rejimida yopuvchi `"`.
 - **So'z unutiladi:** sichqoncha bosilsa, strelka/End/PgUp/Tab/Esc/Delete, Ctrl/Alt/Win kombinatsiya, boshqa oyna.
-  Enter/Home — yangi qator (kod rejimi uchun "holat ma'lum").
+  Enter/Home — yangi qator (kod rejimi uchun "holat ma'lum"). **AltGr** (Ctrl + o'ng Alt) bilan belgi chiqsa — so'z
+  unutilmaydi (o'zbek layoutlarida ʻ shunday yozilishi mumkin).
+- **Belgini aniqlash:** `ToChars` → `ToUnicodeEx(..., flag 4)` (flag 4 — user'ning dead key holatini buzmaslik uchun).
+  Natija < 0 — **dead key** (US-International'da `'`): `_dead` da saqlanadi, keyingi tugma bilan `Compose`
+  (unli → ó/é…, `'`+c → ç, `~`+n → ñ, qolgani — ikkalasi alohida: `'`+g → `'g`). Dead key + probel — faqat belgi, probel emas.
 - **Almashtirish:** Backspace×N + Unicode (KEYEVENTF_UNICODE) harflar + ushlangan tugma. **Hook ichida emas**, alohida
   sender thread'da (hook ichida yuborilgan tugmalar hook'lardan o'tmaydi).
 - **Tartib kafolati:** almashtirish yuborilib, hook'dan o'tib (`_pending`) va ilova qayta ishlab ulgurguncha
   (`_settling`, 40 ms) kelgan foydalanuvchi tugmalari **ushlanadi** (`_held`) va keyin tartib bilan qayta yuboriladi
   (`ReplayInput` belgisi). Saqlagich: 1500 ms.
+- **Qayta yuborilgan tugmalar ham o'giriladi (v1.4.0):** partiya ichidagi tugma (probel/Enter/Ctrl+V) almashtirish
+  boshlasa — `_holdReplays = true`, partiyaning qolgani yana ushlanib `_held` boshiga qo'yiladi (`_reheld` indeks,
+  ular shu paytda kelgan yangi tugmalardan oldin turadi). Navbat FIFO: almashtirishning birinchi `OwnInput` tugmasi kelganda
+  partiya tugagan bo'ladi → `_holdReplays = false`. `FlushHeld` va saqlagich ham uni tiklaydi (qotib qolmasin).
 - **Pauzalar:** har tugma juftligi orasida 6 ms (aniq, Stopwatch bilan), backspace'lardan keyin 30 ms.
 - **Belgilar (dwExtraInfo):** `OwnInput 0x0E8A0E8A` (almashtirish), `ReplayInput 0x0E8A0E8B`,
   `InputSender.EngineInput 0x0E8A0E8C` (hotkey oqimining Ctrl+C/V — avto-yozish ularga tegmaydi).
   Boshqa "injected" tugmalar (ekran klaviaturasi, test skriptlari) oddiy tugma kabi qayta ishlanadi.
-- **Parol:** Win32 `ES_PASSWORD` (tez) + UIA `AutomationElement.FocusedElement.IsPassword` (400 ms timeout,
-  javob bo'lmasa — "parol" deb hisoblanadi). Natija maydon uchun keshlanadi (sichqoncha/Tab/oyna — qayta).
+- **Parol:** Win32 `ES_PASSWORD` (tez) + UIA `AutomationElement.FocusedElement.IsPassword` (`UiaTimeoutMs` = 800).
+  Tekshiruv **so'zning birinchi harfida** fonda boshlanadi (`PrefetchPassword` → `_uiaCheck`) — probelgacha tayyor.
+  Javob = true/false — maydon uchun keshlanadi (`ForgetFocus`: sichqoncha/Tab/oyna). **Javob kelmasa (null)** — shu so'z
+  o'girilmaydi, lekin keshlanmaydi (keyingi so'zda qayta). Logda: `UI Automation javob bermadi`.
 - **Ctrl+V:** V ushlanadi → clipboard'dagi matn (bo'shliq bo'lsa) `CodeGuard.ConvertProse` / Telegram yo'li →
   no-history bilan qo'yiladi → V yuboriladi → 500 ms dan keyin asl clipboard tiklanadi.
 - **Pauza (v1.3.0):** har harf/Backspace'da `DispatcherTimer` (`PauseMs` = 1000) qayta boshlanadi. Tick'da: navbat bo'sh
@@ -182,7 +195,8 @@ dotnet build src/Ozbeca.App -c Release        # → src/Ozbeca.App/bin/Release/n
 
 **E2E (real ilovalar):** `tools\e2e\run_autotype_tests.bat` (~35 daqiqa) yoki
 `powershell -ExecutionPolicy Bypass -File tools\e2e\autotype_e2e.ps1 [-Only Notepad|Chrome|Word|VS] [-Limit N] [-DryRun]`.
-- Notepad, Chrome (textarea, input, parol maydoni), Word, VS Code (.js, kod rejimi); oddiy (90 ms) va tez (35 ms).
+- Notepad, Chrome (textarea, input, parol maydoni), Word, VS Code (.js, kod rejimi); oddiy (90 ms), tez (35 ms),
+  **juda tez** (15 ms, `-StressDelay`) va **Ctrl+V + darhol Enter + yozish** (Telegram'dagi holat).
 - Odamga o'xshab yozadi: `keybd_event` + `VkKeyScan`, Shift bilan, tasodifiy kechikish. **`WScript.SendKeys` ishlatmang** —
   u NumLock bosadi, Chrome/Electron'ga Ctrl+C yetkazmaydi.
 - Kutilgan natija dasturning o'z kodi bilan (`Ozbeca.Core.TokenBuffer`, exe'dan yuklanadi).
@@ -200,8 +214,10 @@ dotnet build src/Ozbeca.App -c Release        # → src/Ozbeca.App/bin/Release/n
   Bu kompyuterda Sandbox hali yoqilmagan (`WindowsSandbox.exe` yo'q) — yoqishni user o'zi qiladi.
 - Sinov faqat **faol** Windows sessiyasida ishlaydi: `query session` → `Active`. User masofadan ulanib, sessiya `Disc`
   bo'lsa — hech qanday oynaga bosib bo'lmaydi va hamma test "yiqiladi" (bu dastur xatosi emas).
-- Sinov paytida user klaviatura/sichqonchaga tegmasligi kerak; avval userdan so'rang. Skript "aralashuv"ni (boshqa oyna
-  oldinga chiqsa) alohida belgilaydi.
+- Sinov paytida klaviatura/sichqonchaga hech kim tegmasligi kerak (Sandbox ichida ham). Skript "aralashuv"ni (boshqa
+  oyna oldinga chiqsa) alohida belgilaydi.
+- A/B uchun eski commit'ni alohida worktree'da build qiling (`git worktree add <scratch> <commit>`) va `-Exe` bilan bering;
+  ishdan keyin `git worktree remove`.
 - Oldingi sinovdan qolgan modal oynalar (Notepad "Cannot find file") keyingi sinovni buzadi — tekshirib yoping.
 - Word'ni COM orqali ochmang (yashirin nusxa qotib qoladi) — docx `tools/e2e/mkdocx.py` bilan yasaladi.
 
@@ -263,8 +279,11 @@ dotnet build src/Ozbeca.App -c Release        # → src/Ozbeca.App/bin/Release/n
 - Word'da belgilab o'girishda aralash format bitta formatga tushadi.
 - Terminalda belgilab o'girish matnni almashtirmaydi, kursor joyiga qo'yadi.
 - Himoyalangan ko'rinishni aniqlash sarlavha matniga bog'liq (ingliz/rus/o'zbek).
-- Juda tez yozishda (35 ms/harf) Notepad'da ~4% xato; oddiy tezlikda 0.
-- Telegram'da avto-yozish va Ctrl+V real sinalmagan (belgilab o'girish — ✅, user tasdiqlagan).
+- Win11 Notepad'da tez yozishda (35/15 ms) ~15–25% jumlada Notepad'ning o'zi harf yo'qotadi; oddiy tezlikda ~5%.
+  Chrome'da shu sinovlar 100%. Dastur xatosi emas, lekin Notepad'da tez yozuvchilar ko'radi.
+- Telegram'da avto-yozish real sinalmagan — faqat user'ning boshqa kompyuteridan skrinshot (v1.3.0) bor; v1.4.0 natijasi kutilmoqda.
+- Dead key birlashishi (`Compose`) US-International jadvaliga yaqinlashtirilgan — boshqa layoutlarda (masalan, frantsuzcha)
+  kamdan-kam so'z noto'g'ri bilinishi mumkin.
 - Google Docs sinalmagan (login kerak).
 - Pauza so'z o'rtasida bo'lsa, `Ishoq`/`ashob` maxsus qoidasi ishlamay qolishi mumkin (`Isho`+pauza → `Işo`).
 - Lug'at: ikki ma'noli so'zlar ataylab tuzatilmaydi. Masalan `yo'q`, `yo'l`, `so'z`, `o'z`, `o'rta`, `qo'l`, `to'rt`:
@@ -276,16 +295,35 @@ dotnet build src/Ozbeca.App -c Release        # → src/Ozbeca.App/bin/Release/n
 
 ## 8. Keyingi qadamlar (takliflar — user bilan kelishiladi)
 
-0. **Tez yozish tuzatishi E2E'da tasdiqlandi** (Chrome 333/333). Keyingi qadam: boshqa kompyuterda v1.4.0 bilan Telegram'da sinash. Ishlamasa — o'sha kompyuterning `ozbeca.log` i (UIA/kutish vaqti yozuvlari).
-1. User v1.3.0 ni boshqa kompyuterda sinaydi (UAC tuzatishi u yerda tasdiqlanmagan — faqat koddan topilgan sabab;
-   o'z kompyuterimizda sinov: yangilash ✅, pauza va probel ✅) → ishlamasa logni so'rab, sababni logdan aniqlash.
-   Ehtimoliy boshqa sabab: sekin kompyuterda UIA parol tekshiruvi 400 ms dan oshib, maydon "parol" deb keshlanadi
-   (logda `parol maydoni — so'z o'girilmadi`).
-2. Telegram'da avto-yozish va Ctrl+V ni real sinash (user bilan; xabar tasodifan yuborilmasin).
+1. **Boshqa kompyuterdagi fikrni kutish (v1.4.0).** U yerda v1.3.0'da Telegram'da: tez yozish, Ctrl+V + Enter va
+   `to'g'irlaç` muammolari bor edi — v1.4.0 da tuzatildi (Chrome E2E bilan tasdiqlangan, Telegram'da emas). Ishlamasa:
+   o'sha kompyuterning `%AppData%\Ozbeca\ozbeca.log` i va klaviatura layouti (Sozlamalar → Til → Klaviatura) so'ralsin.
+   Logda qidiring: `UI Automation javob bermadi`, `kutish vaqti tugadi`, `to'liq yuborilmadi`, `o'chiq (...)`.
+2. **Sinov muhiti:** user Windows Sandbox'ni yoqsa — E2E'ni Sandbox ichida yurgizish skripti (`.wsb` + exe/skriptni
+   mapped folder bilan). Unga qadar real sinov yo'q, faqat unit test (D24).
+2a. Ushlab-qaytarish mantig'ini (`_pending`/`_held`/`_holdReplays`) Windows'siz sinf qilib Core'ga ajratish va unit test
+   bilan qamrash — E2E'siz tartib xatolarini ushlash uchun (taklif, user bilan kelishiladi).
 3. Sozlamalarda **istisno ilovalar ro'yxati** (user o'zi qo'shadigan) — hozir ro'yxat kodda.
 4. **Microsoft Store** (MSIX, bepul individual akkaunt) — ko'k SmartScreen oynasisiz o'rnatish; user akkaunti kerak.
 5. Excel/Telegram uchun E2E kengaytirish; Win10 (Mica'siz) ko'rinishini tekshirish; qorong'i mavzuda skrinshot.
 6. Yangi imlo qoidalari e'lon qilinsa — `ng`, tutuq va boshqa qoidalarni qayta tekshirish.
 7. ~~v1.4.0 release~~ — ✅ chiqdi (2026-11-11). Keyingi release'da `<Version>` ni 1.4.1/1.5.0 ga oshiring.
 8. Lug'at qamrovini real yozishmalarda baholash: user qaysi so'zlar tuzatilmaganini aytsa — sababini tekshirib, kerak bo'lsa
-   korpusni kengaytirish (masalan, boshqa Leipzig korpuslari).
+   korpusni kengaytirish (masalan, boshqa Leipzig korpuslari). So'zlashuv shakllari (`to'g'irlamoqda` — adabiysi
+   `to'g'rilamoqda`) korpusda kam. `yo'q`, `yo'l`, `so'z` kabi ikki ma'noli so'zlar esa ataylab tuzatilmaydi (D21).
+
+---
+
+## 9. Oxirgi sessiya (2026-11-11, v1.3.0 → v1.4.0) — nima qilindi
+
+| Commit | Nima |
+|---|---|
+| `e48bf49` | README: bitta "Yuklab olish" SVG tugmasi; GitHub tavsifi va topics yangilandi |
+| `b9c361d` | Code review: TelegramTags `int` toshishi (+test), sichqoncha hook oqishi, eskirgan izohlar |
+| `4515af2` | Yakka `o'` → `ö`; Debug build'dagi `[debug]` tugma loglari olib tashlandi |
+| `c995e0f` | Tutuqsiz so'zlar lug'ati (WordList + words.txt + tools/wordlist), sozlamada toggle, 30 test |
+| `49b2aa3` | AutoType: qayta yuborilganlar ham o'giriladi, dead key/AltGr, UIA prefetch/timeout; E2E "juda tez" va Ctrl+V+Enter |
+| `484ad9e` | v1.4.0 (release: 249 KB) |
+
+Ish tartibi bo'yicha: user tanlovlari AskUserQuestion bilan olindi (lug'at manbasi, g' ham, toggle standart yoqilgan;
+release "Ha, yarat"). E2E user ish stolida ~60 daqiqa yurdi — user norozi bo'ldi → D24.
