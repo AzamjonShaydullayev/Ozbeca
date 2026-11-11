@@ -1,4 +1,4 @@
-using System.Text;
+﻿using System.Text;
 using Ozbeca.Core;
 using static Ozbeca.App.Native;
 
@@ -102,7 +102,7 @@ internal sealed class ConvertEngine
         // Telegram: stillar (qalin, chiziqli, premium emoji) alohida formatda — ularni ham surib qaytaramiz.
         List<(string, byte[])>? extras = null;
         string converted;
-        if (TryTelegram(out var tgOld, out var tgNew, out var tgTags))
+        if (TryTelegram(_clip, out var tgOld, out var tgNew, out var tgTags))
         {
             text = tgOld;
             converted = tgNew;
@@ -134,12 +134,13 @@ internal sealed class ConvertEngine
         Say("Özbeça ✓"); // muvaffaqiyat xabari (user qarori, 2026-11-10)
     }
 
-    private bool TryTelegram(out string oldText, out string newText, out byte[] newTags)
+    /// <summary>Clipboard'da Telegram formati bo'lsa — matn va stillarni o'giradi (hotkey va Ctrl+V uchun umumiy).</summary>
+    internal static bool TryTelegram(ClipboardSwap clip, out string oldText, out string newText, out byte[] newTags)
     {
         oldText = newText = "";
         newTags = Array.Empty<byte>();
-        var tdText = _clip.ReadNamed(TelegramTags.TextFormat);
-        var tdTags = _clip.ReadNamed(TelegramTags.TagsFormat);
+        var tdText = clip.ReadNamed(TelegramTags.TextFormat);
+        var tdTags = clip.ReadNamed(TelegramTags.TagsFormat);
         if (tdText == null || tdTags == null) return false;
         if (!TelegramTags.TryConvert(tdText, tdTags, out newText, out newTags))
         {

@@ -41,7 +41,9 @@ internal sealed class Settings
         {
             if (File.Exists(FilePath))
             {
-                using var f = File.OpenRead(FilePath);
+                // File.ReadAllText BOM'ni olib tashlaydi (Notepad'da saqlangan fayl BOM bilan bo'lishi mumkin —
+                // DataContractJsonSerializer uni ko'rsa xato beradi).
+                using var f = new MemoryStream(new UTF8Encoding(false).GetBytes(File.ReadAllText(FilePath)));
                 var s = (Settings?)Json.ReadObject(f) ?? new Settings();
                 s.Hotkey ??= "Ctrl+Alt+O";
                 s.RestoreDelayMs = Math.Max(0, Math.Min(5000, s.RestoreDelayMs));

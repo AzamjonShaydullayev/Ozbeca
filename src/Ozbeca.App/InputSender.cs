@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Runtime.InteropServices;
 using static Ozbeca.App.Native;
 
@@ -8,6 +8,9 @@ namespace Ozbeca.App;
 internal static class InputSender
 {
     private static readonly int[] Modifiers = { VK_CONTROL, VK_MENU, VK_SHIFT, VK_LWIN, VK_RWIN };
+
+    /// <summary>Hotkey oqimi yuboradigan tugmalar belgisi — avto-yozish ularga tegmaydi (Ctrl+V ni "user paste" deb o'ylamasin).</summary>
+    public static readonly IntPtr EngineInput = new(0x0E8A0E8C);
 
     public static bool IsDown(int vk) => (GetAsyncKeyState(vk) & 0x8000) != 0;
 
@@ -43,7 +46,7 @@ internal static class InputSender
         return new INPUT
         {
             type = INPUT_KEYBOARD,
-            U = new InputUnion { ki = new KEYBDINPUT { wVk = (ushort)vk, wScan = (ushort)MapVirtualKey((uint)vk, 0), dwFlags = flags } },
+            U = new InputUnion { ki = new KEYBDINPUT { wVk = (ushort)vk, wScan = (ushort)MapVirtualKey((uint)vk, 0), dwFlags = flags, dwExtraInfo = EngineInput } },
         };
     }
 

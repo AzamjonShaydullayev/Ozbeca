@@ -16,7 +16,7 @@ public partial class App : Application
     private ConvertEngine _engine = null!;
     private WinForms.NotifyIcon _tray = null!;
     private WinForms.ToolStripMenuItem _enabledItem = null!, _autostartItem = null!, _autoTypeItem = null!;
-    private readonly AutoType _autoType = new();
+    private AutoType _autoType = null!;
     private ToastWindow? _toast;
     private SettingsWindow? _settingsWindow;
 
@@ -57,6 +57,7 @@ public partial class App : Application
         _hotkey = new HotkeyService();
         _engine = new ConvertEngine(_hotkey.Handle);
         _hotkey.Pressed += _engine.Trigger;
+        _autoType = new AutoType(_hotkey.Handle);
         _engine.Notify += msg => Dispatcher.BeginInvoke(() => Toast(msg));
         ApplyDelay();
 
@@ -76,7 +77,7 @@ public partial class App : Application
     {
         if (_tray != null) { _tray.Visible = false; _tray.Dispose(); }
         _hotkey?.Dispose();
-        _autoType.Dispose();
+        _autoType?.Dispose();
         _showEvent?.Dispose();
         _mutex?.ReleaseMutex();
         _mutex?.Dispose();

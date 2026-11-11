@@ -42,8 +42,12 @@ internal sealed class AutoType : IDisposable
 
     private readonly System.Windows.Threading.Dispatcher _dispatcher;
 
-    public AutoType()
+    private readonly ClipboardSwap _clip;
+
+    /// <param name="clipboardOwner">Ctrl+V da clipboard'ni vaqtincha almashtirish uchun oyna (hotkey oynasi).</param>
+    public AutoType(IntPtr clipboardOwner)
     {
+        _clip = new ClipboardSwap(clipboardOwner);
         _dispatcher = System.Windows.Threading.Dispatcher.CurrentDispatcher;
         _keyProc = OnKey;
         _mouseProc = OnMouse;
@@ -112,6 +116,9 @@ internal sealed class AutoType : IDisposable
 #endif
         try
         {
+            if (injected && k.dwExtraInfo == InputSender.EngineInput)
+                return CallNextHookEx(_keyHook, nCode, wParam, lParam); // hotkey oqimining Ctrl+C/Ctrl+V'si
+
             if (injected && k.dwExtraInfo == OwnInput)
             {
                 if (_pending > 0 && --_pending == 0) FlushHeld();
@@ -242,6 +249,16 @@ internal sealed class AutoType : IDisposable
             or >= 0xA0 and <= 0xA5 or >= 0xA6 and <= 0xB7)
             return false;
 
+        // Ctrl+V: qo'yilayotgan matn (probel yoki yangi qatori bo'lsa) ham o'giriladi.
+        if (vk == VK_V && allowReplace && InputSender.IsDown(VK_CONTROL) && !InputSender.IsDown(VK_MENU) &&
+            !InputSender.IsDown(VK_LWIN) && !InputSender.IsDown(VK_RWIN) && !IsPasswordFocus(fg))
+        {
+            _word.Reset();
+            BeginPending(1, 600); // haqiqiy son PasteConverted'da aniqlanadi; shu orada kelgan tugmalar ushlanadi
+            _dispatcher.BeginInvoke(new Action(PasteConverted));
+            return true; // V ushlandi — clipboard tayyor bo'lgach o'zimiz yuboramiz
+        }
+
         // LL-hook'da asinxron holat voqealar tartibida yangilanadi (ushlangan tugmalar uni o'zgartirmaydi).
         if (InputSender.IsDown(VK_CONTROL) || InputSender.IsDown(VK_MENU) || InputSender.IsDown(VK_LWIN) || InputSender.IsDown(VK_RWIN))
         {
@@ -299,6 +316,64 @@ internal sealed class AutoType : IDisposable
 #endif
         SendDeferred(inputs.ToArray(), "almashtirish");
         return true;
+    }
+
+    private const int PasteRestoreDelayMs = 500;
+
+    /// <summary>
+    /// Clipboard'dagi matnni o'girib qo'yadi, keyin asl clipboard'ni tiklaydi.
+    /// Faqat probel/yangi qatori bor matn: bitta so'z (masalan, nusxalangan parol "shahar123") o'zgarmasin.
+    /// Nima bo'lsa ham V yuboriladi — foydalanuvchining paste'i yo'qolmasin.
+    /// </summary>
+    private void PasteConverted()
+    {
+        ClipboardSwap.Snapshot? snapshot = null;
+        uint ours = 0;
+        string? converted = null;
+        try
+        {
+            string? text = _clip.ReadText();
+            if (text != null && text.Any(char.IsWhiteSpace))
+            {
+                List<(string, byte[])>? extras = null;
+                string conv;
+                if (ConvertEngine.TryTelegram(_clip, out var tgOld, out var tgNew, out var tgTags))
+                {
+                    text = tgOld;
+                    conv = tgNew;
+                    extras = new() { (TelegramTags.TextFormat, Encoding.UTF8.GetBytes(tgNew)), (TelegramTags.TagsFormat, tgTags) };
+                }
+                else conv = Transliterator.ToNewAlphabet(text);
+
+                if (conv != text)
+                {
+                    snapshot = _clip.Save();
+                    ours = _clip.SetText(conv, extras);
+                    if (ours != 0) converted = conv;
+                    else snapshot = null;
+                }
+            }
+        }
+        catch (Exception ex) { Log.Write("AutoType paste: " + ex.Message); }
+
+        bool ctrl = InputSender.IsDown(VK_CONTROL); // user Ctrl'ni qo'yib yuborgan bo'lsa — o'zimiz bosamiz
+        var keys = new List<INPUT>();
+        if (!ctrl) keys.Add(Key(VK_CONTROL, false));
+        keys.Add(Key(VK_V, false));
+        keys.Add(Key(VK_V, true));
+        if (!ctrl) keys.Add(Key(VK_CONTROL, true));
+        _pending += keys.Count - 1; // BeginPending(1) o'rniga haqiqiy son
+        _sendQueue.Add((keys.ToArray(), "paste"));
+
+        if (snapshot == null) return;
+        var timer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(PasteRestoreDelayMs) };
+        timer.Tick += (_, _) =>
+        {
+            timer.Stop();
+            // Boshqa dastur clipboard'ga yangi narsa yozgan bo'lsa — ustidan yozmaymiz.
+            if (ClipboardSwap.Sequence == ours || _clip.ReadText() == converted) _clip.Restore(snapshot);
+        };
+        timer.Start();
     }
 
     private char? ToChar(IntPtr fg, KBDLLHOOKSTRUCT k)
