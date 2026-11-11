@@ -155,7 +155,7 @@ ko'chiriladi. Yangisi balloon chiqaradi: "X versiyaga yangilandi". `--updated` a
 ## 4. Sinov
 
 ```bash
-dotnet test                                   # 386 unit test
+dotnet test                                   # 392 unit test
 dotnet build src/Ozbeca.App -c Release        # → src/Ozbeca.App/bin/Release/net48/Ozbeca.exe
 ```
 

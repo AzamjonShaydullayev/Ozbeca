@@ -133,9 +133,6 @@ internal sealed class AutoType : IDisposable
 
         var k = Marshal.PtrToStructure<KBDLLHOOKSTRUCT>(lParam);
         bool injected = (k.flags & LLKHF_INJECTED) != 0;
-#if DEBUG
-        Log.Write($"[debug] {(up ? "up  " : "down")} vk=0x{k.vkCode:X2} inj={injected} extra=0x{k.dwExtraInfo.ToInt64():X} pending={_pending} held={_held.Count}");
-#endif
         try
         {
             if (injected && k.dwExtraInfo == InputSender.EngineInput)
@@ -362,9 +359,6 @@ internal sealed class AutoType : IDisposable
         }
 
         char? c = ToChar(fg, k);
-#if DEBUG
-        Log.Write($"[debug] vk=0x{vk:X2} char={(c is char d ? d.ToString() : "null")} buf='{_word.Current}'");
-#endif
         if (c is char ch && !char.IsControl(ch) && !char.IsWhiteSpace(ch))
         {
             // Kod rejimi: qo'shtirnoq yopilyapti — oldingi so'zni o'girib, keyin " ni o'zimiz yozamiz.
@@ -435,9 +429,6 @@ internal sealed class AutoType : IDisposable
     /// </summary>
     private void Replace(int deleteCount, string replacement, INPUT[] trailing)
     {
-#if DEBUG
-        Log.Write($"[debug] almashtirish: del={deleteCount} -> '{replacement}', parol={_focusPassword?.ToString() ?? "?"}");
-#endif
         if (_focusPassword == false)
         {
             SendDeferred(ReplacementKeys(deleteCount, replacement, trailing).ToArray(), "almashtirish");

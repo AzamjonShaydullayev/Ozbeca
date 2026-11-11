@@ -93,8 +93,10 @@ public static class Transliterator
                 continue;
             }
 
-            // 2. o + A → ö, faqat A dan keyin harf kelsa.
-            if ((c == 'o' || c == 'O') && IsA(n1) && IsLetter(n2))
+            // 2. o + A → ö, A dan keyin harf kelsa — yoki yakka o' (oldida harf ham, tirnoq ham yo'q: "o' harfi").
+            //    So'z oxiridagi o' ('kino') yopuvchi tirnoq bo'lib qoladi.
+            char p = At(i - 1);
+            if ((c == 'o' || c == 'O') && IsA(n1) && (IsLetter(n2) || !IsLetter(p) && !IsA(p)))
             {
                 sb.Append(c == 'o' ? 'ö' : 'Ö');
                 i += 2;

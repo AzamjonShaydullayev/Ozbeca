@@ -59,6 +59,12 @@ public class TransliteratorTests
     [InlineData("'bog'", "'bog'")]                   // ma'lum cheklov: tirnoq bilan boshlansa bog' ham saqlanadi
     [InlineData("tog' va bog'", "toğ va boğ")]
     [InlineData("'o'zbek'", "'özbek'")]
+    [InlineData("o' harfi", "ö harfi")]                  // yakka o' — harfning o'zi
+    [InlineData("O‘ va G‘", "Ö va Ğ")]
+    [InlineData("o'", "ö")]
+    [InlineData("(o')", "(ö)")]
+    [InlineData("'o' harfi", "'o' harfi")]               // tirnoq ichidagi o — o'zgarmaydi
+    [InlineData("kino' ", "kino' ")]                     // so'z oxiridagi o' — yopuvchi tirnoq
     [InlineData("sana' ", "sana' ")]                                // harflar orasida emas
     [InlineData("Salom, www.shahar.uz/choy ga kir", "Salom, www.shahar.uz/choy ga kir")]
     [InlineData("Choy: http://x.uz/sh?q=o'g'il, keyin choy", "Çoy: http://x.uz/sh?q=o'g'il, keyin çoy")]
