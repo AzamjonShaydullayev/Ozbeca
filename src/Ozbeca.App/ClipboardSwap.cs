@@ -30,6 +30,9 @@ internal sealed class ClipboardSwap
 
     public static uint Sequence => GetClipboardSequenceNumber();
 
+    /// <summary>Clipboard'da Excel kataklari bor (formulalar, formatlar) — oddiy matn bilan almashtirilsa ular yo'qoladi.</summary>
+    public static bool HasSpreadsheetCells => IsClipboardFormatAvailable(RegisterClipboardFormat("XML Spreadsheet"));
+
     public sealed record Snapshot(IReadOnlyList<(uint Format, byte[] Data)> Items);
 
     public Snapshot Save()

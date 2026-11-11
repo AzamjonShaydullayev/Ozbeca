@@ -79,7 +79,16 @@ internal static class AppCatalog
     {
         if (item.ExtendedProperty("System.Link.TargetParsingPath") is string target &&
             target.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
-            return Path.GetFileNameWithoutExtension(target);
+        {
+            string exe = Path.GetFileNameWithoutExtension(target);
+            // Squirrel bilan o'rnatilganlar (Discord, Slack...): yorliq "Update.exe --processStart Discord.exe" ga
+            // ko'rsatadi, oyna esa Discord jarayoniniki — aks holda tanlangan dastur hech qachon tanilmasdi.
+            if (exe.Equals("Update", StringComparison.OrdinalIgnoreCase) &&
+                item.ExtendedProperty("System.Link.Arguments") is string args &&
+                ProcessStart.Match(args) is { Success: true } m)
+                return Path.GetFileNameWithoutExtension(m.Groups[1].Success ? m.Groups[1].Value : m.Groups[2].Value);
+            return exe;
+        }
 
         // Store ilovasi: Oila!AppId → paket papkasidagi AppxManifest.xml → <Application Id=AppId Executable=...>
         int bang = aumid.IndexOf('!');
@@ -100,8 +109,16 @@ internal static class AppCatalog
         return null;
     }
 
-    /// <summary>O'chiruvchi/o'rnatuvchilar, o'zimiz va avto-o'girish umuman ishlamaydigan joylar (terminal va b.) ko'rsatilmaydi.</summary>
+    private static readonly System.Text.RegularExpressions.Regex ProcessStart = new(
+        @"--processStart\s+(?:""([^""]+)""|(\S+))", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+    /// <summary>
+    /// O'chiruvchi/o'rnatuvchilar, o'zimiz va avto-o'girish umuman ishlamaydigan joylar (terminal va b.) ko'rsatilmaydi.
+    /// Brauzer "ilovalari" (chrome_proxy, msedge_proxy) ham: ularning oynasi brauzer jarayoniniki — brauzerning o'zi tanlanadi.
+    /// </summary>
     private static bool IsJunk(string name, string process) =>
+        process.EndsWith("_proxy", StringComparison.OrdinalIgnoreCase) ||
+        process.Equals("msiexec", StringComparison.OrdinalIgnoreCase) ||
         process.StartsWith("unins", StringComparison.OrdinalIgnoreCase) ||
         process.IndexOf("uninstall", StringComparison.OrdinalIgnoreCase) >= 0 ||
         name.IndexOf("uninstall", StringComparison.OrdinalIgnoreCase) >= 0 ||

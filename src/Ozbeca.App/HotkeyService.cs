@@ -50,6 +50,10 @@ internal sealed class HotkeyService : IDisposable
         _source.Dispose();
     }
 
+    /// <summary>Ko'rsatish uchun: "Ctrl+Alt+D1" → Ctrl, Alt, 1 (WPF raqam tugmasini "D1" deb ataydi); Space → Probel.</summary>
+    public static string[] Caps(string combo) => combo.Split('+').Select(k => k.Trim()).Select(k =>
+        k == "Space" ? "Probel" : k.Length == 2 && k[0] == 'D' && char.IsDigit(k[1]) ? k.Substring(1) : k).ToArray();
+
     /// <summary>"Ctrl+Alt+Space" → (MOD_*, VK). Noto'g'ri bo'lsa false.</summary>
     public static bool TryParse(string text, out uint modifiers, out int vk)
     {

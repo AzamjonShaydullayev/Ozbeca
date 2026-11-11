@@ -182,6 +182,7 @@ internal sealed class ConvertEngine
     }
 
     internal static bool IsTerminalWindow(IntPtr hwnd) => TerminalClasses.Contains(ClassNameOf(hwnd));
+    internal static bool IsOfficeWindow(IntPtr hwnd) => OfficeClasses.Contains(ClassNameOf(hwnd));
 
     internal static string ClassNameOf(IntPtr hwnd)
     {

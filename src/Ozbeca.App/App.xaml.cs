@@ -20,12 +20,22 @@ public partial class App : Application
     private ToastWindow? _toast;
     private NoticeWindow? _notice;
     private SettingsWindow? _settingsWindow;
+    private bool _ready; // ishga tushish tugadi (tray bor)
 
     internal Settings Settings { get; private set; } = null!;
 
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+
+        // Tray dasturi kutilmagan xatoda jim yopilib qolmasin: logga yozamiz va ishlashda davom etamiz.
+        // Ishga tushish tugamagan bo'lsa — yopiladi (tray belgisisiz "arvoh" jarayon qolmasin).
+        DispatcherUnhandledException += (_, ev) =>
+        {
+            Log.Write("Kutilmagan xato: " + ev.Exception);
+            ev.Handled = _ready;
+        };
+        AppDomain.CurrentDomain.UnhandledException += (_, ev) => Log.Write("Jiddiy xato: " + ev.ExceptionObject);
 
         // Yangi versiya ishga tushirildi — eski nusxani yopib, o'rnini egallaymiz (mutex'dan oldin: u eskisida).
         try
@@ -77,6 +87,17 @@ public partial class App : Application
 
         CreateTray();
         ApplyAutoType();
+        // Kompyuter uyqudan yoki qulfdan chiqqanda hook jim o'chib qolgan bo'lishi mumkin: tizim band paytda hook
+        // vaqtida javob bermasa, Windows uni ogohlantirmasdan olib tashlaydi. Qayta o'rnatamiz.
+        Microsoft.Win32.SystemEvents.PowerModeChanged += (_, ev) =>
+        {
+            if (ev.Mode == Microsoft.Win32.PowerModes.Resume) Dispatcher.BeginInvoke(() => _autoType.Restart());
+        };
+        Microsoft.Win32.SystemEvents.SessionSwitch += (_, ev) =>
+        {
+            if (ev.Reason == Microsoft.Win32.SessionSwitchReason.SessionUnlock) Dispatcher.BeginInvoke(() => _autoType.Restart());
+        };
+        _ready = true;
 
         string? error = ApplyHotkeyState();
         Log.Write($"Ishga tushdi {Theme.Version}, hotkey {Settings.Hotkey}, yoqilgan={Settings.Enabled}, avto-yozish={Settings.AutoType}, admin={Compat.IsElevatedSelf}" + (error != null ? $" — {error}" : ""));
@@ -262,7 +283,7 @@ public partial class App : Application
     private void UpdateTrayText()
     {
         if (_tray == null) return;
-        _tray.Text = Settings.Enabled ? $"Özbeça — {Settings.Hotkey}" : "Özbeça — o'chirilgan";
+        _tray.Text = Settings.Enabled ? $"Özbeça — {string.Join("+", HotkeyService.Caps(Settings.Hotkey))}" : "Özbeça — o'chirilgan";
     }
 
     internal SettingsWindow? ShowSettings()

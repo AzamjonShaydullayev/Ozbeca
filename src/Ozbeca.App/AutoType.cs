@@ -108,6 +108,14 @@ internal sealed class AutoType : IDisposable
 
     public void Dispose() => Stop();
 
+    /// <summary>Hook'larni qayta o'rnatadi (uyqu/qulfdan keyin). Almashtirish ketayotgan bo'lsa — tegmaydi.</summary>
+    public void Restart()
+    {
+        if (!IsRunning || _pending > 0 || _settling > 0 || _held.Count > 0) return;
+        Stop();
+        Start();
+    }
+
     private IntPtr OnMouse(int nCode, IntPtr wParam, IntPtr lParam)
     {
         int msg = wParam.ToInt32();
@@ -338,8 +346,11 @@ internal sealed class AutoType : IDisposable
             return false;
 
         // Ctrl+V: qo'yilayotgan matn (probel yoki yangi qatori bo'lsa) ham o'giriladi.
+        // Tegilmaydi: parol maydoni (UIA bilan ma'lum bo'lsa ham) va Office'ga qo'yilayotgan Excel kataklari —
+        // oddiy matnga aylantirilsa formulalar va jadval yo'qolardi.
         if (vk == VK_V && _mode == Mode.Prose && InputSender.IsDown(VK_CONTROL) && !InputSender.IsDown(VK_MENU) &&
-            !InputSender.IsDown(VK_LWIN) && !InputSender.IsDown(VK_RWIN) && !IsPasswordFocus(fg))
+            !InputSender.IsDown(VK_LWIN) && !InputSender.IsDown(VK_RWIN) && !IsPasswordFocus(fg) && _focusPassword != true &&
+            !(ConvertEngine.IsOfficeWindow(fg) && ClipboardSwap.HasSpreadsheetCells))
         {
             ResetWord();
             BeginPending(1, 600); // haqiqiy son PasteConverted'da aniqlanadi; shu orada kelgan tugmalar ushlanadi
@@ -354,6 +365,7 @@ internal sealed class AutoType : IDisposable
         if (!altGr && (ctrl || alt) || InputSender.IsDown(VK_LWIN) || InputSender.IsDown(VK_RWIN))
         {
             ResetWord(); // Ctrl+V, Ctrl+Z, Alt+Tab... — matn qayerda ekanini endi bilmaymiz
+            ForgetFocus(); // Ctrl+Tab, Ctrl+L, Alt+D — o'sha oynada boshqa maydon (parol bo'lishi mumkin)
             return false;
         }
 
@@ -381,9 +393,13 @@ internal sealed class AutoType : IDisposable
                     _word.TryCompleteAtEnter(out int enterDel, out string enterWord))
                 {
                     Replace(enterDel, enterWord, new[] { Key(VK_RETURN, false), Key(VK_RETURN, true) });
+                    ForgetFocus(); // pastdagi izohga qarang; Replace joriy maydon javobini olib bo'ldi
                     return true; // Enter ushlandi — so'z almashgach o'zimiz yuboramiz
                 }
                 _word.ResetNewLine();
+                // Enter fokusni ko'chirishi mumkin: login → Enter → o'sha oynada parol maydoni (Google, Telegram Web).
+                // Eski maydonning "parol emas" javobi yangi maydonga o'tib ketmasin.
+                ForgetFocus();
                 return false;
             case 0x24: // Home
                 _word.ResetNewLine(); // kursor qator boshida — kod rejimida qo'shtirnoqdan tashqari ekani aniq
@@ -393,6 +409,9 @@ internal sealed class AutoType : IDisposable
                 ResetWord();
                 return false;
             case VK_ESCAPE:
+                ForgetFocus(); // dialog yopilib, fokus boshqa maydonga o'tishi mumkin
+                ResetWord();
+                return false;
             case VK_DELETE:
             case VK_INSERT:
             case >= 0x21 and <= 0x28: // PgUp, PgDn, End, strelkalar
@@ -427,7 +446,11 @@ internal sealed class AutoType : IDisposable
             PrefetchPassword();
             ArmPause();
         }
-        else ResetWord();
+        else
+        {
+            ResetWord();
+            ForgetFocus(); // F6 va shunga o'xshash tugmalar fokusni ko'chiradi
+        }
         return false;
     }
 
@@ -524,6 +547,7 @@ internal sealed class AutoType : IDisposable
         }
 
         BeginPending(1, UiaTimeoutMs + 1100); // haqiqiy son tekshiruvdan keyin aniqlanadi
+        int focus = _focusGen;
         bool? cached = _focusPassword; // true — shu maydon parol ekani allaqachon ma'lum
         var check = cached != null ? null : _uiaCheck ?? System.Threading.Tasks.Task.Run(FocusIsPasswordUia); // odatda harf yozilganda boshlangan
         _uiaCheck = null;
@@ -534,7 +558,8 @@ internal sealed class AutoType : IDisposable
             {
                 // Javob kelmasa (sekin kompyuter) — bu so'zga tegmaymiz, lekin "parol" deb eslab qolmaymiz:
                 // aks holda sichqoncha bosilguncha shu maydonda hech narsa o'girilmasdi.
-                _focusPassword ??= uia;
+                // Javob kutilayotganda fokus o'zgargan bo'lsa (sichqoncha, Enter) — u eski maydonniki, eslab qolmaymiz.
+                if (focus == _focusGen) _focusPassword ??= uia;
                 bool password = uia ?? true;
                 var keys = password ? new List<INPUT>(trailing) : ReplacementKeys(deleteCount, replacement, trailing);
                 if (uia == null) Log.Write("AutoType: UI Automation javob bermadi — so'z o'girilmadi, keyingisida qayta tekshiriladi");
@@ -555,7 +580,10 @@ internal sealed class AutoType : IDisposable
     {
         _focusPassword = null;
         _uiaCheck = null;
+        _focusGen++;
     }
+
+    private int _focusGen; // fokus har o'zgarganda oshadi — kechikkan UIA javobi yangi maydonga yozilmasin
 
     /// <summary>
     /// UIA tekshiruvini so'zning birinchi harfida boshlaymiz — probelgacha javob tayyor bo'ladi va tugmalar ushlanmaydi

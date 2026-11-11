@@ -42,8 +42,7 @@ public partial class SettingsWindow : Window
         HotkeyStatusBox.Background = message == App.AltGrWarning ? WarningBrush : (Brush)FindResource("Danger");
     }
 
-    private void ShowHotkey(string combo) =>
-        HotkeyCaps.ItemsSource = combo.Split('+').Select(k => k.Trim() == "Space" ? "Probel" : k.Trim()).ToArray();
+    private void ShowHotkey(string combo) => HotkeyCaps.ItemsSource = HotkeyService.Caps(combo);
 
     private void UpdateStatus()
     {

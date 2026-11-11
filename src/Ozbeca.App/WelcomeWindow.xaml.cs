@@ -12,7 +12,7 @@ public partial class WelcomeWindow : Window
         InitializeComponent();
         Theme.Apply(this);
         Theme.RoundClip(HeroClip, 16);
-        HotkeyCaps.ItemsSource = hotkey.Split('+').Select(k => k.Trim() == "Space" ? "Probel" : k.Trim()).ToArray();
+        HotkeyCaps.ItemsSource = HotkeyService.Caps(hotkey);
         if (Install.IsInstalledCopy)
         {
             InstallBox.Visibility = Visibility.Collapsed;
