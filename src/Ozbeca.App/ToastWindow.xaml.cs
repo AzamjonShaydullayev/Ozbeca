@@ -33,9 +33,28 @@ public partial class ToastWindow : Window
         _timer.Start();
     }
 
+    /// <summary>
+    /// Matn kursori (caret) yonida; ilova caret'ni bermasa (Chrome, Word) — faol oynaning pastki o'rtasida.
+    /// Sichqoncha ishlatilmaydi: u boshqa monitorda bo'lishi mumkin.
+    /// </summary>
+    private static POINT AnchorPoint()
+    {
+        IntPtr fg = GetForegroundWindow();
+        var gti = new GUITHREADINFO { cbSize = System.Runtime.InteropServices.Marshal.SizeOf<GUITHREADINFO>() };
+        if (fg != IntPtr.Zero && GetGUIThreadInfo(GetWindowThreadProcessId(fg, out _), ref gti) && gti.hwndCaret != IntPtr.Zero)
+        {
+            var p = new POINT { X = gti.rcCaret.Left, Y = gti.rcCaret.Bottom };
+            if (ClientToScreen(gti.hwndCaret, ref p)) return p;
+        }
+        if (fg != IntPtr.Zero && GetWindowRect(fg, out var wr))
+            return new POINT { X = (wr.Left + wr.Right) / 2 - 60, Y = wr.Bottom - 90 };
+        GetCursorPos(out var c);
+        return c;
+    }
+
     private void PlaceNearCursor()
     {
-        GetCursorPos(out var p);
+        var p = AnchorPoint();
         GetWindowRect(_hwnd, out var r);
         int w = r.Right - r.Left, h = r.Bottom - r.Top;
         var mi = new MONITORINFO { cbSize = System.Runtime.InteropServices.Marshal.SizeOf<MONITORINFO>() };

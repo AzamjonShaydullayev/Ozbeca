@@ -91,6 +91,7 @@ public partial class App : Application
     {
         var w = new WelcomeWindow(Settings.Hotkey);
         bool ok = w.ShowDialog() == true;
+        if (ok) Settings.AutoType = w.DoAutoType;
         Settings.Save(); // X bosilsa ham — keyingi safar qayta so'ramaymiz
         if (!ok) { Log.Write("O'rnatish oynasi yopildi — hech narsa o'zgartirilmadi"); return false; }
 
@@ -166,6 +167,16 @@ public partial class App : Application
         else _autoType.Stop();
     }
 
+    /// <summary>Umumiy yoqish/o'chirish (hotkey va yozish paytida o'girish). Xato matni yoki null.</summary>
+    internal string? SetEnabled(bool on)
+    {
+        Settings.Enabled = on;
+        Settings.Save();
+        string? error = ApplyHotkeyState();
+        ApplyAutoType();
+        return error;
+    }
+
     internal void SetAutoType(bool on)
     {
         Settings.AutoType = on;
@@ -184,10 +195,7 @@ public partial class App : Application
         _enabledItem = new WinForms.ToolStripMenuItem("Yoqilgan") { CheckOnClick = true, Checked = Settings.Enabled };
         _enabledItem.Click += (_, _) =>
         {
-            Settings.Enabled = _enabledItem.Checked;
-            Settings.Save();
-            string? error = ApplyHotkeyState();
-            ApplyAutoType();
+            string? error = SetEnabled(_enabledItem.Checked);
             if (error != null) _tray.ShowBalloonTip(5000, "Özbeça", error, WinForms.ToolTipIcon.Warning);
         };
 
@@ -198,12 +206,15 @@ public partial class App : Application
         _autostartItem.Click += (_, _) => Autostart.Set(_autostartItem.Checked);
 
         var menu = new WinForms.ContextMenuStrip();
+        menu.Items.Add(TrayMenu.Header());
+        menu.Items.Add(new WinForms.ToolStripSeparator());
         menu.Items.Add(_enabledItem);
         menu.Items.Add(_autoTypeItem);
-        menu.Items.Add("Sozlamalar…", null, (_, _) => ShowSettings());
         menu.Items.Add(_autostartItem);
         menu.Items.Add(new WinForms.ToolStripSeparator());
+        menu.Items.Add("Sozlamalar…", null, (_, _) => ShowSettings());
         menu.Items.Add("Chiqish", null, (_, _) => Shutdown());
+        TrayMenu.Style(menu);
         menu.Opening += (_, _) =>
         {
             _enabledItem.Checked = Settings.Enabled;

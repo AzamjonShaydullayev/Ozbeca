@@ -4,11 +4,19 @@
         WindowStyle="None" AllowsTransparency="True" Background="Transparent"
         ShowInTaskbar="False" ShowActivated="False" Topmost="True" Focusable="False"
         ResizeMode="NoResize" SizeToContent="WidthAndHeight" Opacity="0">
-    <Border CornerRadius="8" Background="#EE1F1F1F" BorderBrush="#33FFFFFF" BorderThickness="1"
-            Padding="12,6" Margin="6">
+    <Border CornerRadius="17" Background="#F2202428" BorderBrush="#26FFFFFF" BorderThickness="1"
+            Padding="6,6,14,6" Margin="8">
         <Border.Effect>
-            <DropShadowEffect BlurRadius="10" ShadowDepth="2" Opacity="0.35" />
+            <DropShadowEffect BlurRadius="14" ShadowDepth="3" Opacity="0.28" />
         </Border.Effect>
-        <TextBlock x:Name="MessageText" Foreground="White" FontFamily="Segoe UI" FontSize="13" />
+        <StackPanel Orientation="Horizontal">
+            <Border Width="22" Height="22" CornerRadius="11" Background="#FF0099B5">
+                <TextBlock Text="Ö" Foreground="White" FontSize="13" FontWeight="SemiBold"
+                           FontFamily="Segoe UI Variable Display, Segoe UI"
+                           HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,-2,0,0" />
+            </Border>
+            <TextBlock x:Name="MessageText" Foreground="White" FontFamily="Segoe UI Variable Text, Segoe UI" FontSize="13"
+                       VerticalAlignment="Center" Margin="9,0,0,1" />
+        </StackPanel>
     </Border>
 </Window>
