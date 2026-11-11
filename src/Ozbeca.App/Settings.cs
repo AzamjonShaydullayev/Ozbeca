@@ -78,7 +78,7 @@ internal static class Autostart
 {
     private const string RunKey = @"Software\Microsoft\Windows\CurrentVersion\Run";
     private const string Name = "Ozbeca";
-    private static string Command => Quote(Compat.ProcessPath!);
+    private static string Command => Quote(Compat.ProcessPath);
     private static string Quote(string path) => $"\"{path}\"";
 
     public static bool IsEnabled

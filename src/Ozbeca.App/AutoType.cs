@@ -12,7 +12,8 @@ namespace Ozbeca.App;
 /// xotirada turadi (eng ko'pi 64 belgi) — hech qayerga yozilmaydi va yuborilmaydi.
 ///
 /// Xavfsizlik:
-/// - Enter'da o'girilmaydi: parol odatda Enter bilan tugaydi (choy1990 + Enter → çoy1990 bo'lib qolmasin).
+/// - Enter'da oxirgi so'z faqat parol maydoni bo'lmasa o'giriladi (Win32 ES_PASSWORD + UIA IsPassword) —
+///   choy1990 + Enter parolda çoy1990 bo'lib qolmasin.
 /// - Win32 parol maydoni, terminal, parol menejeri, masofaviy ish stoli, admin oynada o'chiq.
 /// - Kod muharrirlarida — kod rejimi: faqat qo'shtirnoq "…" ichidagi matn o'giriladi (TokenBuffer.CodeMode).
 /// - Sichqoncha bosilsa, strelka/Home/End/Tab/Esc yoki boshqa oyna — so'z unutiladi (noto'g'ri joyni almashtirmaslik uchun).
@@ -74,6 +75,8 @@ internal sealed class AutoType : IDisposable
         IntPtr module = GetModuleHandle(null);
         _keyHook = SetWindowsHookEx(WH_KEYBOARD_LL, _keyProc, module, 0);
         _mouseHook = SetWindowsHookEx(WH_MOUSE_LL, _mouseProc, module, 0);
+        int hookError = Marshal.GetLastWin32Error();
+        if (!IsRunning) Stop(); // klaviatura hook'i bo'lmasa sichqonchanikini ham qoldirmaymiz (keyingi Start'da oqib ketmasin)
         _word.Reset();
         _lastWindow = IntPtr.Zero;
         if (_sender == null)
@@ -81,7 +84,7 @@ internal sealed class AutoType : IDisposable
             _sender = new Thread(SenderLoop) { IsBackground = true, Name = "OzbecaAutoTypeSender" };
             _sender.Start();
         }
-        Log.Write(IsRunning ? "Yozish paytida o'girish yoqildi" : "Hook o'rnatilmadi: " + Marshal.GetLastWin32Error());
+        Log.Write(IsRunning ? "Yozish paytida o'girish yoqildi" : "Hook o'rnatilmadi: " + hookError);
     }
 
     public void Stop()

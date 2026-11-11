@@ -50,5 +50,6 @@ public class TelegramTagsTests
     [InlineData(new byte[] { })]
     [InlineData(new byte[] { 0, 0, 0, 1 })]                              // soni 1, lekin ma'lumot yo'q
     [InlineData(new byte[] { 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 50, 0, 0, 0, 0 })] // matndan uzun
+    [InlineData(new byte[] { 0, 0, 0, 1, 0x7F, 0xFF, 0xFF, 0xFF, 0, 0, 0, 1, 0xFF, 0xFF, 0xFF, 0xFF })] // offset+length int'dan toshadi
     public void RejectsBrokenData(byte[] data) => Assert.False(TelegramTags.TryParse(data, 10, out _));
 }

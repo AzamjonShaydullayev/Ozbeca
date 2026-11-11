@@ -108,7 +108,7 @@ public partial class App : Application
         Settings.Save(); // X bosilsa ham — keyingi safar qayta so'ramaymiz
         if (!ok) { Log.Write("O'rnatish oynasi yopildi — hech narsa o'zgartirilmadi"); return false; }
 
-        string target = Compat.ProcessPath!;
+        string target = Compat.ProcessPath;
         try
         {
             if (w.DoInstall) { Install.CopySelf(); target = Install.Exe; }

@@ -21,12 +21,12 @@ internal static class Install
         Environment.GetFolderPath(Environment.SpecialFolder.Programs), "Özbeça.lnk");
 
     public static bool IsInstalledCopy =>
-        string.Equals(Path.GetFullPath(Compat.ProcessPath!), Path.GetFullPath(Exe), StringComparison.OrdinalIgnoreCase);
+        string.Equals(Path.GetFullPath(Compat.ProcessPath), Path.GetFullPath(Exe), StringComparison.OrdinalIgnoreCase);
 
     public static void CopySelf()
     {
         Directory.CreateDirectory(Dir);
-        File.Copy(Compat.ProcessPath!, Exe, overwrite: true);
+        File.Copy(Compat.ProcessPath, Exe, overwrite: true);
         // Internetdan yuklangan belgisi (Zone.Identifier) nusxaga ham o'tadi — user faylni allaqachon ochgan,
         // qayta SmartScreen so'ramasligi uchun olib tashlaymiz (installerlar ham shunday qiladi).
         Native.DeleteFile(Exe + ":Zone.Identifier"); // oqim bo'lmasa — shunchaki false qaytaradi

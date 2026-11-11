@@ -2,7 +2,7 @@ using System.Windows.Interop;
 
 namespace Ozbeca.App;
 
-/// <summary>RegisterHotKey + yashirin message-only oyna. Keyboard hook yo'q (D4).</summary>
+/// <summary>RegisterHotKey + yashirin message-only oyna. Hotkey uchun hook kerak emas (hook faqat AutoType'da).</summary>
 internal sealed class HotkeyService : IDisposable
 {
     private const int HotkeyId = 0x0E8A;

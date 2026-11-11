@@ -55,7 +55,7 @@ public static class TelegramTags
                 id = Encoding.BigEndianUnicode.GetString(data, pos, bytes);
                 pos += bytes;
             }
-            if (offset < 0 || length <= 0 || offset + length > textLength) return false;
+            if (offset < 0 || length <= 0 || length > textLength - offset) return false; // offset+length int'dan toshmasin
             tags.Add(new Tag(offset, length, id));
         }
         return true;

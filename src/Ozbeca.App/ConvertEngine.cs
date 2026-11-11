@@ -38,7 +38,7 @@ internal sealed class ConvertEngine
     public int HotkeyVk { get; set; } = VK_SPACE;
     public int RestoreDelayMs { get; set; } = 400;
 
-    /// <summary>Foydalanuvchiga ko'rsatiladigan xabar (M3 da toast).</summary>
+    /// <summary>Foydalanuvchiga ko'rsatiladigan xabar (toast).</summary>
     public event Action<string>? Notify;
 
     public void Trigger()
