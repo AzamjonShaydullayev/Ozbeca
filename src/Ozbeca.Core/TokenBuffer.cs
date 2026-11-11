@@ -208,7 +208,7 @@ public sealed class TokenBuffer
         replacement = "";
         if (_raw == null) return false;
         string raw = _raw.ToString();
-        if (raw == _sb.ToString() || !CodeGuard.LooksLikeCode(raw)) return false;
+        if (raw == _sb.ToString() || !CodeGuard.ShouldSkip(raw)) return false;
         return TryConvertAtPause(out deleteCount, out replacement);
     }
 
@@ -225,9 +225,9 @@ public sealed class TokenBuffer
         if (_codeMode && !InString) return false;        // kod: faqat qo'shtirnoq ichi
 
         string converted;
-        if (CodeGuard.LooksLikeCode(word))
+        if (CodeGuard.ShouldSkip(word))
         {
-            // Kod yoki manzil yozilyapti — tegmaymiz. Boshi pauzada o'girilib ulgurgan bo'lsa
+            // Kod, manzil yoki inglizcha so'z (check) yozilyapti — tegmaymiz. Boshi pauzada o'girilib ulgurgan bo'lsa
             // (şerzod + @gmail.com) — yozilganidek qaytaramiz.
             converted = word;
         }

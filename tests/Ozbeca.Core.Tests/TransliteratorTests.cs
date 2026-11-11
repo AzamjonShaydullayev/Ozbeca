@@ -44,6 +44,7 @@ public class TransliteratorTests
     [InlineData("‘Yaxshi tong’", "‘Yaxşi tong’")]
     [InlineData("'Yaxshi tong!'", "'Yaxşi tong!'")]
     [InlineData("'Yaxshi tong', dedi u", "'Yaxşi tong', dedi u")]
+    [InlineData("'Yaxshi tong' edi", "'Yaxşi tong' edi")]
     [InlineData("('Yaxshi tong')", "('Yaxşi tong')")]
     [InlineData("'tong'", "'tong'")]                                        // bitta so'z — avvalgidek
     [InlineData("'Tog' baland'", "'Toğ baland'")]                           // keyinroq aniq yopuvchi bor — g' harf
@@ -85,6 +86,10 @@ public class TransliteratorTests
     [InlineData("shahar.docx", "şahar.docx")]
     [InlineData("3.5 choy", "3.5 çoy")]
     [InlineData("ish.uzoq", "iş.uzoq")]
+    [InlineData("Sayt: shop.example.com/choy", "Sayt: shop.example.com/choy")]
+    // Tirnoq ichidagi domen ham himoyalanadi — tutuq belgisi domen boshlanishiga to'sqinlik qilmaydi.
+    [InlineData("'shahar.uz' sayti", "'shahar.uz' sayti")]
+    [InlineData("Sayt 'kun.uz/choy' edi", "Sayt 'kun.uz/choy' edi")]
     public void BareLinksAreProtected(string input, string expected)
     {
         Assert.Equal(expected, T(input));

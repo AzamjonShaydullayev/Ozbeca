@@ -36,6 +36,9 @@ CYR = re.compile(r"[Ѐ-ӿ]")
 # Gapni "shalaq" deb belgilaydigan aniq xato shakllar (bunday gaplar toza hisoblanmaydi).
 SLOPPY = set("bolgan bolib boladi boyicha ozbekiston ozbek kop togri bolsa boldi korinadi bolishi kopchilik "
              "korsatadi bolmagan".split())
+# Tutuqsiz shakli inglizcha so'z, lekin top-10k ro'yxatida yo'q: yozish paytida buzilmasin (logon -> log'on).
+# tog'a — haqiqiy o'zbekcha so'z, qoladi (inglizcha toga o'giriladi). Taklif: XakimovNosirbek (PR #1).
+ENGLISH_HOMOGRAPHS = {"logon"}
 
 # --- Qo'shimchalar grammatikasi (soddalashtirilgan, tartib bilan) ---
 N_DERIV = {"li", "lik", "siz", "chi", "chilik", "cha"}
@@ -181,7 +184,7 @@ def main():
         f = form[k]
         if n < MIN_FULL or len(k) < 3 or not re.fullmatch(r"[a-z']+", f):
             continue
-        if k in en:
+        if k in en or k in ENGLISH_HOMOGRAPHS:
             stats["inglizcha"] += 1
             continue
         if k in lemmas:

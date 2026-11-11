@@ -47,10 +47,30 @@ public class CodeGuardTests
     [InlineData("var shahar_choy = getChoy(); // shirin choy", "var shahar_choy = getChoy(); // şirin çoy")]
     [InlineData("if (x) { choy(); }", "if (x) { choy(); }")]
     [InlineData("shahar.uz saytida choy", "shahar.uz saytida çoy")]
+    [InlineData("Please check the school chart", "Please check the school chart")]       // inglizcha so'zlar — tegilmaydi
+    [InlineData("Check, should; (which)", "Check, should; (which)")]
+    [InlineData("chat va match", "çat va matç")]                                         // o'zbekchada ham bor — o'giriladi
+    [InlineData("checkni shoshma", "çeckni şoşma")]                                      // qo'shimchali — ro'yxatda yo'q
     [InlineData("U 'Yaxshi tong' dedi, bog' katta", "U 'Yaxşi tong' dedi, boğ katta")]  // tirnoq so'zdan so'zga o'tadi
     [InlineData("'Yaxshi\r\ntog' baland", "'Yaxşi\r\ntoğ baland")]                      // lekin qatordan qatorga emas
     [InlineData("", "")]
     public void ConvertProse(string input, string expected) => Assert.Equal(expected, CodeGuard.ConvertProse(input));
+
+    [Theory]
+    [InlineData("check", true)]
+    [InlineData("Should,", true)]
+    [InlineData("SCHOOL", true)]
+    [InlineData("chat", false)]      // o'zbekcha çat
+    [InlineData("match", false)]     // matç
+    [InlineData("finish", false)]    // finiş
+    [InlineData("shahar", false)]
+    [InlineData("checkni", false)]
+    [InlineData("", false)]
+    public void EnglishWords(string token, bool expected)
+    {
+        Assert.Equal(expected, CodeGuard.IsEnglishWord(token));
+        Assert.False(CodeGuard.LooksLikeCode(token), token); // inglizcha so'z kod emas — Telegram'da "kod bor" deb o'tkazib yuborilmasin
+    }
 
     [Fact]
     public void TokenBufferSkipsCode()

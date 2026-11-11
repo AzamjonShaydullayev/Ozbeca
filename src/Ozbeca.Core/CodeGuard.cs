@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Text;
 
 namespace Ozbeca.Core;
@@ -14,6 +15,34 @@ public static class CodeGuard
 
     // So'z ichida bo'lsa — bu kod/identifikator: user_name, x=5, print(choy), a<b, $var, path\to, a*b, a&b, a|b
     private const string CodeChars = "_=(){}[]<>$\\*&|^~#@/";
+
+    // Ko'p uchraydigan inglizcha so'zlar: yozish paytida va Ctrl+V da buzilmasin (check → çeck).
+    // O'zbekchada ham xuddi shunday yoziladiganlari ataylab yo'q: chat, match, finish, shop, much, chop, chin, char.
+    // Ro'yxat g'oyasi — XakimovNosirbek (PR #1).
+    private static readonly HashSet<string> EnglishWords = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "she", "shall", "should", "shape", "share", "shared", "sharp", "shell", "shift", "ship", "shipping", "shopping",
+        "short", "shortcut", "shot", "show", "showed", "showing", "shown", "shut", "chain", "chance", "change", "changed", "changes",
+        "changing", "channel", "chapter", "character", "charge", "chart", "charts", "cheap", "check", "checked",
+        "checking", "checkout", "checks", "chief", "child", "children", "choice", "choose", "chrome", "church", "cache", "schedule",
+        "scheme", "school", "which", "such", "each", "reach", "teach", "touch", "watch", "catch", "march", "search",
+        "searching", "speech", "branch", "lunch", "launch", "tech", "technical", "technology", "machine", "merchant", "purchase",
+        "architecture", "english", "finished", "publish", "published", "push", "pushed", "crash",
+        "refresh", "wish", "dish", "wash", "cash", "hash", "trash", "brush", "dash", "slash", "splash", "mesh", "fashion",
+    };
+
+    /// <summary>Token (chetidagi tinish belgilarisiz) ko'p uchraydigan inglizcha so'zmi.</summary>
+    public static bool IsEnglishWord(string token)
+    {
+        if (string.IsNullOrEmpty(token)) return false;
+        int start = 0, end = token.Length;
+        while (start < end && EdgePunctuation.IndexOf(token[start]) >= 0) start++;
+        while (end > start && EdgePunctuation.IndexOf(token[end - 1]) >= 0) end--;
+        return end > start && EnglishWords.Contains(token.Substring(start, end - start));
+    }
+
+    /// <summary>Avtomatik o'girishda tegilmaydigan token: kod yoki inglizcha so'z.</summary>
+    public static bool ShouldSkip(string token) => LooksLikeCode(token) || IsEnglishWord(token);
 
     /// <summary>Token kodga o'xshaydimi (identifikator, ifoda, domen, camelCase).</summary>
     public static bool LooksLikeCode(string token)
@@ -64,7 +93,7 @@ public static class CodeGuard
             {
                 while (j < text.Length && !char.IsWhiteSpace(text[j])) j++;
                 string token = text.Substring(i, j - i);
-                sb.Append(LooksLikeCode(token) ? token
+                sb.Append(ShouldSkip(token) ? token
                     : Transliterator.ToNewAlphabet(token, Transliterator.RestoreApostrophes, ref quoteOpen));
             }
             i = j;

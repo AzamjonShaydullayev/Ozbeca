@@ -204,15 +204,15 @@ public class TokenBufferTests
     }
 
     [Theory]
-    [InlineData("check \b", "check ")]                 // o'girildi (çeck) → Backspace → asliga qaytdi, probel joyida
+    [InlineData("chess \b", "chess ")]                 // o'girildi (çess) → Backspace → asliga qaytdi, probel joyida
     [InlineData("ozbek \b", "ozbek ")]                 // lug'at tuzatishi ham qaytadi
-    [InlineData("Men check \b", "Men check ")]
-    [InlineData("check \b\b", "check")]                // ikkinchi Backspace — odatdagidek probelni o'chiradi
-    [InlineData("check \b\b ", "check ")]              // qaytarilgan so'z qayta o'girilmaydi
-    [InlineData("check \bqildim ", "check qildim ")]   // keyingi so'zlar odatdagidek
-    [InlineData("check \bchoy ", "check çoy ")]
+    [InlineData("Men chess \b", "Men chess ")]
+    [InlineData("chess \b\b", "chess")]                // ikkinchi Backspace — odatdagidek probelni o'chiradi
+    [InlineData("chess \b\b ", "chess ")]              // qaytarilgan so'z qayta o'girilmaydi
+    [InlineData("chess \bqildim ", "chess qildim ")]   // keyingi so'zlar odatdagidek
+    [InlineData("chess \bchoy ", "chess çoy ")]
     [InlineData("shahr \b\b\bar ", "şahar ")]          // qaytarib, xatosi tuzatilgan so'z — o'giriladi
-    [InlineData("check \b\b\bk ", "check ")]           // o'chirib, o'sha harfni qayta yozdi — hamon rad etilgan so'z
+    [InlineData("chess \b\b\bs ", "chess ")]          // o'chirib, o'sha harfni qayta yozdi — hamon rad etilgan so'z
     [InlineData("maktab \b", "maktab")]                // o'girilmagan so'z — oddiy Backspace
     [InlineData("choy n\b\b", "çoy")]                  // orada boshqa tugma bosildi — qaytarish yo'q
     [InlineData("choy \b\b\b ", "ço ")]                // qaytarilgan so'z qisqartirildi — endi boshqa so'z, o'giriladi
@@ -261,6 +261,24 @@ public class TokenBufferTests
         Assert.Equal(expected, late.Pause().Screen);
     }
 
+    // Inglizcha so'zlar yozish paytida o'girilmaydi; pauzada boshi o'girilib ulgurgan bo'lsa — qaytadi.
+    [Theory]
+    [InlineData("check ", "check ")]
+    [InlineData("Should, ", "Should, ")]
+    [InlineData("I should check the school ", "I should check the school ")]
+    [InlineData("chat ", "çat ")]                      // o'zbekchada ham shunday yoziladi
+    [InlineData("checkni ", "çeckni ")]
+    public void EnglishWordsAreNotConvertedWhileTyping(string keys, string expected) =>
+        Assert.Equal(expected, new Typist().Type(keys).Screen);
+
+    [Fact]
+    public void EnglishWordStartedBeforePauseIsRestored()
+    {
+        Assert.Equal("check", new Typist().Type("check").Pause().Screen);            // to'liq so'z pauzada ham tegilmaydi
+        Assert.Equal("çe", new Typist().Type("che").Pause().Screen);                 // hali noma'lum so'z
+        Assert.Equal("check ", new Typist().Type("che").Pause().Type("ck ").Screen); // tugagach — yozilganidek
+    }
+
     [Fact]
     public void RestoredAddressStaysAsTyped()
     {
@@ -282,26 +300,26 @@ public class TokenBufferTests
         Assert.Equal("organish ", t.Type("\b").Screen);
 
         // Pauzada o'girilib, probelda o'zgarmagan so'z ham qaytadi.
-        t = new Typist().Type("check").Pause().Type(" ");
-        Assert.Equal("çeck ", t.Screen);
-        Assert.Equal("check ", t.Type("\b").Screen);
+        t = new Typist().Type("chess").Pause().Type(" ");
+        Assert.Equal("çess ", t.Screen);
+        Assert.Equal("chess ", t.Type("\b").Screen);
     }
 
     [Fact]
     public void PauseDoesNotBreakUndo()
     {
         // Probeldan keyin pauza taymeri ishlasa ham qaytarish imkoni qoladi.
-        Assert.Equal("check ", new Typist().Type("check ").Pause().Type("\b").Screen);
+        Assert.Equal("chess ", new Typist().Type("chess ").Pause().Type("\b").Screen);
         // Qaytarilgan so'z pauzada ham qayta o'girilmaydi; o'zgartirilsa — o'giriladi.
-        var t = new Typist().Type("check \b\b").Pause();
-        Assert.Equal("check", t.Screen);
-        Assert.Equal("çecks", t.Type("s").Pause().Screen);
+        var t = new Typist().Type("chess \b\b").Pause();
+        Assert.Equal("chess", t.Screen);
+        Assert.Equal("çesss", t.Type("s").Pause().Screen);
     }
 
     [Fact]
     public void UndoIsForgottenOnReset()
     {
-        var t = new Typist().Type("check ");
+        var t = new Typist().Type("chess ");
         t.B.Reset(); // sichqoncha, boshqa oyna
         Assert.False(t.B.TryUndo(out _, out _));
     }
