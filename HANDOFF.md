@@ -2,7 +2,7 @@
 
 > **Yangi chatda birinchi bo'lib shu faylni to'liq o'qing.** Unda loyihaning joriy holati, qabul qilingan
 > qarorlar (va ularning sababi), ish tartibi, sinov usullari va oldingi sessiyalarda o'rganilgan saboqlar bor.
-> Oxirgi yangilanish: **2026-11-11**, v1.4.0 release chiqqandan keyin (lug'at + tez yozish tuzatishlari).
+> Oxirgi yangilanish: **2026-11-11**, v1.5.0 release chiqqandan keyin (yangi dizayn, dasturlarni tanlash, pauza+lug'at tuzatishi).
 
 ---
 
@@ -11,7 +11,7 @@
 | | |
 |---|---|
 | **Nima** | Windows uchun tray dasturi: o'zbekcha matnni 2026-yilgi yangi lotin alifbosiga (Ö Ğ Ş Ç) o'giradi |
-| **Oxirgi versiya** | **v1.4.0** — https://github.com/AzamjonShaydullayev/Ozbeca/releases/tag/v1.4.0 (exe 249 KB, `484ad9e`) |
+| **Oxirgi versiya** | **v1.5.0** — https://github.com/AzamjonShaydullayev/Ozbeca/releases/tag/v1.5.0 (exe 312 KB, `cf3a701`) |
 | **Repo** | https://github.com/AzamjonShaydullayev/Ozbeca (**ochiq**), branch `main`, lokal: `D:\projects\ozbeca` |
 | **Platforma** | C#, WPF, **.NET Framework 4.8** (Windows 10/11 ichida bor) — bitta `Ozbeca.exe`, ~250 KB (shundan ~100 KB lug'at) |
 | **Testlar** | 422 unit test (xUnit, .NET 8) + E2E: Chrome **333/333** (v1.4.0, 15–90 ms); Notepad'da tez yozishda Notepad'ning o'zi harf yo'qotadi (6-bo'lim) |
@@ -318,7 +318,8 @@ dotnet build src/Ozbeca.App -c Release        # → src/Ozbeca.App/bin/Release/n
 4. **Microsoft Store** (MSIX, bepul individual akkaunt) — ko'k SmartScreen oynasisiz o'rnatish; user akkaunti kerak.
 5. Excel/Telegram uchun E2E kengaytirish; Win10 (Mica'siz) ko'rinishini tekshirish; qorong'i mavzuda skrinshot.
 6. Yangi imlo qoidalari e'lon qilinsa — `ng`, tutuq va boshqa qoidalarni qayta tekshirish.
-7. ~~v1.4.0 release~~ — ✅ chiqdi (2026-11-11). Keyingi release'da `<Version>` ni 1.4.1/1.5.0 ga oshiring.
+7. ~~v1.4.0 release~~ — ✅ chiqdi (2026-11-11). ~~v1.5.0~~ — ✅ chiqdi (2026-11-11). Keyingi release'da `<Version>` ni 1.5.1/1.6.0 ga oshiring.
+8. Tekshirilmagan: qorong'i mavzu, Windows 10 (Mica'siz) ko'rinishi, dasturlar filtrini haqiqiy yozishda sinash.
 8. Lug'at qamrovini real yozishmalarda baholash: user qaysi so'zlar tuzatilmaganini aytsa — sababini tekshirib, kerak bo'lsa
    korpusni kengaytirish (masalan, boshqa Leipzig korpuslari). So'zlashuv shakllari (`to'g'irlamoqda` — adabiysi
    `to'g'rilamoqda`) korpusda kam. `yo'q`, `yo'l`, `so'z` kabi ikki ma'noli so'zlar esa ataylab tuzatilmaydi (D21).
@@ -335,6 +336,7 @@ dotnet build src/Ozbeca.App -c Release        # → src/Ozbeca.App/bin/Release/n
 | `c995e0f` | Tutuqsiz so'zlar lug'ati (WordList + words.txt + tools/wordlist), sozlamada toggle, 30 test |
 | `49b2aa3` | AutoType: qayta yuborilganlar ham o'giriladi, dead key/AltGr, UIA prefetch/timeout; E2E "juda tez" va Ctrl+V+Enter |
 | `484ad9e` | v1.4.0 (release: 249 KB) |
+| `cf3a701` | v1.5.0 (release: 312 KB) — yangi dizayn, dasturlarni tanlash, pauza+lug'at |
 
 Ish tartibi bo'yicha: user tanlovlari AskUserQuestion bilan olindi (lug'at manbasi, g' ham, toggle standart yoqilgan;
 release "Ha, yarat"). E2E user ish stolida ~60 daqiqa yurdi — user norozi bo'ldi → D24.
