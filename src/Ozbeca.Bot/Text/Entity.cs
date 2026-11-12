@@ -14,7 +14,7 @@ public sealed record Entity(string Type, int Offset, int Length, string? Url = n
         {
             var type = e.Str("type");
             if (type is null || e.Int("offset") is not { } off || e.Int("length") is not { } len) continue;
-            list.Add(new Entity(type, off, len, e.Str("url"), e.Str("custom_emoji_id"), e.Str("language"), e.Obj("user")));
+            list.Add(new Entity(type, off, len, e.Str("url"), e.Str("custom_emoji_id"), e.Str("language"), e.Obj("user")?.Clone()));  // hujjat dispose bo'lsa ham yashasin
         }
         return list;
     }

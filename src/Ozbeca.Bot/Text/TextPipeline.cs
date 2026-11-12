@@ -6,15 +6,47 @@ public sealed record Converted(string Text, List<Entity> Entities, bool Changed)
 
 public static class TextPipeline
 {
+    // Shu turdagi entity ostidagi matn o'zgarmaydi (kod, havola, e-mail, ...).
+    private static readonly HashSet<string> Protected =
+        ["code", "pre", "url", "email", "mention", "hashtag", "cashtag", "bot_command", "phone_number"];
+
     public static Converted Convert(string text, IReadOnlyList<Entity> entities, ConvertOptions o)
     {
+        var valid = entities.Where(e => e.Offset >= 0 && e.Length > 0 && (long)e.Offset + e.Length <= text.Length).ToList();
+
+        // himoyalangan oraliqlar birlashtiriladi
+        var guard = new bool[text.Length];
+        foreach (var e in valid.Where(e => Protected.Contains(e.Type)))
+            Array.Fill(guard, true, e.Offset, e.Length);
+
+        // faqat himoyasiz bo'laklar o'giriladi; butun matn bo'yicha bitta monoton xarita yig'iladi
         var map = new int[text.Length + 1];
-        var result = CodeGuard.ConvertProse(text, o, map);
-        var list = new List<Entity>();
-        foreach (var e in entities)
+        var sb = new System.Text.StringBuilder();
+        for (int i = 0; i < text.Length;)
         {
-            // Telegram ma'lumoti ishonchsiz: noto'g'ri oraliq — tashlanadi
-            if (e.Offset < 0 || e.Length <= 0 || (long)e.Offset + e.Length > text.Length) continue;
+            int j = i;
+            while (j < text.Length && guard[j] == guard[i]) j++;
+            var seg = text[i..j];
+            if (guard[i])
+            {
+                for (int k = 0; k < seg.Length; k++) map[i + k] = sb.Length + k;
+                sb.Append(seg);
+            }
+            else
+            {
+                var m = new int[seg.Length + 1];
+                var conv = CodeGuard.ConvertProse(seg, o, m);
+                for (int k = 0; k < seg.Length; k++) map[i + k] = sb.Length + m[k];
+                sb.Append(conv);
+            }
+            i = j;
+        }
+        map[text.Length] = sb.Length;
+        var result = sb.ToString();
+
+        var list = new List<Entity>();
+        foreach (var e in valid)
+        {
             int start = map[e.Offset], end = map[e.Offset + e.Length];
             if (end > start) list.Add(e with { Offset = start, Length = end - start });
         }
@@ -23,18 +55,29 @@ public static class TextPipeline
 
     /// <summary>
     /// Uzun matnni <paramref name="max"/> dan oshmaydigan bo'laklarga bo'ladi. Kesish: oxirgi "\n\n", "\n", ". ", " ",
-    /// bo'lmasa max. Ajratgich oldingi bo'lakning oxirida qoladi (hech narsa tushib qolmaydi).
+    /// bo'lmasa max. Ajratgich oldingi bo'lakning oxirida qoladi.
+    /// Bo'sh yoki faqat bo'shliqdan iborat bo'lak chiqarilmaydi (Telegram rad etadi): sig'sa oldingisiga qo'shiladi, aks holda tashlanadi.
+    /// Bo'sh matn — bo'sh ro'yxat.
     /// </summary>
     public static List<(string Text, List<Entity> Entities)> Split(string text, IReadOnlyList<Entity> entities, int max)
     {
-        var parts = new List<(string, List<Entity>)>();
+        ArgumentOutOfRangeException.ThrowIfLessThan(max, 2);
+        var parts = new List<(string Text, List<Entity> Entities)>();
         int pos = 0;
-        do
+        while (pos < text.Length)
         {
             int cut = text.Length - pos <= max ? text.Length - pos : CutLength(text, pos, max);
-            parts.Add((text.Substring(pos, cut), Clip(entities, pos, pos + cut)));
+            var chunk = text.Substring(pos, cut);
+            var ents = Clip(entities, pos, pos + cut);
+            if (!string.IsNullOrWhiteSpace(chunk)) parts.Add((chunk, ents));
+            else if (parts.Count > 0 && parts[^1].Text.Length + chunk.Length <= max)
+            {
+                var (pt, pe) = parts[^1];
+                pe.AddRange(ents.Select(e => e with { Offset = e.Offset + pt.Length }));
+                parts[^1] = (pt + chunk, pe);
+            }
             pos += cut;
-        } while (pos < text.Length);
+        }
         return parts;
     }
 

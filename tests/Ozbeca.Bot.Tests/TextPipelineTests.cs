@@ -92,7 +92,7 @@ public class TextPipelineTests
     public void Split_short_and_empty_text()
     {
         Assert.Equal("abc", Assert.Single(TextPipeline.Split("abc", [], 4000)).Text);
-        Assert.Equal("", Assert.Single(TextPipeline.Split("", [], 4000)).Text);
+        Assert.Empty(TextPipeline.Split("", [], 4000));
     }
 
     [Fact]
@@ -115,5 +115,53 @@ public class TextPipelineTests
         Assert.Empty(parts[0].Entities);
         var e = Assert.Single(parts[1].Entities);
         Assert.Equal((0, 3), (e.Offset, e.Length));
+    }
+
+    [Fact]
+    public void Parse_clones_user_so_it_survives_document_disposal()
+    {
+        List<Entity> list;
+        using (var doc = System.Text.Json.JsonDocument.Parse("""[{"type":"text_mention","offset":0,"length":3,"user":{"id":7,"first_name":"A"}}]"""))
+            list = Entity.Parse(doc.RootElement);
+        var json = System.Text.Json.JsonSerializer.Serialize(list[0].ToJson(), Ozbeca.Bot.Api.Json.Options);
+        Assert.Contains("\"user\":{\"id\":7", json);
+    }
+
+    [Fact]
+    public void Split_rejects_max_below_two() =>
+        Assert.Throws<ArgumentOutOfRangeException>(() => TextPipeline.Split("abc", [], 1));
+
+    [Fact]
+    public void Code_entity_is_not_converted_but_outside_is()
+    {
+        var r = TextPipeline.Convert("Shahar `shahar` choy", [new Entity("code", 8, 6), new Entity("bold", 15, 4)], Fwd);
+        Assert.Equal("Şahar `shahar` çoy", r.Text);
+        Assert.Equal((7, 6), (r.Entities[0].Offset, r.Entities[0].Length));
+        Assert.Equal((14, 3), (r.Entities[1].Offset, r.Entities[1].Length));
+    }
+
+    [Fact]
+    public void Pre_and_url_blocks_are_preserved()
+    {
+        var text = "shahar pre shahar https://shahar.uz";
+        var r = TextPipeline.Convert(text, [new Entity("pre", 7, 3), new Entity("url", 18, 17)], Fwd);
+        Assert.Equal("şahar pre şahar https://shahar.uz", r.Text);
+        Assert.Equal((16, 17), (r.Entities[1].Offset, r.Entities[1].Length));
+    }
+
+    [Fact]
+    public void Entity_overlapping_protected_range_still_remaps()
+    {
+        var r = TextPipeline.Convert("shahar shahar", [new Entity("bold", 0, 13), new Entity("code", 7, 6)], Fwd);
+        Assert.Equal("şahar shahar", r.Text);
+        Assert.Equal((0, 12), (r.Entities[0].Offset, r.Entities[0].Length));
+    }
+
+    [Fact]
+    public void Split_never_emits_whitespace_only_part()
+    {
+        var parts = TextPipeline.Split("aaaa" + new string(' ', 10) + "bb", [], 4);
+        Assert.All(parts, p => Assert.False(string.IsNullOrWhiteSpace(p.Text)));
+        Assert.All(parts, p => Assert.True(p.Text.Length <= 4));
     }
 }
