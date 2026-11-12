@@ -24,6 +24,12 @@ public static class Texts
     public const string CardCaption = "Özbeça — yangi alifbo";
     public const string CopyButton = "Nusxa";
     public const string ReverseButton = "Teskari";
+    public const string SettingsTitle = "Sozlamalar. Tugmani bosib özgartiring.";
+    public const string SetOldToNew = "Eski → Yangi";
+    public const string SetNewToOld = "Yangi → Eski";
+    public const string SetCyrillic = "Kirillni ham ögiriş";
+    public const string SetWords = "Tutuqsiz sözlar";
+    public const string SetFile = "Katta matnni fayl qilib beriş";
 
     public const string InlineNewTitle = "Yangi alifbo";
     public const string InlineOldTitle = "Eski alifbo";

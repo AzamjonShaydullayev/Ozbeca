@@ -1,0 +1,94 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+:root{--bg:var(--tg-theme-bg-color,#fff);--tx:var(--tg-theme-text-color,#1c1c1e);--hi:var(--tg-theme-hint-color,#8a8a8e);--s2:var(--tg-theme-secondary-bg-color,#f0f2f4);--bt:var(--tg-theme-button-color,#2a9fd6);--btx:var(--tg-theme-button-text-color,#fff);--a:#00a5bb}
+body{margin:0;font:15px/1.35 system-ui,sans-serif;color:var(--tx);background:var(--bg);user-select:none}
+button{font:inherit;color:inherit;border:0;background:var(--s2);border-radius:10px;padding:.55em .6em;cursor:pointer}
+button:active{opacity:.7}
+.busy button{opacity:.55}
+#h{position:relative;overflow:hidden;background:linear-gradient(135deg,#00b4cc,#00728a);color:#fff;padding:.8em 1em;border-radius:12px}
+#h:after{content:"";position:absolute;top:-50%;left:-40%;width:30%;height:200%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.35),transparent);transform:rotate(20deg);animation:g 4s ease-in-out infinite}
+@keyframes g{0%,60%{left:-40%}100%{left:130%}}
+@media (prefers-reduced-motion:reduce){#h:after{animation:none;left:70%}}
+#h b{display:block;font-size:1.45em;letter-spacing:.02em}
+#h span{opacity:.9;font-size:.9em}
+.r{display:flex;gap:6px}
+.r>*{flex:1}
+#tb{margin:8px 0}
+#tb button{font-size:.85em;padding:.5em .2em}
+#tb .on,.seg .on,.o.ok{background:var(--bt);color:var(--btx)}
+.p{display:none}
+.p.on{display:block}
+.seg{margin-bottom:6px}
+.tg{display:flex;width:100%;align-items:center;justify-content:space-between;text-align:left;margin-top:6px}
+.sw{flex:none;width:2.3em;height:1.35em;border-radius:1em;background:var(--hi);position:relative;margin-left:8px;transition:background .2s}
+.sw:after{content:"";position:absolute;top:2px;left:2px;width:calc(1.35em - 4px);height:calc(1.35em - 4px);border-radius:50%;background:#fff;transition:transform .2s}
+.y .sw{background:var(--a)}
+.y .sw:after{transform:translateX(.95em)}
+.l button{font-size:1.4em;font-weight:600;padding:.35em 0}
+#ld{margin-top:8px;padding:.6em .8em;background:var(--s2);border-radius:10px;min-height:4.6em}
+#ld i{color:var(--hi)}
+#ld .r{margin-top:6px}
+#ld button{background:var(--bg);font-size:.9em}
+#q{text-align:center;font-size:1.9em;font-weight:700;letter-spacing:.06em;margin:.25em 0 .35em}
+.o{font-size:1.5em;font-weight:700;padding:.3em 0}
+.o.no{background:#e5484d;color:#fff}
+#gs{display:flex;justify-content:space-between;margin-top:8px;color:var(--hi);font-size:.9em}
+#m{min-height:1.3em;margin-top:6px;text-align:center;font-size:.9em;color:var(--hi)}
+.c{text-align:center;color:var(--hi);font-size:.9em}
+</style></head><body>
+<div id="h"><b>Özbeça</b><span>Bugun: <span id="n">0</span> belgi ögirildi</span></div>
+<div class="r" id="tb"><button>⚙️ Sozlama</button><button>🔤 Harflar</button><button>🎮 Öyin</button></div>
+<div class="p">
+<div class="r seg"><button id="d0">Eski → Yangi</button><button id="d1">Yangi → Eski</button></div>
+<button class="tg" id="tc">Kirillni ham ögiriş<span class="sw"></span></button>
+<button class="tg" id="tw">Tutuqsiz sözlar (ozbek → özbek)<span class="sw"></span></button>
+<button class="tg" id="tf">Katta matnni fayl qilib beriş<span class="sw"></span></button>
+</div>
+<div class="p">
+<div class="r l" id="ls"></div>
+<div id="ld"><div class="c">Harfni bosing — eski yozuvi va misol çiqadi</div></div>
+</div>
+<div class="p">
+<div class="c">Harfni top</div>
+<div id="q">…</div>
+<div class="r" id="os"></div>
+<div id="gs"><span>🔥 Seriya: <b id="s">0</b></span><span>Eng yaxşi: <b id="b">0</b></span></div>
+</div>
+<div id="m"></div>
+<script>
+var W=window.TelegramWidget,D={d:0,c:1,w:1,f:0,t:0,s:0,b:0},S=D,busy=0,tab=0,
+H=[["Ö","o'","Ördak"],["Ğ","g'","Ğişt"],["Ş","sh","Şahar"],["Ç","ch","Çoy"],["ʼ","'","Maʼno"]];
+function $(i){return document.getElementById(i)}
+function el(t,x,f){var e=document.createElement(t);e.textContent=x;if(f)e.onclick=f;return e}
+function say(x){$("m").textContent=x||""}
+function chk(r){say(r=="ok"?"":"Xatolik. Qayta bosing.")}
+function hap(t){try{W.HapticFeedback.notificationOccurred(t)}catch(e){}}
+function load(){S=D;try{var j=W&&W.chatData&&JSON.parse(W.chatData);if(j)S=Object.assign({},D,j)}catch(e){}}
+function ask(d,ok){if(!W||busy)return;busy=1;document.body.className="busy";
+W.request(d).then(function(a){done();ok&&ok(a&&a.result)},function(){done();ok&&say("Xatolik. Qayta bosing.")})}
+function done(){busy=0;document.body.className=""}
+function setTab(i){tab=i;say("");try{localStorage.t=i}catch(e){}
+[].forEach.call(document.querySelectorAll(".p"),function(p,k){p.className="p"+(k==i?" on":"")});
+[].forEach.call($("tb").children,function(b,k){b.className=k==i?"on":""})}
+function draw(){load();$("n").textContent=S.t;$("s").textContent=S.s;$("b").textContent=S.b;
+$("d0").className=S.d?"":"on";$("d1").className=S.d?"on":"";
+["c","w","f"].forEach(function(k){$("t"+k).className="tg"+(S[k]?" y":"")});
+$("q").textContent=S.q||"…";var os=$("os");os.textContent="";
+(S.o||"").split("").forEach(function(c,i){var b=el("button",c,function(){say("");
+ask("g:"+i,function(r){if(r=="ok"){b.className="o ok";hap("success");say("Töğri! 🔥")}
+else if(r&&r.indexOf("no:")==0){b.className="o no";hap("error");say("Xato. Töğri javob: "+r.slice(3))}
+else say("Xatolik. Qayta bosing.")})});b.className="o";os.appendChild(b)})}
+function show(h){var d=$("ld");d.textContent="";
+var t=el("div","");t.innerHTML="<b>"+h[0]+"</b> — eski yozuvda <b>"+h[1]+"</b> · <i>"+h[2]+"</i>";d.appendChild(t);
+var r=el("div","");r.className="r";var v=h[0]=="ʼ"?[h[0]]:[h[0],h[0].toLowerCase()];
+v.forEach(function(c){r.appendChild(el("button","Nusxa: "+c,function(){W&&W.copyText(c);say("Nusxa olindi: "+c)}))});d.appendChild(r)}
+[].forEach.call($("tb").children,function(b,k){b.onclick=function(){setTab(k)}});
+$("d0").onclick=function(){ask("d:0",chk)};$("d1").onclick=function(){ask("d:1",chk)};
+["c","w","f"].forEach(function(k){$("t"+k).onclick=function(){ask("t:"+k,chk)}});
+H.forEach(function(h){$("ls").appendChild(el("button",h[0],function(){show(h)}))});
+try{tab=+localStorage.t||0}catch(e){}
+setTab(tab>2?0:tab);draw();
+if(W){W.onEvent("chatDataChanged",draw);W.onEvent("activated",function(){ask("r")});W.ready&&W.ready();ask("r")}
+</script>
+</body></html>

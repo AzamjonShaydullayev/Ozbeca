@@ -3,6 +3,7 @@ using Ozbeca.Bot.Api;
 using Ozbeca.Bot.Data;
 using Ozbeca.Bot.Handlers;
 using Ozbeca.Bot.Ui;
+using Ozbeca.Bot.Widget;
 
 namespace Ozbeca.Bot;
 
@@ -17,6 +18,8 @@ public sealed class Router(BotApi api, Sender sender, Store store, PremiumEmoji 
     private readonly InlineHandler _inline = new(sender, store);   // TASK9
     internal AdminHandler Admin { get; } = new(api, sender, store, cfg);   // TASK10
     private readonly FileHandler _file = new(api, sender, store, emoji, cfg.WorkDir);   // TASK7
+    private readonly WidgetHandler _widget = new(sender, store);   // TASK8
+    private readonly CardSender _card = new(sender, store);        // TASK8
     private readonly FloodGuard _flood = new();
 
     // Mazmunli xabar turlari; ro'yxatda yo'q (xizmat xabarlari: pinned_message, ...) e'tiborsiz.
@@ -68,9 +71,9 @@ public sealed class Router(BotApi api, Sender sender, Store store, PremiumEmoji 
         var data = cq.Str("data") ?? "";
 
         if (data.StartsWith("rev:", StringComparison.Ordinal)) { await AnswerCallback(cq, ct); await _private.OnReverse(cq, user, ct); }
-        // TASK8: else if (data.StartsWith("set:", StringComparison.Ordinal)) await _settings.OnCallback(cq, user, ct);   (handler o'zi answerCallbackQuery qiladi)
+        else if (data.StartsWith("set:", StringComparison.Ordinal)) await _card.OnCallback(cq, user, ct);   // TASK8: handler o'zi answerCallbackQuery qiladi
         else if (data.StartsWith("bc:", StringComparison.Ordinal)) await Admin.OnCallback(cq, user, ct);   // TASK10
-        else await AnswerCallback(cq, ct);   // set:/bc: hozircha band, boshqa noma'lum — shunchaki javob
+        else await AnswerCallback(cq, ct);   // noma'lum — shunchaki javob
     }
 
     private async Task OnInlineQuery(JsonElement q, CancellationToken ct)   // TASK9
@@ -80,7 +83,7 @@ public sealed class Router(BotApi api, Sender sender, Store store, PremiumEmoji 
     }
 
     private Task OnChosenInline(JsonElement c, CancellationToken ct) => _inline.HandleChosen(c);      // TASK9
-    private Task OnWidgetQuery(JsonElement q, CancellationToken ct) => Task.CompletedTask;       // TASK8
+    private Task OnWidgetQuery(JsonElement q, CancellationToken ct) => _widget.Handle(q, ct);    // TASK8
 
     private async Task AnswerCallback(JsonElement cq, CancellationToken ct)
     {

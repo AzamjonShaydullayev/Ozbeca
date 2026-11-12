@@ -4,6 +4,7 @@ using Ozbeca.Bot.Api;
 using Ozbeca.Bot.Data;
 using Ozbeca.Bot.Text;
 using Ozbeca.Bot.Ui;
+using Ozbeca.Bot.Widget;
 
 namespace Ozbeca.Bot.Handlers;
 
@@ -13,6 +14,7 @@ internal sealed class PrivateHandler(BotApi api, Sender sender, Store store, Pre
     private const int MaxPart = 4000;      // Telegram chegarasi 4096; sarlavhaga joy qoladi
     private const int ExpandableOver = 500;
     private const int CopyMax = 256;
+    private readonly CardSender _card = new(sender, store);   // TASK8
 
     public async Task Handle(JsonElement msg, UserRow user, CancellationToken ct)
     {
@@ -37,11 +39,13 @@ internal sealed class PrivateHandler(BotApi api, Sender sender, Store store, Pre
         var cmd = parts[0].Split('@')[0].ToLowerInvariant();
         switch (cmd)
         {
-            // TASK8: case "/sozlama": karta qayta yuboriladi
+            case "/sozlama":   // TASK8: karta qayta yuboriladi
+                await _card.Send(chatId, user, ct);
+                break;
             case "/start":
                 var (t, e) = new MessageBuilder(emoji, user.Id).Emoji("greeting").Text(" " + Texts.Greeting).Build();
                 await Say(chatId, t, e, ct: ct);
-                // TASK8: bu yerda widget kartasi yuboriladi (parametr: parts.ElementAtOrDefault(1), masalan "inline")
+                await _card.Send(chatId, user, ct);   // TASK8: parametr (parts[1], masalan "inline") karta uchun ahamiyatsiz
                 break;
             default:   // /help va noma'lum buyruqlar
                 await Say(chatId, Texts.Help, ct: ct);
