@@ -120,9 +120,10 @@ public sealed class PrivateHandlerTests : IDisposable
     [Fact]
     public async Task Commands()
     {
-        await _h.Text("/start inline");
-        await _h.Text("/help@ozbecauzbot");
-        await _h.Text("/nimadir");
+        static object Cmd(int len) => new[] { new { type = "bot_command", offset = 0, length = len } };
+        await _h.Text("/start inline", entities: Cmd(6));
+        await _h.Text("/help@ozbecauzbot", entities: Cmd(17));
+        await _h.Text("/nimadir", entities: Cmd(8));
         var s = _h.Sent();
         Assert.Contains(Texts.Greeting, TextOf(s[0]));
         Assert.Equal(Texts.Help, TextOf(s[1]));
@@ -136,6 +137,13 @@ public sealed class PrivateHandlerTests : IDisposable
         Assert.Equal(Texts.FileUnsupported, TextOf(Assert.Single(_h.Sent())));
     }
 
+    [Fact]
+    public async Task Slash_without_bot_command_entity_is_converted()
+    {
+        await _h.Text("/ Shahar");
+        Assert.EndsWith("/ Şahar", TextOf(Assert.Single(_h.Sent())));
+    }
+
     private static string Long() => string.Concat(Enumerable.Repeat("Shahar ", 1700));
 
     [Fact]
@@ -147,9 +155,8 @@ public sealed class PrivateHandlerTests : IDisposable
         Assert.All(parts, p => Assert.True(TextOf(p).Length <= 4096));
         Assert.Contains(Texts.NewHeader, TextOf(parts[0]));
         Assert.DoesNotContain(Texts.NewHeader, TextOf(parts[1]));
-        Assert.False(parts[0].TryGetProperty("reply_markup", out _));
-        Assert.False(parts[1].TryGetProperty("reply_markup", out _));
-        Assert.Single(Buttons(parts[2]));   // Copy yo'q (> 256), faqat Teskari
+        Assert.All(parts, p =>   // har bo'lakda faqat Teskari (Copy yo'q: butun natija > 256)
+            Assert.Equal("rev:n", Assert.Single(Buttons(p)).GetProperty("callback_data").GetString()));
         Assert.All(parts, p => Entity(p, "expandable_blockquote"));
     }
 

@@ -18,9 +18,9 @@ internal sealed class PrivateHandler(BotApi api, Sender sender, Store store, Pre
     {
         var chatId = user.Id;   // lichkada chat id == user id
         var text = msg.Str("text");
-        if (text != null && text.StartsWith('/')) { await Command(chatId, user, text, ct); return; }
-
         var entities = Entity.Parse(Prop(msg, text != null ? "entities" : "caption_entities"));
+        // buyruq: faqat 0-o'rinda bot_command entity bo'lsa ("/ salom" yoki yo'l matni o'giriladi)
+        if (text != null && entities.Any(e => e.Type == "bot_command" && e.Offset == 0)) { await Command(chatId, user, text, ct); return; }
         text ??= msg.Str("caption");
         if (string.IsNullOrEmpty(text)) { await Say(chatId, Texts.SendText, ct: ct); return; }
 
@@ -88,15 +88,16 @@ internal sealed class PrivateHandler(BotApi api, Sender sender, Store store, Pre
             if (i == 0) b.Emoji("success").Text(" " + header).NewLine();
             b.Quote(parts[i].Text, parts[i].Entities, parts[i].Text.Length > ExpandableOver);
             var (t, e) = b.Build();
-            await Say(chatId, t, e, i == parts.Count - 1 ? Keyboard(result, reverse) : null, ct);
+            await Say(chatId, t, e, Keyboard(parts.Count == 1 ? result : null, reverse), ct);
         }
         return true;
     }
 
-    private static object Keyboard(string result, bool reverse)
+    /// <summary>Teskari — har bo'lakda (o'z quote'ini o'giradi); Nusxa — faqat butun natija ≤ 256 bo'lsa.</summary>
+    private static object Keyboard(string? result, bool reverse)
     {
         var row = new List<object>();
-        if (result.Length <= CopyMax) row.Add(Buttons.Copy(Texts.CopyButton, result));
+        if (result is { Length: <= CopyMax }) row.Add(Buttons.Copy(Texts.CopyButton, result));
         row.Add(Buttons.Callback(Texts.ReverseButton, reverse ? "rev:o" : "rev:n", "primary"));
         return Buttons.Markup(row.ToArray());
     }

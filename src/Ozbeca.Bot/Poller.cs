@@ -12,6 +12,48 @@ public sealed class Poller(BotApi api, Router router)
     /// <summary>getUpdates tarmoq xatosidan keyingi kutish (testlarda nol).</summary>
     public TimeSpan RetryDelay { get; init; } = TimeSpan.FromSeconds(5);
 
+    /// <summary>401 (token yaroqsiz) dan keyingi kutish.</summary>
+    public TimeSpan AuthRetryDelay { get; init; } = TimeSpan.FromSeconds(60);
+
+    private static readonly string[] UserKinds = ["message", "callback_query", "inline_query", "chosen_inline_result", "widget_query"];
+    private readonly object _lock = new();
+    private readonly Dictionary<long, Task> _tails = new();
+
+    private static long? UserKey(JsonElement u)
+    {
+        foreach (var k in UserKinds)
+            if (u.Obj(k) is { } o && o.Obj("from") is { } f && f.Long("id") is { } id) return id;
+        return null;
+    }
+
+    // Bir user'ning update'lari ketma-ket (oldingisi tugagach), turli user'lar parallel. Global chegara: gate.
+    private Task Dispatch(JsonElement u, SemaphoreSlim gate)
+    {
+        async Task Run(Task? prev)
+        {
+            if (prev != null) await prev;   // prev hech qachon xato bermaydi (quyida ushlanadi)
+            await gate.WaitAsync();
+            try { await router.Handle(u, CancellationToken.None); }   // yopilishda ham boshlangan javob tugasin
+            catch (Exception e) { Log.Error($"update={Router.Kind(u)} {Describe(e)}"); }
+            finally { gate.Release(); }
+        }
+
+        if (UserKey(u) is not { } key) return Task.Run(() => Run(null));
+        lock (_lock)
+        {
+            _tails.TryGetValue(key, out var prev);
+            var task = Task.Run(() => Run(prev));
+            _tails[key] = task;
+            _ = task.ContinueWith(t =>
+            {
+                lock (_lock) if (_tails.TryGetValue(key, out var cur) && cur == t) _tails.Remove(key);
+            }, TaskScheduler.Default);
+            return task;
+        }
+    }
+
+    internal int PendingUsers { get { lock (_lock) return _tails.Count; } }
+
     public async Task RunAsync(CancellationToken ct)
     {
         var gate = new SemaphoreSlim(16);
@@ -30,7 +72,8 @@ public sealed class Poller(BotApi api, Router router)
                 catch (Exception e)
                 {
                     Log.Error("getUpdates: " + Describe(e));
-                    try { await Task.Delay(RetryDelay, ct); } catch (OperationCanceledException) { break; }
+                    var delay = e is BotApiException { Code: 401 } ? AuthRetryDelay : RetryDelay;
+                    try { await Task.Delay(delay, ct); } catch (OperationCanceledException) { break; }
                     continue;
                 }
                 if (updates.ValueKind != JsonValueKind.Array) continue;
@@ -38,13 +81,7 @@ public sealed class Poller(BotApi api, Router router)
                 foreach (var u in updates.EnumerateArray())
                 {
                     if (u.Long("update_id") is { } id) offset = Math.Max(offset, id + 1);
-                    await gate.WaitAsync(ct);
-                    var task = Task.Run(async () =>
-                    {
-                        try { await router.Handle(u, CancellationToken.None); }   // yopilishda ham boshlangan javob tugasin
-                        catch (Exception e) { Log.Error($"update={Router.Kind(u)} {Describe(e)}"); }
-                        finally { gate.Release(); }
-                    }, CancellationToken.None);
+                    var task = Dispatch(u, gate);
                     running[task] = 0;
                     _ = task.ContinueWith(t => running.TryRemove(t, out _), TaskScheduler.Default);
                 }

@@ -48,4 +48,58 @@ public sealed class PollerTests
         await new Poller(h.Api, h.Router) { RetryDelay = TimeSpan.Zero }.RunAsync(cts.Token);
         Assert.Equal(3, polls);   // xatolardan keyin ham sikl davom etdi
     }
+
+    // sendMessage javoblari tugash tartibini yozadi; "Shahar" (1-update) sekinlashtiriladi.
+    private static async Task<List<string>> RunSlowFirst(BotHarness h, string updates)
+    {
+        using var cts = new CancellationTokenSource();
+        var polls = 0;
+        var done = new List<string>();
+        h.Fake.Respond = (method, body) =>
+        {
+            if (method == "sendMessage")
+            {
+                var first = body.GetProperty("text").GetString()!.EndsWith("Şahar");
+                if (first) Thread.Sleep(400);
+                lock (done) done.Add(first ? "first" : "second");
+                return FakeTelegram.DefaultResponse;
+            }
+            if (method != "getUpdates") return FakeTelegram.DefaultResponse;
+            if (++polls == 1) return "{\"ok\":true,\"result\":[" + updates + "]}";
+            cts.Cancel();
+            return "{\"ok\":true,\"result\":[]}";
+        };
+        var poller = new Poller(h.Api, h.Router);
+        await poller.RunAsync(cts.Token);
+        await Task.Delay(50);   // ContinueWith tozalashi
+        Assert.Equal(0, poller.PendingUsers);   // yozuvlar tozalandi
+        return done;
+    }
+
+    [Fact]
+    public async Task Same_user_updates_are_processed_in_order()
+    {
+        using var h = new BotHarness();
+        var done = await RunSlowFirst(h, Upd(1, 5, "Shahar") + "," + Upd(2, 5, "choy"));
+        Assert.Equal(["first", "second"], done);
+    }
+
+    [Fact]
+    public async Task Different_users_run_concurrently()
+    {
+        using var h = new BotHarness();
+        var done = await RunSlowFirst(h, Upd(1, 5, "Shahar") + "," + Upd(2, 6, "choy"));
+        Assert.Equal(["second", "first"], done);
+    }
+
+    [Fact]
+    public async Task Unauthorized_backs_off_long_and_stays_cancellable()
+    {
+        using var h = new BotHarness();
+        using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(500));
+        var polls = 0;
+        h.Fake.RespondRaw = (_, _) => { polls++; return (401, "{\"ok\":false,\"error_code\":401,\"description\":\"Unauthorized\"}"); };
+        await new Poller(h.Api, h.Router) { RetryDelay = TimeSpan.Zero, AuthRetryDelay = TimeSpan.FromHours(1) }.RunAsync(cts.Token);
+        Assert.Equal(1, polls);
+    }
 }
