@@ -172,6 +172,13 @@ public partial class SettingsWindow : Window
 
     private void AutostartToggle_Click(object sender, RoutedEventArgs e) => Autostart.Set(AutostartToggle.IsChecked == true);
 
+    private void ConvertFile_Click(object sender, RoutedEventArgs e) => _app.ConvertFilesDialog(this);
+
+    private void Files_Drop(object sender, DragEventArgs e)
+    {
+        if (e.Data.GetData(DataFormats.FileDrop) is string[] files) _app.ConvertFiles(files);
+    }
+
     private void ChooseApps_Click(object sender, RoutedEventArgs e)
     {
         new AppPickerWindow(_app) { Owner = this }.ShowDialog();

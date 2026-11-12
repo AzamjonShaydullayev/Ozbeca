@@ -349,6 +349,7 @@ public partial class App : Application
         menu.Items.Add(_autoTypeItem);
         menu.Items.Add(_autostartItem);
         menu.Items.Add(new WinForms.ToolStripSeparator());
+        menu.Items.Add("Faylni o'girish…", null, (_, _) => ConvertFilesDialog(null));
         menu.Items.Add("Sozlamalar…", null, (_, _) => ShowSettings());
         menu.Items.Add("Chiqish", null, (_, _) => Shutdown());
         TrayMenu.Style(menu);
@@ -387,6 +388,61 @@ public partial class App : Application
         if (_settingsWindow.WindowState == WindowState.Minimized) _settingsWindow.WindowState = WindowState.Normal;
         _settingsWindow.Activate();
         return _settingsWindow;
+    }
+
+    // ---- fayl o'girish ----
+
+    internal void ConvertFilesDialog(Window? owner)
+    {
+        string exts = string.Join(";", Ozbeca.Core.DocumentConverter.OfficeExtensions.Concat(Ozbeca.Core.DocumentConverter.TextExtensions).Select(x => "*" + x));
+        var dlg = new Microsoft.Win32.OpenFileDialog
+        {
+            Title = "Yangi alifboga o'giriladigan fayllar",
+            Multiselect = true,
+            Filter = $"Word, Excel, PowerPoint, matn|{exts}",
+        };
+        if (dlg.ShowDialog(owner) == true) ConvertFiles(dlg.FileNames);
+    }
+
+    /// <summary>Fon thread'da o'giradi; natija — bildirishnoma, yangi fayl Explorer'da belgilanadi. Asl fayllar o'zgarmaydi.</summary>
+    internal void ConvertFiles(string[] paths)
+    {
+        ThreadPool.QueueUserWorkItem(_ =>
+        {
+            var done = new List<string>();
+            var lines = new List<string>();
+            foreach (string p in paths)
+            {
+                string name = System.IO.Path.GetFileName(p);
+                if (!Ozbeca.Core.DocumentConverter.IsSupported(p))
+                {
+                    lines.Add($"{name}: bu tur o'girilmaydi. PDF va .doc ni Word'da .docx qilib saqlang.");
+                    continue;
+                }
+                try
+                {
+                    string output = Ozbeca.Core.DocumentConverter.OutputPath(p);
+                    if (Ozbeca.Core.DocumentConverter.Convert(p, output)) done.Add(output);
+                    else lines.Add($"{name}: eski alifbodagi matn topilmadi.");
+                }
+                catch (Exception ex)
+                {
+                    Log.Write($"Fayl o'girilmadi: {p}: {ex}");
+                    lines.Add($"{name}: {ex.Message}");
+                }
+            }
+            Log.Write($"Fayl o'girish: {done.Count}/{paths.Length} ta");
+            Dispatcher.BeginInvoke(() =>
+            {
+                if (done.Count > 0)
+                {
+                    lines.Insert(0, done.Count == 1 ? $"Yangi fayl: {System.IO.Path.GetFileName(done[0])}" : $"{done.Count} ta yangi fayl yonida.");
+                    try { System.Diagnostics.Process.Start("explorer.exe", $"/select,\"{done[done.Count - 1]}\""); }
+                    catch (Exception ex) { Log.Write("Explorer ochilmadi: " + ex.Message); }
+                }
+                Notice(done.Count > 0 ? "Fayl o'girildi" : "Fayl o'girilmadi", string.Join("\n", lines), warning: done.Count < paths.Length);
+            });
+        });
     }
 
     private void Toast(string message)

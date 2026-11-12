@@ -83,6 +83,14 @@ public static class Transliterator
         return Convert(input, map, RestoreApostrophes);
     }
 
+    /// <summary>So'zma-so'z o'girish + xarita (fayl o'girish: Word run'lariga qaytarish). NFC bo'lmasa map null.</summary>
+    public static string ToNewAlphabet(string input, bool dictionary, ref bool quoteOpen, out int[]? map)
+    {
+        input ??= string.Empty;
+        map = input.IsNormalized(NormalizationForm.FormC) ? new int[input.Length + 1] : null;
+        return Convert(input, map, dictionary, ref quoteOpen);
+    }
+
     private static string Convert(string input, int[]? map, bool dictionary)
     {
         bool quoteOpen = false;

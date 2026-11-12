@@ -74,9 +74,17 @@ public static class CodeGuard
     /// Matnni (masalan, Ctrl+V bilan qo'yilgan) so'zma-so'z o'giradi: bo'shliqlar aynan saqlanadi,
     /// kodga o'xshash tokenlar o'zgarmaydi.
     /// </summary>
-    public static string ConvertProse(string text)
+    public static string ConvertProse(string text) => ConvertProse(text, false, null);
+
+    /// <param name="cyrillic">Kirill so'zlar ham o'girilsin (fayl o'girish: faylda o'zbek kirill harflari bo'lsa).</param>
+    /// <param name="map">null yoki text.Length + 1: map[i] — kirishdagi i-belgi chiqishda qayerdan boshlanadi.</param>
+    public static string ConvertProse(string text, bool cyrillic, int[]? map)
     {
-        if (string.IsNullOrEmpty(text)) return text ?? string.Empty;
+        if (string.IsNullOrEmpty(text))
+        {
+            if (map != null) map[0] = 0;
+            return text ?? string.Empty;
+        }
         var sb = new StringBuilder(text.Length);
         bool quoteOpen = false; // 'Yaxshi tong' — tirnoq bir so'zda ochilib, boshqasida yopiladi
         int i = 0;
@@ -87,17 +95,32 @@ public static class CodeGuard
             {
                 while (j < text.Length && char.IsWhiteSpace(text[j])) j++;
                 if (text.IndexOf('\n', i, j - i) >= 0) quoteOpen = false; // tirnoq qatordan qatorga o'tmaydi
+                if (map != null) Fill(map, i, j - i, sb.Length, j - i, null);
                 sb.Append(text, i, j - i);
             }
             else
             {
                 while (j < text.Length && !char.IsWhiteSpace(text[j])) j++;
                 string token = text.Substring(i, j - i);
-                sb.Append(ShouldSkip(token) ? token
-                    : Transliterator.ToNewAlphabet(token, Transliterator.RestoreApostrophes, ref quoteOpen));
+                int[]? tm = null;
+                string result;
+                if (ShouldSkip(token)) result = token;
+                else if (cyrillic && CyrillicConverter.HasCyrillic(token))
+                    result = CyrillicConverter.ToNewLatin(token, tm = map != null ? new int[token.Length + 1] : null);
+                else if (map != null) result = Transliterator.ToNewAlphabet(token, Transliterator.RestoreApostrophes, ref quoteOpen, out tm);
+                else result = Transliterator.ToNewAlphabet(token, Transliterator.RestoreApostrophes, ref quoteOpen);
+                if (map != null) Fill(map, i, j - i, sb.Length, result.Length, tm);
+                sb.Append(result);
             }
             i = j;
         }
+        if (map != null) map[text.Length] = sb.Length;
         return sb.ToString();
+    }
+
+    // Token xaritasi umumiy xaritaga; xarita yo'q (o'zgarmagan yoki NFC emas) — uzunlik bo'yicha proporsional.
+    private static void Fill(int[] map, int at, int len, int outAt, int outLen, int[]? tm)
+    {
+        for (int k = 0; k < len; k++) map[at + k] = outAt + (tm != null ? tm[k] : k * outLen / len);
     }
 }

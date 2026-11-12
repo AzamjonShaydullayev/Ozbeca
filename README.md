@@ -195,12 +195,26 @@ Soat yonidagi <img src="docs/icon.png" width="16" alt="Ö"> belgisini yoki ish s
 | **O'girilmaydigan so'zlar** | Ismlar, brendlar, loginlar. Ular hech qachon o'zgarmaydi. Bir so'zni ikki marta <kbd>Backspace</kbd> bilan qaytarsangiz, o'zi shu ro'yxatga qo'shiladi |
 | **Avtomatik yangilanish** | Yangi versiya chiqsa, internet bo'lganda o'zi yuklab o'rnatiladi. Standart yoqiq |
 | **Qaysi dasturlarda** | Yozish paytida o'girish faqat tanlangan dasturlarda ishlaydi |
+| **Faylni o'girish** | Butun faylni yangi alifboga o'giradi (pastda) |
 
 ### Qaysi dasturlarda ishlasin
 
 **Tanlash** ni bosing — kompyuterdagi hamma dasturlar (Store ilovalari ham) ikonkasi bilan chiqadi. Belgilaganlaringizda o'giradi, qolganlarida tegmaydi. Hech narsa belgilanmasa — hamma joyda ishlaydi.
 
 <p align="center"><img src="docs/apps.png" width="760" alt="Dasturlarni tanlash oynasi"></p>
+
+### 📄 Faylni o'girish
+
+Sozlamalardagi **Faylni o'girish → Tanlash** (yoki Ö belgisi menyusidagi **Faylni o'girish…**) bilan faylni tanlang yoki shu qatorga sudrab tashlang. Yonida yangi fayl paydo bo'ladi: `Hisobot.docx` → `Hisobot (yangi alifbo).docx`. Asl fayl o'zgarmaydi, internet kerak emas.
+
+| Fayl | Nima bo'ladi |
+|---|---|
+| **Word** (.docx), **Excel** (.xlsx), **PowerPoint** (.pptx) | Faqat matn o'zgaradi: shrift, rang, qalin harflar, jadval, rasm, sarlavha, izoh, matn qutisi joyida qoladi. Formulalar va havolalar tegilmaydi |
+| **Matn** (.txt, .csv, .srt, .md) | Kodirovka saqlanadi |
+| **Kirill** matn | Faylda o'zbek kirill harflari (ў, қ, ғ, ҳ) bo'lsa, kirill ham yangi alifboga o'tadi. Ruscha matnga tegilmaydi |
+| **PDF**, eski **.doc / .xls** | O'girilmaydi: Word yoki Excel'da ochib, .docx / .xlsx qilib saqlang |
+
+Yozish paytidagidek URL, e-mail, kod va inglizcha so'zlar (`check`, `Shell`) o'zgarmaydi. Excel formulasi ichidagi matn (`="o'quvchi"`) ham o'zgarmaydi.
 
 ### 🔄 Avtomatik yangilanish
 

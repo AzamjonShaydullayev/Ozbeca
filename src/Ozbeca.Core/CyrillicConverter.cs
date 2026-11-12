@@ -20,13 +20,21 @@ public static class CyrillicConverter
         return false;
     }
 
-    public static string ToNewLatin(string input)
+    public static string ToNewLatin(string input) => ToNewLatin(input, null);
+
+    /// <param name="map">null yoki input.Length + 1: map[i] — kirishdagi i-belgi chiqishda qayerdan boshlanadi.</param>
+    public static string ToNewLatin(string input, int[]? map)
     {
-        if (string.IsNullOrEmpty(input)) return input ?? string.Empty;
+        if (string.IsNullOrEmpty(input))
+        {
+            if (map != null) map[0] = 0;
+            return input ?? string.Empty;
+        }
 
         var sb = new StringBuilder(input.Length + input.Length / 4);
         for (int i = 0; i < input.Length; i++)
         {
+            if (map != null) map[i] = sb.Length;
             char c = input[i];
             if (!IsCyrillic(c)) { sb.Append(c); continue; }
 
@@ -76,6 +84,7 @@ public static class CyrillicConverter
             if (lower == 'ҳ' && sb.Length > 0 && sb[sb.Length - 1] is 's' or 'S') sb.Append(Transliterator.Tutuq);
             sb.Append(upper ? char.ToUpperInvariant(latin) : latin);
         }
+        if (map != null) map[input.Length] = sb.Length;
         return sb.ToString();
     }
 

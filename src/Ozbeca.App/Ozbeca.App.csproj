@@ -29,6 +29,7 @@
 
   <ItemGroup>
     <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.IO.Compression" />  <!-- fayl o'girish: docx/xlsx/pptx (ZIP) -->
     <Reference Include="Microsoft.CSharp" />  <!-- dynamic: Shell.Application (dasturlar ro'yxati) -->
     <Reference Include="UIAutomationClient" />  <!-- avto-yozishda parol maydonini aniqlash -->
     <Reference Include="UIAutomationTypes" />
