@@ -260,6 +260,22 @@ public class FileHandlerTests : IDisposable
         Assert.Equal(2, _h.Sent("sendDocument").Count);
     }
 
+    [Theory]
+    [InlineData("a.txt")]
+    [InlineData("a.csv")]
+    public async Task Cp1251_text_file_decoded(string name)
+    {
+        // cp1251 da ҳ/қ/ғ yo'q — shu kod sahifasida bor harflar (ў bilan)
+        var bytes = System.Text.CodePagesEncodingProvider.Instance.GetEncoding(1251)!.GetBytes("Тошкент ўзи, Shahar");
+        Serve(name, bytes);
+        await Make().Handle(Msg(name, bytes.Length), User(), default);
+        Assert.Single(_h.Sent("sendDocument"));
+        Assert.Equal(new byte[] { 0xEF, 0xBB, 0xBF }, _cap.Sent![..3]);   // natija UTF-8 BOM bilan
+        var text = Encoding.UTF8.GetString(_cap.Sent[3..]);
+        Assert.DoesNotContain('�', text);
+        Assert.Equal("Toşkent özi, Şahar", text);
+    }
+
     // ---- C1: zararli Office XML (chuqur ichma-ich, element portlashi, DTD) ----
 
     private const string WNs = "xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\"";

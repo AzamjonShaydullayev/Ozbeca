@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.IO.Compression;
+using System.Text;
 using System.Text.Json;
 using System.Xml;
 using System.Net.Http;
@@ -80,6 +81,7 @@ internal sealed class FileHandler(BotApi api, Sender sender, Store store, Premiu
                 if (zip.Entries.Sum(e => e.Length) > maxUnzipped) { await Say(user.Id, Texts.FileBroken, ct); return; }
                 ScanXml(zip);
             }
+            else if (DocumentConverter.TextExtensions.Contains(ext)) FixLegacyEncoding(input);
             if (!DocumentConverter.Convert(input, output, user.Settings.ToOptions())) { await Say(user.Id, Texts.FileNoChange, ct); return; }
         }
         catch (Exception e) when (e is InvalidDataException or XmlException or IOException or OutOfMemoryException) { await Say(user.Id, Texts.FileBroken, ct); return; }
@@ -114,6 +116,21 @@ internal sealed class FileHandler(BotApi api, Sender sender, Store store, Premiu
                 fields.Remove("caption_entities");
             }
         }
+    }
+
+    private static readonly Encoding Cp1251 = CodePagesEncodingProvider.Instance.GetEncoding(1251)!;
+
+    /// <summary>
+    /// Core BOMsiz, UTF-8 bo'lmagan matnni Encoding.Default bilan o'qiydi: net48 da ANSI, .NET 8 (Linux) da UTF-8 — kirill buziladi.
+    /// Shuning uchun bunday faylni oldindan cp1251 -> UTF-8 (BOM bilan) qilib qayta yozamiz; natija ham UTF-8 BOM bilan chiqadi.
+    /// </summary>
+    internal static void FixLegacyEncoding(string path)
+    {
+        var bytes = File.ReadAllBytes(path);
+        if (bytes is [0xEF, 0xBB, 0xBF, ..] or [0xFF, 0xFE, ..] or [0xFE, 0xFF, ..]) return;
+        try { _ = new UTF8Encoding(false, true).GetString(bytes); return; }
+        catch (DecoderFallbackException) { }
+        File.WriteAllText(path, Cp1251.GetString(bytes), new UTF8Encoding(true));
     }
 
     internal const int MaxXmlDepth = 64;
