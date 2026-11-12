@@ -14,6 +14,12 @@ catch (InvalidOperationException e)
     return 1;
 }
 
+if (BotConfig.UnsafeWorkDir(cfg.WorkDir, cfg.DbPath))
+{
+    Log.Error("Sozlama xatosi: WORK_DIR fayl tizimi ildizi, DB katalogi yoki uning otasi bo'lishi mumkin emas.");   // R20: qiymatsiz
+    return 1;
+}
+
 using var cts = new CancellationTokenSource();
 Console.CancelKeyPress += (_, e) => { e.Cancel = true; cts.Cancel(); };
 using var sigterm = PosixSignalRegistration.Create(PosixSignal.SIGTERM, ctx => { ctx.Cancel = true; cts.Cancel(); });

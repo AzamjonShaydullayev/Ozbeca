@@ -38,4 +38,22 @@ public class BotConfigTests
         Assert.DoesNotContain("secret", e.Message);
         Assert.DoesNotContain("abc", e.Message);
     }
+
+    [Theory]
+    [InlineData("data/work", "data/bot.db", false)]
+    [InlineData("work", "data/bot.db", false)]
+    [InlineData("dat", "data/bot.db", false)]
+    [InlineData("data", "data/bot.db", true)]          // DB katalogining o'zi
+    [InlineData("data/", "data/bot.db", true)]
+    [InlineData("data/work/..", "data/bot.db", true)]
+    [InlineData(".", "data/bot.db", true)]             // DB katalogining otasi
+    [InlineData(".", "bot.db", true)]
+    public void Unsafe_work_dir(string work, string db, bool unsafeDir) => Assert.Equal(unsafeDir, BotConfig.UnsafeWorkDir(work, db));
+
+    [Fact]
+    public void Filesystem_root_work_dir_is_unsafe()
+    {
+        var root = Path.GetPathRoot(Path.GetFullPath("."))!;
+        Assert.True(BotConfig.UnsafeWorkDir(root, Path.Combine(Path.GetTempPath(), "x", "bot.db")));
+    }
 }

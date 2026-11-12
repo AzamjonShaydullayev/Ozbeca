@@ -125,5 +125,13 @@ public sealed class InlineTests : IDisposable
         });
         Assert.Equal((1, 6L), _h.Store.GetStats().Today["inline"]);
         Assert.Null(_h.Store.Get(7));
+
+        _h.Store.Touch(7);   // botdan foydalanuvchi — shaxsiy statistikaga ham yoziladi
+        await _h.Handle(new
+        {
+            update_id = 3,
+            chosen_inline_result = new { result_id = "n", from = new { id = 7, is_bot = false }, query = "Shahar" },
+        });
+        Assert.Equal((6L, 0), _h.Store.UserTotals(7));
     }
 }

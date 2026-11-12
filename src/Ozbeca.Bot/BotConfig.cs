@@ -23,4 +23,17 @@ public sealed record BotConfig(string Token, IReadOnlySet<long> Admins, string D
         return new BotConfig(token, admins, Or(get("DB_PATH"), "data/bot.db"), Or(get("WORK_DIR"), "data/work"),
             Or(get("PREMIUM_EMOJI"), "1") != "0");
     }
+
+    /// <summary>
+    /// R20: WORK_DIR ishga tushishda tozalanadi — fayl tizimi ildizi, DB katalogi yoki uning otasi bo'lsa ma'lumot o'chadi.
+    /// </summary>
+    internal static bool UnsafeWorkDir(string workDir, string dbPath)
+    {
+        var cmp = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+        var work = Path.TrimEndingDirectorySeparator(Path.GetFullPath(workDir));
+        var root = Path.GetPathRoot(work);
+        if (string.IsNullOrEmpty(root) || string.Equals(work, Path.TrimEndingDirectorySeparator(root), cmp)) return true;
+        var db = Path.TrimEndingDirectorySeparator(Path.GetDirectoryName(Path.GetFullPath(dbPath))!);
+        return string.Equals(db, work, cmp) || db.StartsWith(work + Path.DirectorySeparatorChar, cmp);
+    }
 }

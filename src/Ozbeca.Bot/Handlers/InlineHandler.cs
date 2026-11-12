@@ -38,7 +38,9 @@ internal sealed class InlineHandler(Sender sender, Store store)
 
     public Task HandleChosen(JsonElement r)
     {
-        store.AddUsage("inline", (r.Str("query") ?? "").Length);   // user qatori shart emas
+        var chars = (r.Str("query") ?? "").Length;
+        store.AddUsage("inline", chars);   // user qatori shart emas
+        if (r.Obj("from")?.Long("id") is { } userId) store.AddChars(userId, chars);   // shaxsiy statistika — faqat mavjud userga
         return Task.CompletedTask;
     }
 

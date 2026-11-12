@@ -95,6 +95,7 @@ internal sealed class FileHandler(BotApi api, Sender sender, Store store, Premiu
         var replyName = Path.GetFileName(DocumentConverter.OutputPath(Path.Combine(dir, safe), reverse));
         await SendResult(user, output, replyName, ct);
         store.AddUsage("file", 0);
+        store.AddFile(user.Id);
         Log.Info($"file ok user={user.Id} bytes={size ?? -1}");
     }
 

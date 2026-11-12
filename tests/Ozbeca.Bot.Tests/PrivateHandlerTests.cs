@@ -37,6 +37,7 @@ public sealed class PrivateHandlerTests : IDisposable
         var q = Entity(b, "blockquote");
         Assert.Equal(at, q.GetProperty("offset").GetInt32());
         Assert.Equal(9, q.GetProperty("length").GetInt32());
+        Assert.Equal((11L, 0), _h.Store.UserTotals(1));   // shaxsiy statistika
         var btns = Buttons(b);
         Assert.Equal("Şahar çoy", btns[0].GetProperty("copy_text").GetProperty("text").GetString());
         Assert.Equal("rev:n", btns[1].GetProperty("callback_data").GetString());

@@ -82,6 +82,7 @@ public class FileHandlerTests : IDisposable
         using var r = new StreamReader(zip.GetEntry("word/document.xml")!.Open());
         Assert.Contains("Şahar", r.ReadToEnd());
         Assert.Equal(1, _h.Store.GetStats().Today["file"].Count);
+        Assert.Equal((0L, 1), _h.Store.UserTotals(1));
     }
 
     [Fact]
