@@ -30,7 +30,25 @@ public static class Texts
     public const string InlineLongButton = "Uzun matn — botda ögiriş";
 
     public const string StatTitle = "Statistika";
-    public const string BroadcastAsk = "Xabarni yuboring. Barça foydalanuvçilarga tarqataman.";
+    public const string BroadcastAsk = "Tarqatiladigan xabarga javob qilib /send deb yozing.";
+    public const string BroadcastConfirm = "foydalanuvçiga yuboriladi.";
+    public const string BroadcastBusy = "Boşqa tarqatiş davom etyapti.";
+    public const string BroadcastGo = "Yuboriş";
+    public const string BroadcastNo = "Bekor";
+    public const string BroadcastStop = "Töxtatiş";
+    public const string BroadcastCancelled = "Bekor qilindi.";
+    public const string BroadcastRunning = "Yuborilmoqda.";
+    public const string BroadcastSent = "Yuborildi";
+    public const string BroadcastFailed = "Xato";
+    public const string BroadcastLeft = "Qoldi";
+    public const string StatUsers = "Jami";
+    public const string StatToday = "Bugun";
+    public const string StatWeek = "7 kun";
+    public const string StatBlocked = "Bloklagan";
+    public const string StatText = "Matn";
+    public const string StatFile = "Fayl";
+    public const string StatInline = "Inline";
+    public const string StatChars = "belgi";
     public const string BroadcastDone = "Tarqatiş tugadi.";
     public const string BroadcastStopped = "Tarqatiş töxtatildi.";
     public const string NotAdmin = "Bu buyruq faqat admin uçun.";
