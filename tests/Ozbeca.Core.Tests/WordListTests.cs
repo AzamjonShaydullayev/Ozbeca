@@ -42,6 +42,15 @@ public class WordListTests
     [InlineData("bodi bosa bop tori torisi")]
     public void LeavesAmbiguousColloquial(string input) => Assert.Equal(input, T(input));
 
+    // "o'z" olmoshi — "oz" (kam) bilan ikki ma'noli bo'lsa ham qo'shilgan (user qarori); "oz" o'zi tegilmaydi.
+    [Theory]
+    [InlineData("nima ozi", "nima özi")]
+    [InlineData("Ozim qildim", "Özim qildim")]
+    [InlineData("ozingizga", "özingizga")]
+    [InlineData("ozlarining", "özlarining")]
+    [InlineData("oz qoldi", "oz qoldi")]
+    public void FixesOzPronoun(string input, string expected) => Assert.Equal(expected, T(input));
+
     [Fact]
     public void ColloquialAfterPause()
     {

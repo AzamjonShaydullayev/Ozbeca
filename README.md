@@ -230,6 +230,7 @@ Faqat o'rnatilgan nusxa yangilanadi (o'rnatish oynasida **Kompyuterga o'rnatish*
 | `Is'hoq`, `as'hob`, `Ishoq` | `Isʼhoq`, `asʼhob`, `Isʼhoq` | s va h alohida tovush — ş bo'lmaydi |
 | `ozbek`, `togri`, `Fargona` | `özbek`, `töğri`, `Farğona` | tutuqsiz so'z — lug'at bo'yicha |
 | `bomadi`, `torimas`, `togirlash` | `bömadi`, `törimas`, `töğirlaş` | yozishmalardagi qisqargan shakllar ham |
+| `ozi`, `ozim`, `ozingizga` | `özi`, `özim`, `özingizga` | `oz` (kam) o'zi o'zgarmaydi |
 | `qol`, `ot`, `bor`, `yoq` | o'zgarmaydi | ikki ma'noli (qol/qo'l, ot/o't) |
 | `o' harfi` | `ö harfi` | yakka o' ham |
 | `tong`, `keng`, `dengiz` | o'zgarmaydi | **ng** o'z holicha |

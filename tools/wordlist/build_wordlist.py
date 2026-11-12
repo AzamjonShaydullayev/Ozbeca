@@ -111,6 +111,10 @@ STEM_ENDINGS = ["", "b", "bman", "bsan", "bdi", "bdimi", "di", "dim", "ding", "d
                 "yapsiz", "yaptimi", "ng", "nglar", "ngchi", "gan", "ganman", "gani", "ganmiz", "sin", "sinlar",
                 "moq", "moqchi", "moqchiman", "vchi", "vdi", "vdim", "vurdi", "volsa", "volaman", "ttim", "tti"]
 COLLOQUIAL_STEMS = ["to'g'irla", "to'g'rila"]
+# "o'z" olmoshi: "oz" (kam, ozmoq) bilan ikki ma'noli, lekin yozishmada deyarli doim o'zi/o'zim. Tekshiruvsiz qo'shiladi —
+# user qarori (2026-11-12). Narxi: kam uchraydigan "ozi qoldi", "ozim" (ekin) ham o'giriladi (Backspace qaytaradi).
+OZ_PRONOUN = ["o'z" + p + c for p in ("i", "im", "ing", "imiz", "ingiz", "lari")
+              for c in ("", "ni", "ga", "da", "dan", "ning")]
 
 
 def colloquial(forms):
@@ -257,6 +261,7 @@ def main():
             continue
         keys.add(k)
         added.append(f)
+    added += [f for f in OZ_PRONOUN if key(f) not in keys]
     result += added
 
     result.sort()
