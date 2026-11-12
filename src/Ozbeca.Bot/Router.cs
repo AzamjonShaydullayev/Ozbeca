@@ -16,6 +16,7 @@ public sealed class Router(BotApi api, Sender sender, Store store, PremiumEmoji 
     private readonly PrivateHandler _private = new(api, sender, store, emoji);
     private readonly InlineHandler _inline = new(sender, store);   // TASK9
     internal AdminHandler Admin { get; } = new(api, sender, store, cfg);   // TASK10
+    private readonly FileHandler _file = new(api, sender, store, emoji, cfg.WorkDir);   // TASK7
     private readonly FloodGuard _flood = new();
 
     // Mazmunli xabar turlari; ro'yxatda yo'q (xizmat xabarlari: pinned_message, ...) e'tiborsiz.
@@ -53,12 +54,11 @@ public sealed class Router(BotApi api, Sender sender, Store store, PremiumEmoji 
         var user = store.Touch(userId);
 
         if (await Admin.TryHandle(m, user, ct)) return;   // TASK10: admin buyruqlari
-        if (m.TryGetProperty("document", out _)) await OnDocument(m, user, ct);   // TASK7: shu metod tanasini FileHandler'ga almashtiring
+        if (m.TryGetProperty("document", out _)) await OnDocument(m, user, ct);   // TASK7: FileHandler (animation ham document maydoniga ega — FileHandler nom bo'yicha rad etadi)
         else await _private.Handle(m, user, ct);
     }
 
-    private async Task OnDocument(JsonElement m, UserRow user, CancellationToken ct) =>
-        await sender.Send("sendMessage", new() { ["chat_id"] = user.Id, ["text"] = Texts.FileUnsupported }, ct);
+    private Task OnDocument(JsonElement m, UserRow user, CancellationToken ct) => _file.Handle(m, user, ct);
 
     private async Task OnCallback(JsonElement cq, CancellationToken ct)
     {
