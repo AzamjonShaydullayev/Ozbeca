@@ -1,0 +1,88 @@
+using Ozbeca.Bot.Api;
+using Ozbeca.Bot.Text;
+using Ozbeca.Bot.Ui;
+
+namespace Ozbeca.Bot.Tests;
+
+public class SenderTests
+{
+    private static Dictionary<string, object?> Payload() => new()
+    {
+        ["chat_id"] = 1,
+        ["text"] = "A b",
+        ["entities"] = new List<object>
+        {
+            new Entity("custom_emoji", 0, 1, CustomEmojiId: "99").ToJson(),
+            new Entity("bold", 2, 1).ToJson(),
+        },
+        ["reply_markup"] = Buttons.Markup(new object[]
+        {
+            Buttons.Callback("T", "d", "primary", "111"), Buttons.Copy("Nusxa", "c"),
+        }),
+    };
+
+    [Fact]
+    public async Task Sender_retries_without_custom_emoji_on_400()
+    {
+        var fake = new FakeTelegram
+        {
+            Respond = (_, _) => Flip()
+        };
+        var sender = new Sender(new BotApi(fake, "1:X"));
+        var payload = Payload();
+        await sender.Send("sendMessage", payload);
+
+        var calls = fake.Calls;
+        Assert.Equal(2, calls.Count);
+        var first = calls[0].Body.GetRawText();
+        Assert.Contains("custom_emoji", first);
+        Assert.Contains("icon_custom_emoji_id", first);
+        var second = calls[1].Body;
+        var ents = second.GetProperty("entities").EnumerateArray().ToList();
+        Assert.Single(ents);
+        Assert.Equal("bold", ents[0].GetProperty("type").GetString());
+        var raw = second.GetRawText();
+        Assert.DoesNotContain("icon_custom_emoji_id", raw);
+        Assert.DoesNotContain("\"style\"", raw);
+        Assert.Contains("copy_text", raw);
+        // chaqiruvchining payload'i buzilmagan
+        Assert.Equal(2, ((List<object>)payload["entities"]!).Count);
+    }
+
+    private bool _sent;
+    private string Flip()
+    {
+        if (_sent) return FakeTelegram.DefaultResponse;
+        _sent = true;
+        return "{\"ok\":false,\"error_code\":400,\"description\":\"Bad Request: invalid custom emoji identifier\"}";
+    }
+
+    [Fact]
+    public async Task Sender_waits_retry_after_on_429()
+    {
+        var n = 0;
+        var fake = new FakeTelegram
+        {
+            Respond = (_, _) => n++ == 0
+                ? "{\"ok\":false,\"error_code\":429,\"description\":\"Too Many\",\"parameters\":{\"retry_after\":1}}"
+                : FakeTelegram.DefaultResponse
+        };
+        TimeSpan? waited = null;
+        var sender = new Sender(new BotApi(fake, "1:X")) { Delay = (t, _) => { waited = t; return Task.CompletedTask; } };
+        await sender.Send("sendMessage", Payload());
+        Assert.Equal(2, fake.Calls.Count);
+        Assert.Equal(TimeSpan.FromSeconds(1), waited);
+    }
+
+    [Fact]
+    public async Task Sender_rethrows_other_errors()
+    {
+        var fake = new FakeTelegram
+        {
+            Respond = (_, _) => "{\"ok\":false,\"error_code\":400,\"description\":\"Bad Request: chat not found\"}"
+        };
+        var sender = new Sender(new BotApi(fake, "1:X"));
+        await Assert.ThrowsAsync<BotApiException>(() => sender.Send("sendMessage", Payload()));
+        Assert.Single(fake.Calls);
+    }
+}

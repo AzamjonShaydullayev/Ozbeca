@@ -1,0 +1,51 @@
+using System.Text.Json;
+using System.Text.Json.Nodes;
+
+namespace Ozbeca.Bot.Api;
+
+/// <summary>Xabar yuborish: 429 da kutib qayta, premium emoji/style xatosida bezaksiz qayta.</summary>
+public sealed class Sender(BotApi api)
+{
+    /// <summary>Testlarda almashtiriladi.</summary>
+    internal Func<TimeSpan, CancellationToken, Task> Delay { get; set; } = Task.Delay;
+
+    public async Task<JsonElement> Send(string method, Dictionary<string, object?> payload, CancellationToken ct = default)
+    {
+        // JsonNode nusxasi: chaqiruvchi payload'iga tegmaymiz, strip shu nusxada.
+        var node = JsonSerializer.SerializeToNode(payload, Json.Options)!;
+        var retried429 = false;
+        var stripped = false;
+        while (true)
+        {
+            try { return await api.Call(method, node, ct); }
+            catch (BotApiException e) when (e.Code == 429 && !retried429)
+            {
+                retried429 = true;
+                await Delay(TimeSpan.FromSeconds(Math.Clamp(e.RetryAfter ?? 1, 0, 30)), ct);
+            }
+            catch (BotApiException e) when (e.Code == 400 && !stripped && IsDecorationError(e.Description))
+            {
+                stripped = true;
+                Strip(node);
+            }
+        }
+    }
+
+    private static bool IsDecorationError(string d) =>
+        d.Contains("emoji", StringComparison.OrdinalIgnoreCase) || d.Contains("style", StringComparison.OrdinalIgnoreCase);
+
+    private static void Strip(JsonNode root)
+    {
+        foreach (var key in new[] { "entities", "caption_entities" })
+            if (root[key] is JsonArray arr)
+                for (var i = arr.Count - 1; i >= 0; i--)
+                    if (arr[i]?["type"]?.GetValue<string>() == "custom_emoji") arr.RemoveAt(i);
+        if (root["reply_markup"]?["inline_keyboard"] is JsonArray rows)
+            foreach (var row in rows.OfType<JsonArray>())
+                foreach (var btn in row.OfType<JsonObject>())
+                {
+                    btn.Remove("icon_custom_emoji_id");
+                    btn.Remove("style");
+                }
+    }
+}
