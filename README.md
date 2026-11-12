@@ -56,7 +56,7 @@
     <td width="33%" valign="top">
       <img src="docs/icons/dictionary.png" width="56" alt=""><br>
       <b>Tutuqsiz so'zlarni tuzatadi</b><br>
-      <sub><code>ozbek</code> → <code>özbek</code>, <code>togri</code> → <code>töğri</code>. Lug'atda ~9 000 so'z, ikki ma'noli so'zlarga tegmaydi.</sub>
+      <sub><code>ozbek</code> → <code>özbek</code>, <code>togri</code> → <code>töğri</code>. Lug'atda ~9 400 so'z (<code>bomadi</code>, <code>torimas</code> kabi yozishma shakllari ham), ikki ma'noli so'zlarga tegmaydi.</sub>
     </td>
     <td width="33%" valign="top">
       <img src="docs/icons/apps.png" width="56" alt=""><br>
@@ -187,7 +187,7 @@ Soat yonidagi <img src="docs/icon.png" width="16" alt="Ö"> belgisini yoki ish s
 | **Özbeça yoqilgan** | Dasturni butunlay vaqtincha o'chiradi |
 | **Belgilab o'girish** | **O'zgartirish** → yangi kombinatsiyani bosing. Band bo'lsa, darhol aytadi |
 | **Yozish paytida** | Yozish paytida avtomatik o'girish |
-| **Tutuqsiz so'zlar** | `ozbek` → `özbek`. Ikki ma'noli so'zlar (`qol`, `ot`, `bor`) o'zgarmaydi |
+| **Tutuqsiz so'zlar** | `ozbek` → `özbek`, `bomadi` → `bömadi`. Ikki ma'noli so'zlar (`qol`, `ot`, `bor`) o'zgarmaydi |
 | **Xabar ko'rsatish** | O'girilganda kursor yonida «Özbeça ✓» |
 | **Windows bilan** | Kompyuter yoqilganda ishga tushadi |
 | **Ctrl+V da** | Qo'yilayotgan matnni ham o'giradi (parol maydoni va Excel kataklariga tegilmaydi) |
@@ -229,6 +229,7 @@ Faqat o'rnatilgan nusxa yangilanadi (o'rnatish oynasida **Kompyuterga o'rnatish*
 | `ma'no`, `san'at`, `she'r` | `maʼno`, `sanʼat`, `şeʼr` | harflar orasidagi tutuq → rasmiy **ʼ** |
 | `Is'hoq`, `as'hob`, `Ishoq` | `Isʼhoq`, `asʼhob`, `Isʼhoq` | s va h alohida tovush — ş bo'lmaydi |
 | `ozbek`, `togri`, `Fargona` | `özbek`, `töğri`, `Farğona` | tutuqsiz so'z — lug'at bo'yicha |
+| `bomadi`, `torimas`, `togirlash` | `bömadi`, `törimas`, `töğirlaş` | yozishmalardagi qisqargan shakllar ham |
 | `qol`, `ot`, `bor`, `yoq` | o'zgarmaydi | ikki ma'noli (qol/qo'l, ot/o't) |
 | `o' harfi` | `ö harfi` | yakka o' ham |
 | `tong`, `keng`, `dengiz` | o'zgarmaydi | **ng** o'z holicha |
@@ -373,7 +374,7 @@ dotnet build src/Ozbeca.App -c Release
 
 Natija: `src/Ozbeca.App/bin/Release/net48/Ozbeca.exe`. README rasmlari: `python tools/make_readme_art.py`.
 
-Tutuqsiz so'zlar lug'ati [Leipzig Corpora Collection](https://wortschatz.uni-leipzig.de/) (uzb_community_2017, uzb_wikipedia_2021_100K, CC BY 4.0) asosida `tools/wordlist/build_wordlist.py` bilan yasalgan; ikki ma'noli so'zlarni ajratishda [uz-hunspell](https://github.com/uzbek-net/uz-hunspell) ishlatilgan.
+Tutuqsiz so'zlar lug'ati [Leipzig Corpora Collection](https://wortschatz.uni-leipzig.de/) (uzb_community_2017, uzb_wikipedia_2021_100K, CC BY 4.0) asosida `tools/wordlist/build_wordlist.py` bilan yasalgan (yozishmalardagi qisqargan shakllar — skriptdagi qoidalar bilan); ikki ma'noli so'zlarni ajratishda [uz-hunspell](https://github.com/uzbek-net/uz-hunspell) ishlatilgan.
 
 <br>
 
