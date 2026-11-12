@@ -36,6 +36,8 @@ STEM_MIN = 30     # o'zak alohida so'z sifatida (tutuqli) kamida shuncha uchrasa
 LEX_MIN = 1.5     # --lexicon: kirill korpusida kamida ~3 marta (og'irlik log10(chastota)+1)
 LEX_STEM_GAP = 1.5  # tutuqsiz o'zak tutuqlisidan ~30 marta siyrak bo'lsa — o'zbekchada deyarli uchramaydi
 LEX_STEM_MIN = 2.0  # va kirillda 10 martadan kam uchragan tutuqsiz o'zak (bol, ism, qisqartma) — shovqin
+AMB_GAP = 1.0       # ikki ma'noli: tutuqli shakl tutuqsizidan ~10 marta ko'p uchrasa — kontekstda tiklanadi
+AMB_MIN = 2.0       # va kirillda kamida ~10 marta
 
 APOS = "'`’‘ʻʼ´′＇‛"
 TOK = re.compile(r"[A-Za-z" + re.escape(APOS) + r"]+")
@@ -215,7 +217,8 @@ def main():
         del args[i:i + 2]
     out_path, en_path, dic_path, *sentences = args
     full, form, clean = read_corpus(sentences)
-    en = {w.strip() for w in open(en_path, encoding="utf-8") if w.strip()}
+    en_list = [w.strip() for w in open(en_path, encoding="utf-8") if w.strip()]
+    en, en_top = set(en_list), set(en_list[:2000])
 
     verbs, nouns = set(), set()
     for line in open(dic_path, encoding="utf-8"):
@@ -335,8 +338,31 @@ def main():
         added.append(f)
     added += [f for f in OZ_PRONOUN if key(f) not in keys]
     result += added
+    keys |= {key(f) for f in added}
+
+    # Ikki ma'noli so'zlar (oz/o'z, yoq/yo'q, otgan/o'tgan): faqat matn muallifi tutuq umuman qo'ymayotgani aniq
+    # bo'lganda tiklanadi (Transliterator: matnda o'/g' yo'q va boshqa so'z tiklangan). Tutuqli shakl kirillda
+    # tutuqsizidan ~10 marta ko'p uchrasa (AMB_GAP). Faylda "?" bilan.
+    amb_forms = collections.defaultdict(list)
+    for f, weight in lex.items():
+        k = key(f)
+        if k != f and "'" not in k and weight > 0 and re.fullmatch(r"[a-z']+", f):
+            amb_forms[k].append((weight, f))
+    amb = []
+    for k, forms in amb_forms.items():
+        forms.sort(reverse=True)
+        weight, f = forms[0]
+        # Inglizcha: faqat eng ko'p ishlatiladigan 2000 tasi (on, song) — oz (ounce) kabi siyraklari o'zbekcha matnda o'z.
+        if k in keys or len(k) < 2 or k in en_top or k in ENGLISH_HOMOGRAPHS or weight < AMB_MIN:
+            continue
+        if len(forms) > 1 and forms[1][0] >= weight - LEX_STEM_GAP:   # yog'i / yo'g'i — qaysi biri noma'lum
+            continue
+        if weight >= lex.get(k, 0) + AMB_GAP:
+            amb.append("?" + f)
+    stats["ikki ma'noli (kontekstda)"] = len(amb)
 
     result.sort()
+    result += sorted(amb)
     with open(out_path, "w", encoding="utf-8", newline="\n") as f:
         f.write("# Özbeça — tutuqsiz yozilgan o'/g' so'zlar (bir ma'noli). tools/wordlist/build_wordlist.py bilan yasalgan.\n")
         f.write("# Manba: Leipzig Corpora Collection (uzb_community_2017, uzb_wikipedia_2021_100K), CC BY 4.0.\n")

@@ -125,6 +125,8 @@ public static class CodeGuard
         }
         var sb = new StringBuilder(text.Length);
         bool quoteOpen = false; // 'Yaxshi tong' — tirnoq bir so'zda ochilib, boshqasida yopiladi
+        // Muallif tutuq umuman qo'ymaydi (ozbek, bolgan) — ikki ma'noli so'zlar ham: oz → o'z, yoq → yo'q.
+        bool ambiguous = Transliterator.RestoreApostrophes && Transliterator.ApostropheStyle(text) == true;
         int i = 0;
         while (i < text.Length)
         {
@@ -145,8 +147,8 @@ public static class CodeGuard
                 if (ShouldSkip(token)) result = token;
                 else if (cyrillic && CyrillicConverter.HasCyrillic(token))
                     result = CyrillicConverter.ToNewLatin(token, tm = map != null ? new int[token.Length + 1] : null);
-                else if (map != null) result = Transliterator.ToNewAlphabet(token, Transliterator.RestoreApostrophes, ref quoteOpen, out tm);
-                else result = Transliterator.ToNewAlphabet(token, Transliterator.RestoreApostrophes, ref quoteOpen);
+                else if (map != null) result = Transliterator.ToNewAlphabet(token, Transliterator.RestoreApostrophes, ref quoteOpen, out tm, ambiguous);
+                else result = Transliterator.ToNewAlphabet(token, Transliterator.RestoreApostrophes, ref quoteOpen, ambiguous);
                 if (map != null) Fill(map, i, j - i, sb.Length, result.Length, tm);
                 sb.Append(result);
             }

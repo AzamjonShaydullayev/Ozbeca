@@ -34,6 +34,9 @@ public sealed class TokenBuffer
     private string? _keep;                        // user o'girishni rad etgan so'z: o'zgarmaguncha qayta o'girilmaydi
     private string? _rejected;                    // qaytarilib, shu holicha qoldirilgan so'z (TakeRejected)
     private bool _quoteOpen;                      // oldingi so'zlarda tirnoq ochilgan va yopilmagan ('Yaxshi tong')
+    // User tutuqni qanday yozadi (oxirgi dalil): true — o'/g' tutuqsiz (ozbek, bolgan), false — tutuq bilan.
+    // Reset'da unutilmaydi: bu odatning xossasi, maydonniki emas. true bo'lsa ikki ma'noli so'zlar ham: oz → o'z.
+    private bool? _omitsApostrophes;
     private bool _lineKnown;                      // qator boshidan beri hamma narsani ko'rdikmi
     private bool _inString;
     private bool _codeMode;
@@ -239,8 +242,13 @@ public sealed class TokenBuffer
             // Oldingi so'zlarda ochilgan tirnoq: 'Yaxshi + tong' — oxirgi ' harf (ğ) emas, yopuvchi tirnoq.
             // Pauzada so'z hali tugamagan — tirnoq holatini o'zgartirmaymiz.
             bool quote = _quoteOpen;
-            converted = Transliterator.ToNewAlphabet(word, dictionary && Transliterator.RestoreApostrophes, ref quote);
-            if (dictionary) _quoteOpen = quote;
+            bool dict = dictionary && Transliterator.RestoreApostrophes;
+            converted = Transliterator.ToNewAlphabet(word, dict, ref quote, ambiguous: dict && _omitsApostrophes == true);
+            if (dictionary)
+            {
+                _quoteOpen = quote;
+                _omitsApostrophes = Transliterator.ApostropheStyle(word) ?? _omitsApostrophes;
+            }
         }
         if (converted == screen) return false;
         deleteCount = screen.Length;

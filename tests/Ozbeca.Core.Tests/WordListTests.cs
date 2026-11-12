@@ -50,6 +50,50 @@ public class WordListTests
     [InlineData("sozlariga", "sözlariga")]
     public void FixesFormsFromCyrillicCorpus(string input, string expected) => Assert.Equal(expected, T(input));
 
+    // Ikki ma'noli so'zlar (oz/o'z, yoq/yo'q) — faqat muallif tutuq umuman qo'ymayotgani aniq bo'lsa:
+    // matnda o'/g' (yoki ö/ğ) yo'q va bir ma'noli so'z tiklangan (ozbek, bolgan).
+    [Theory]
+    [InlineData("ozbek tilida oz fikrimiz", "özbek tilida öz fikrimiz")]
+    [InlineData("Ozbekistonda bunaqasi yoq", "Özbekistonda bunaqasi yöq")]
+    [InlineData("bolgan ishni otgan yili", "bölgan işni ötgan yili")]
+    [InlineData("o'zbek tilida oz fikrimiz", "özbek tilida oz fikrimiz")]   // muallif tutuq qo'yadi — oz qoladi
+    [InlineData("bunaqasi yoq", "bunaqasi yoq")]                           // dalil yo'q
+    [InlineData("ozbek bola ota oq", "özbek bola ota oq")]                  // ota, bola, oq — o'zi ko'p ishlatiladi
+    public void RestoresAmbiguousInApostropheFreeText(string input, string expected) => Assert.Equal(expected, T(input));
+
+    [Theory]
+    [InlineData("ozbek tilida oz fikrimiz", "özbek tilida öz fikrimiz")]
+    [InlineData("o'zbek tilida oz fikrimiz", "özbek tilida oz fikrimiz")]
+    public void AmbiguousInConvertProse(string input, string expected) => Assert.Equal(expected, CodeGuard.ConvertProse(input));
+
+    [Fact]
+    public void AmbiguousWhileTypingFollowsLastEvidence()
+    {
+        Assert.Equal("bunaqasi yoq ", Type("bunaqasi yoq "));                         // dalil yo'q
+        Assert.Equal("özbekça bunaqasi yöq ", Type("ozbekcha bunaqasi yoq "));       // ozbekcha — tutuqsiz yozadi
+        Assert.Equal("özbekça töğri yoq ", Type("ozbekcha to'g'ri yoq "));           // oxirgi dalil: tutuq bilan
+        var b = new TokenBuffer();
+        Type("ozbekcha ", b);
+        b.Reset();                                                                    // boshqa maydon — odat qoladi
+        Assert.Equal("yöq ", Type("yoq ", b));
+    }
+
+    private static string Type(string keys, TokenBuffer? b = null)
+    {
+        b ??= new TokenBuffer();
+        string screen = "";
+        foreach (char c in keys)
+        {
+            if (c == ' ')
+            {
+                if (b.TryComplete(out int del, out string rep)) screen = screen.Substring(0, screen.Length - del) + rep;
+                screen += ' ';
+            }
+            else { b.Add(c); screen += c; }
+        }
+        return screen;
+    }
+
     // Tutuqsiz o'zagi ham haqiqiy so'z: boshliq (bo'shliq), och (o'ch), ot (o't), yog'i/yo'g'i — tegilmaydi.
     [Theory]
     [InlineData("boshliqdan ochmaydi otdim")]

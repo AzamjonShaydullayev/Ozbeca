@@ -56,7 +56,7 @@
     <td width="33%" valign="top">
       <img src="docs/icons/dictionary.png" width="56" alt=""><br>
       <b>Tutuqsiz so'zlarni tuzatadi</b><br>
-      <sub><code>ozbek</code> → <code>özbek</code>, <code>togri</code> → <code>töğri</code>. Lug'atda ~14 000 so'z (<code>bomadi</code>, <code>torimas</code> kabi yozishma shakllari ham), ikki ma'noli so'zlarga tegmaydi.</sub>
+      <sub><code>ozbek</code> → <code>özbek</code>, <code>togri</code> → <code>töğri</code>. Lug'atda ~14 000 so'z (<code>bomadi</code>, <code>torimas</code> kabi yozishma shakllari ham). Ikki ma'noli so'zlar (<code>yoq</code>, <code>oz</code>) — faqat siz tutuq umuman qo'ymayotganingiz aniq bo'lsa.</sub>
     </td>
     <td width="33%" valign="top">
       <img src="docs/icons/apps.png" width="56" alt=""><br>
@@ -245,7 +245,9 @@ Faqat o'rnatilgan nusxa yangilanadi (o'rnatish oynasida **Kompyuterga o'rnatish*
 | `ozbek`, `togri`, `Fargona` | `özbek`, `töğri`, `Farğona` | tutuqsiz so'z — lug'at bo'yicha |
 | `bomadi`, `torimas`, `togirlash` | `bömadi`, `törimas`, `töğirlaş` | yozishmalardagi qisqargan shakllar ham |
 | `ozi`, `ozim`, `ozingizga` | `özi`, `özim`, `özingizga` | `oz` (kam) o'zi o'zgarmaydi |
-| `qol`, `ot`, `bor`, `yoq` | o'zgarmaydi | ikki ma'noli (qol/qo'l, ot/o't) |
+| `bunaqasi yoq` | o'zgarmaydi | ikki ma'noli (yoq/yo'q, oz/o'z, qol/qo'l) |
+| `Ozbekistonda bunaqasi yoq` | `Özbekistonda bunaqasi yöq` | lekin muallif tutuq umuman qo'ymayotgani aniq bo'lsa — tiklanadi |
+| `ota`, `bola`, `oq`, `bor` | o'zgarmaydi | o'zi ham ko'p ishlatiladigan so'z |
 | `o' harfi` | `ö harfi` | yakka o' ham |
 | `tong`, `keng`, `dengiz` | o'zgarmaydi | **ng** o'z holicha |
 | `Bu 'kino' edi` | o'zgarmaydi | tirnoq tutuq emas |

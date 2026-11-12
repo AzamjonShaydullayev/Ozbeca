@@ -67,8 +67,10 @@ public static class Transliterator
     /// Matn bo'laklab (so'zma-so'z) o'girilganda: quoteOpen — bu bo'lakdan oldin ochilgan, hali yopilmagan
     /// tirnoq bor ('Yaxshi | tong'). Chiqishda — bo'lak oxiridagi holat, keyingi bo'lakka beriladi.
     /// </summary>
-    public static string ToNewAlphabet(string input, bool dictionary, ref bool quoteOpen) =>
-        Convert(input, null, dictionary, ref quoteOpen);
+    /// <param name="ambiguous">Ikki ma'noli so'zlar ham (oz → o'z) — chaqiruvchi butun matndan bilgan bo'lsa
+    /// (<see cref="ApostropheStyle"/>): muallif tutuq qo'ymaydi.</param>
+    public static string ToNewAlphabet(string input, bool dictionary, ref bool quoteOpen, bool ambiguous = false) =>
+        Convert(input, null, dictionary, ref quoteOpen, ambiguous);
 
     /// <summary>
     /// O'giradi va pozitsiyalar xaritasini qaytaradi: map[i] — kirishdagi i-belgi chiqishda qayerdan boshlanadi,
@@ -84,20 +86,38 @@ public static class Transliterator
     }
 
     /// <summary>So'zma-so'z o'girish + xarita (fayl o'girish: Word run'lariga qaytarish). NFC bo'lmasa map null.</summary>
-    public static string ToNewAlphabet(string input, bool dictionary, ref bool quoteOpen, out int[]? map)
+    public static string ToNewAlphabet(string input, bool dictionary, ref bool quoteOpen, out int[]? map, bool ambiguous = false)
     {
         input ??= string.Empty;
         map = input.IsNormalized(NormalizationForm.FormC) ? new int[input.Length + 1] : null;
-        return Convert(input, map, dictionary, ref quoteOpen);
+        return Convert(input, map, dictionary, ref quoteOpen, ambiguous);
     }
 
+    /// <summary>
+    /// Matn muallifi tutuqni qanday yozadi: false — o'/g' ni tutuq bilan (yoki ö/ğ) yozgan; true — tutuq umuman yo'q va
+    /// lug'at bo'yicha tushib qolgani aniq so'z bor (ozbek, bolgan); null — bilib bo'lmaydi.
+    /// true bo'lsa ikki ma'noli so'zlar ham tiklanadi: "ozbek tilida oz fikrim" → "özbek tilida öz fikrim".
+    /// </summary>
+    public static bool? ApostropheStyle(string text)
+    {
+        if (string.IsNullOrEmpty(text)) return null;
+        for (int i = 0; i < text.Length; i++)
+        {
+            char c = text[i];
+            if (c is 'ö' or 'Ö' or 'ğ' or 'Ğ') return false;
+            if ((c is 'o' or 'O' or 'g' or 'G') && i + 1 < text.Length && IsA(text[i + 1])) return false;
+        }
+        return MissingApostrophes(text, 0, text.Length, false) != null ? true : null;
+    }
+
+    // Butun matn: ikki ma'noli so'zlar matnning o'zidan (ApostropheStyle) aniqlanadi.
     private static string Convert(string input, int[]? map, bool dictionary)
     {
         bool quoteOpen = false;
-        return Convert(input, map, dictionary, ref quoteOpen);
+        return Convert(input, map, dictionary, ref quoteOpen, null);
     }
 
-    private static string Convert(string input, int[]? map, bool dictionary, ref bool quoteOpen)
+    private static string Convert(string input, int[]? map, bool dictionary, ref bool quoteOpen, bool? ambiguous)
     {
         if (string.IsNullOrEmpty(input))
         {
@@ -107,16 +127,17 @@ public static class Transliterator
 
         string text = input.Normalize(NormalizationForm.FormC);
         HashSet<int>? closing = ClosingQuotes(text, ref quoteOpen);
+        bool amb = dictionary && (ambiguous ?? ApostropheStyle(text) == true);
         var sb = new StringBuilder(text.Length);
         int pos = 0;
         foreach (Match m in Protected.Matches(text))
         {
-            ConvertSegment(text, pos, m.Index, sb, map, dictionary, closing);
+            ConvertSegment(text, pos, m.Index, sb, map, dictionary, amb, closing);
             for (int k = 0; k < m.Length && map != null; k++) map[m.Index + k] = sb.Length + k;
             sb.Append(m.Value);
             pos = m.Index + m.Length;
         }
-        ConvertSegment(text, pos, text.Length, sb, map, dictionary, closing);
+        ConvertSegment(text, pos, text.Length, sb, map, dictionary, amb, closing);
         if (map != null) map[text.Length] = sb.Length;
         return sb.ToString();
     }
@@ -203,11 +224,12 @@ public static class Transliterator
     // ʻ (U+02BB) va ʼ (U+02BC) Unicode'da "modifier letter" — ularni harf deb hisoblamaymiz.
     private static bool IsLetter(char c) => char.IsLetter(c) && !IsA(c);
 
-    private static void ConvertSegment(string s, int start, int end, StringBuilder sb, int[]? map, bool dictionary, HashSet<int>? closing)
+    private static void ConvertSegment(string s, int start, int end, StringBuilder sb, int[]? map, bool dictionary, bool ambiguous,
+        HashSet<int>? closing)
     {
         int segOut = sb.Length;
         char At(int k) => k >= start && k < end ? s[k] : '\0';
-        HashSet<int>? missing = dictionary ? MissingApostrophes(s, start, end) : null;
+        HashSet<int>? missing = dictionary ? MissingApostrophes(s, start, end, ambiguous) : null;
 
         int i = start;
         while (i < end)
@@ -280,7 +302,7 @@ public static class Transliterator
     /// Segmentdagi so'zlarni lug'atdan qidiradi va tutuqi tushib qolgan o/g indekslarini qaytaradi
     /// (Ozbekiston → {0}, to'gri → {2}). So'z = harf va tutuqlar ketma-ketligi; chetdagi tirnoqlar olinmaydi.
     /// </summary>
-    private static HashSet<int>? MissingApostrophes(string s, int start, int end)
+    private static HashSet<int>? MissingApostrophes(string s, int start, int end, bool ambiguous)
     {
         HashSet<int>? result = null;
         int i = start;
@@ -292,12 +314,12 @@ public static class Transliterator
             int b = i;
             while (a < b && IsA(s[a])) a++;                                              // ochuvchi tirnoq
             while (b > a && IsA(s[b - 1]) && !(b - 2 >= a && (s[b - 2] == 'g' || s[b - 2] == 'G'))) b--; // yopuvchi (bog' emas)
-            if (b - a >= 3) MarkWord(s, a, b, ref result);
+            if (b - a >= (ambiguous ? 2 : 3)) MarkWord(s, a, b, ambiguous, ref result);
         }
         return result;
     }
 
-    private static void MarkWord(string s, int a, int b, ref HashSet<int>? result)
+    private static void MarkWord(string s, int a, int b, bool ambiguous, ref HashSet<int>? result)
     {
         var key = new StringBuilder(b - a);
         for (int k = a; k < b; k++)
@@ -311,7 +333,7 @@ public static class Transliterator
             else if (c >= 'a' && c <= 'z') key.Append(c);
             else return; // boshqa harf (ö, ş, kirill) — lug'at so'zi emas
         }
-        string? form = WordList.Lookup(key.ToString());
+        string? form = WordList.Lookup(key.ToString(), ambiguous);
         if (form == null) return;
 
         // Yozilgan so'zni to'g'ri shakl bilan yonma-yon yurib, tutuqi tushib qolgan o/g larni topamiz.

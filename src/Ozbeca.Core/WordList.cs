@@ -13,9 +13,13 @@ namespace Ozbeca.Core;
 internal static class WordList
 {
     /// <summary>kalit (kichik harf, o/g dan keyingi tutuqlarsiz) → to'g'ri shakl (kichik harf, tutuq ').</summary>
-    private static readonly Lazy<Dictionary<string, string>> Map = new(Load);
+    private static readonly Lazy<(Dictionary<string, string> Sure, Dictionary<string, string> Ambiguous)> Maps = new(Load);
 
-    public static string? Lookup(string key) => Map.Value.TryGetValue(key, out var form) ? form : null;
+    /// <param name="ambiguous">Ikki ma'noli so'zlar ham (oz → o'z, yoq → yo'q; faylda "?" bilan) — faqat matn muallifi
+    /// tutuq umuman qo'ymayotgani aniq bo'lganda.</param>
+    public static string? Lookup(string key, bool ambiguous = false) =>
+        Maps.Value.Sure.TryGetValue(key, out var form) ? form
+        : ambiguous && Maps.Value.Ambiguous.TryGetValue(key, out form) ? form : null;
 
     public static string Key(string form)
     {
@@ -25,15 +29,20 @@ internal static class WordList
         return sb.ToString();
     }
 
-    private static Dictionary<string, string> Load()
+    private static (Dictionary<string, string>, Dictionary<string, string>) Load()
     {
-        var map = new Dictionary<string, string>(StringComparer.Ordinal);
+        var sure = new Dictionary<string, string>(StringComparer.Ordinal);
+        var ambiguous = new Dictionary<string, string>(StringComparer.Ordinal);
         using var stream = typeof(WordList).Assembly.GetManifestResourceStream("Ozbeca.words.txt");
-        if (stream == null) return map; // resurs yo'q — lug'atsiz ishlaymiz
+        if (stream == null) return (sure, ambiguous); // resurs yo'q — lug'atsiz ishlaymiz
         using var reader = new StreamReader(stream, Encoding.UTF8);
         string? line;
         while ((line = reader.ReadLine()) != null)
-            if (line.Length > 0 && line[0] != '#') map[Key(line)] = line;
-        return map;
+        {
+            if (line.Length == 0 || line[0] == '#') continue;
+            if (line[0] == '?') ambiguous[Key(line.Substring(1))] = line.Substring(1);
+            else sure[Key(line)] = line;
+        }
+        return (sure, ambiguous);
     }
 }
