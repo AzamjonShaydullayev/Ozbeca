@@ -58,6 +58,35 @@ public class BotApiTests
         Assert.Equal("file:a.docx", body.Str("document"));
     }
 
+    /// <summary>So'rovning xom baytlarini ushlaydi (multipart sarlavhalari qanday yozilganini ko'rish uchun).</summary>
+    private sealed class RawCapture(HttpMessageHandler inner) : DelegatingHandler(inner)
+    {
+        public byte[] Raw = [];
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage req, CancellationToken ct)
+        {
+            Raw = await req.Content!.ReadAsByteArrayAsync(ct);
+            return await base.SendAsync(req, ct);
+        }
+    }
+
+    [Theory]
+    [InlineData("Oʻzbek Шаҳар (yangi alifbo).docx", "Oʻzbek Шаҳар (yangi alifbo).docx")]
+    [InlineData("a\"b\r\n\\c.txt", "a_b___c.txt")]
+    public async Task Upload_writes_raw_utf8_filename(string name, string expected)
+    {
+        var fake = new FakeTelegram();
+        var cap = new RawCapture(fake);
+        await new BotApi(cap, Token).Upload("sendDocument", new Dictionary<string, string> { ["chat_id"] = "42" },
+            "document", name, new MemoryStream(new byte[] { 1 }));
+        var raw = cap.Raw;
+        var header = Encoding.UTF8.GetBytes($"Content-Disposition: form-data; name=\"document\"; filename=\"{expected}\"\r\n");
+        Assert.True(raw.AsSpan().IndexOf(header) >= 0, Encoding.UTF8.GetString(raw));
+        var text = Encoding.Latin1.GetString(raw);
+        Assert.DoesNotContain("=?utf-8?", text, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("filename*", text);
+        Assert.Equal("42", Assert.Single(fake.Calls).Body.Str("chat_id"));
+    }
+
     [Fact]
     public async Task Download_copies_bytes()
     {

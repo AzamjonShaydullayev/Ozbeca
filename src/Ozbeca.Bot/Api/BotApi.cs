@@ -29,11 +29,14 @@ public sealed class BotApi
     public async Task<JsonElement> Upload(string method, IReadOnlyDictionary<string, string> fields,
         string fileField, string fileName, Stream fileContent, CancellationToken ct = default)
     {
-        using var form = new MultipartFormDataContent();
+        // Part sarlavhalari UTF-8 da: Telegram oddiy filename="..." ni o'qiydi, .NET ning =?utf-8?B?..?= / filename* shaklini emas.
+        using var form = new MultipartFormDataContent { HeaderEncodingSelector = (_, _) => Encoding.UTF8 };
         foreach (var (k, v) in fields) form.Add(new StringContent(v, Encoding.UTF8), k);
         var file = new StreamContent(fileContent);
         file.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
-        form.Add(file, fileField, fileName);
+        var safeName = string.Concat(fileName.Select(c => c is '"' or '\\' or '\r' or '\n' ? '_' : c));
+        file.Headers.TryAddWithoutValidation("Content-Disposition", $"form-data; name=\"{fileField}\"; filename=\"{safeName}\"");
+        form.Add(file);
         return await Send(method, form, ct);
     }
 
