@@ -23,6 +23,7 @@ try
     var dbDir = Path.GetDirectoryName(Path.GetFullPath(cfg.DbPath));
     if (!string.IsNullOrEmpty(dbDir)) Directory.CreateDirectory(dbDir);
     Directory.CreateDirectory(cfg.WorkDir);
+    Ozbeca.Bot.Handlers.FileHandler.PurgeWorkDir(cfg.WorkDir);   // spec §4: yiqilishdan qolgan user fayllari saqlanmaydi
 
     using var handler = new SocketsHttpHandler();
     var api = new BotApi(handler, cfg.Token);

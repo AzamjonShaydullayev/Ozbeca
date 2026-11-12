@@ -260,6 +260,34 @@ public class FileHandlerTests : IDisposable
         Assert.Equal(2, _h.Sent("sendDocument").Count);
     }
 
+    [Fact]
+    public void Purge_empties_workdir_without_following_links()
+    {
+        var outside = Directory.CreateTempSubdirectory("ozbeca-outside").FullName;
+        try
+        {
+            File.WriteAllText(Path.Combine(outside, "keep.txt"), "x");
+            Directory.CreateDirectory(Path.Combine(_work, "abc", "sub"));
+            File.WriteAllText(Path.Combine(_work, "abc", "sub", "in.docx"), "x");
+            File.WriteAllText(Path.Combine(_work, "loose.txt"), "x");
+            var link = Path.Combine(_work, "link");
+            try { Directory.CreateSymbolicLink(link, outside); }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+            {
+                // Windows'da symlink huquqi bo'lmasa — junction (huquq talab qilmaydi)
+                System.Diagnostics.Process.Start("cmd", $"/c mklink /J \"{link}\" \"{outside}\"")!.WaitForExit();
+            }
+            Assert.NotNull(new DirectoryInfo(link).LinkTarget);
+
+            FileHandler.PurgeWorkDir(_work);
+
+            Assert.True(Directory.Exists(_work));
+            Assert.Empty(Directory.GetFileSystemEntries(_work));
+            Assert.True(File.Exists(Path.Combine(outside, "keep.txt")));
+        }
+        finally { Directory.Delete(outside, true); }
+    }
+
     [Theory]
     [InlineData("a.txt")]
     [InlineData("a.csv")]

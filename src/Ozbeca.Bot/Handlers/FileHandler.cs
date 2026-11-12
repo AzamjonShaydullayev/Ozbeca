@@ -118,6 +118,22 @@ internal sealed class FileHandler(BotApi api, Sender sender, Store store, Premiu
         }
     }
 
+    /// <summary>
+    /// Ishga tushishda: oldingi (yiqilgan) jarayondan qolgan foydalanuvchi fayllarini o'chiradi. Faqat dir ichida;
+    /// havolalar (symlink/junction) ortidan yurilmaydi — faqat havolaning o'zi o'chadi.
+    /// </summary>
+    internal static void PurgeWorkDir(string dir)
+    {
+        foreach (var e in new DirectoryInfo(dir).EnumerateFileSystemInfos())
+            try
+            {
+                if (e is DirectoryInfo d && d.LinkTarget == null) d.Delete(true);
+                else if (e is DirectoryInfo link && OperatingSystem.IsWindows()) link.Delete();
+                else File.Delete(e.FullName);   // fayl yoki (Unix) havola: unlink
+            }
+            catch (Exception x) when (x is IOException or UnauthorizedAccessException) { Log.Error($"workdir purge: {x.GetType().Name}"); }
+    }
+
     private static readonly Encoding Cp1251 = CodePagesEncodingProvider.Instance.GetEncoding(1251)!;
 
     /// <summary>
