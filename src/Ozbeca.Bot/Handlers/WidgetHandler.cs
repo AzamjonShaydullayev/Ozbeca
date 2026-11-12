@@ -6,10 +6,11 @@ using Ozbeca.Bot.Widget;
 namespace Ozbeca.Bot.Handlers;
 
 /// <summary>
-/// Karta so'rovlari (widget_query.data — ishonchsiz kirish, faqat aniq qiymatlar): r — yangilash, d:0|1 — yo'nalish,
-/// t:c|w|f — toggle, g:0..2 — o'yin javobi. Store → editMessageWidgetData → answerWidgetQuery ("ok" | "no:Ş" | "err").
+/// Widget so'rovlari (widget_query.data — ishonchsiz kirish, faqat aniq qiymatlar):
+/// sozlama — r:s, d:0|1, t:c|w|f; o'yin — r:g, g:i, g:ij, g:t; statistika — r:t.
+/// Touch → Store → editMessageWidgetData (holat o'zgargan bo'lsa) → answerWidgetQuery ("ok" | "no:ŞĞ" | "err").
 /// </summary>
-internal sealed class WidgetHandler(Sender sender, Store store)
+internal sealed class WidgetHandler(Sender sender, Store store, CardSender card)
 {
     public async Task Handle(JsonElement q, CancellationToken ct)
     {
@@ -22,45 +23,63 @@ internal sealed class WidgetHandler(Sender sender, Store store)
         }
 
         var u = store.Touch(userId);
-        var s = u.Settings;
-        var puzzle = Game.Unpack(u.GameAnswer);
+        var data = q.Str("data") ?? "";
         var answer = "ok";
-        switch (q.Str("data"))
+        string state;
+        switch (data)
         {
-            case "r": break;
-            case "d:0": s = s with { Reverse = false }; break;
-            case "d:1": s = s with { Reverse = true }; break;
-            case "t:c": s = s with { Cyrillic = !s.Cyrillic }; break;
-            case "t:w": s = s with { Dictionary = !s.Dictionary }; break;
-            case "t:f": s = s with { LongAsFile = !s.LongAsFile }; break;
-            case ['g', ':', >= '0' and <= '2' and var c] when puzzle != null:
-                var right = puzzle.Options[c - '0'] == puzzle.Answer;
+            case "r:s" or "d:0" or "d:1" or "t:c" or "t:w" or "t:f":
+                var s = u.Settings;
+                s = data switch
+                {
+                    "d:0" => s with { Reverse = false },
+                    "d:1" => s with { Reverse = true },
+                    "t:c" => s with { Cyrillic = !s.Cyrillic },
+                    "t:w" => s with { Dictionary = !s.Dictionary },
+                    "t:f" => s with { LongAsFile = !s.LongAsFile },
+                    _ => s,
+                };
+                if (s != u.Settings) store.SaveSettings(u.Id, s);
+                state = WidgetState.Settings(s);
+                break;
+            case "r:t":
+                state = card.StatsState(u);
+                break;
+            case "r:g":
+                // taymerli topishmoq vaqti o'tgan (karta keyinroq ochildi) — yangisi, seriyaga tegilmaydi
+                var p = Game.Unpack(u.GameAnswer);
+                if (p == null || Game.Expired(p, Clock.Ms())) p = card.NewPuzzle(u);
+                state = WidgetState.Game(u, p);
+                break;
+            case ['g', ':', ..]:
+                if (Game.Unpack(u.GameAnswer) is not { } cur || Game.Check(cur, data, Clock.Ms()) is not { } right)
+                {
+                    await Answer(id, "err", ct);
+                    return;
+                }
                 var streak = right ? u.Streak + 1 : 0;
                 u = u with { Streak = streak, Best = Math.Max(u.Best, streak) };
-                answer = right ? "ok" : "no:" + puzzle.Answer;
-                puzzle = null;   // har javobdan keyin yangi topishmoq
+                answer = right ? "ok" : "no:" + cur.Answer;
+                state = WidgetState.Game(u, card.NewPuzzle(u));   // har javobdan keyin yangi topishmoq — takror hisoblanmaydi
                 break;
             default:
                 await Answer(id, "err", ct);
                 return;
         }
 
-        if (s != u.Settings) { store.SaveSettings(u.Id, s); u = u with { Settings = s }; }
-        if (puzzle == null)
+        if (!card.Unchanged(chatId, messageId, state))
         {
-            puzzle = Game.Next(Random.Shared);
-            store.SetGame(u.Id, Game.Pack(puzzle), u.Streak, u.Best);
-        }
-
-        try
-        {
-            await sender.Send("editMessageWidgetData", new()
+            try
             {
-                ["chat_id"] = chatId, ["message_id"] = messageId, ["chat_data"] = WidgetState.Build(u, puzzle),
-            }, ct);
+                await sender.Send("editMessageWidgetData", new()
+                {
+                    ["chat_id"] = chatId, ["message_id"] = messageId, ["chat_data"] = state,
+                }, ct);
+            }
+            catch (BotApiException e) when (e.Description.Contains("not modified", StringComparison.OrdinalIgnoreCase)) { }   // holat o'zgarmagan
+            catch (BotApiException) { await Answer(id, "err", ct); throw; }   // xabar o'chirilgan va h.k. — widget TIMEOUT kutmasin, xato log'ga
+            card.Remember(chatId, messageId, state);
         }
-        catch (BotApiException e) when (e.Description.Contains("not modified", StringComparison.OrdinalIgnoreCase)) { }   // holat o'zgarmagan (r)
-        catch (BotApiException) { await Answer(id, "err", ct); throw; }   // xabar o'chirilgan va h.k. — widget TIMEOUT kutmasin, xato log'ga
         await Answer(id, answer, ct);
     }
 

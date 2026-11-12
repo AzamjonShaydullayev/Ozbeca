@@ -1,0 +1,74 @@
+<!doctype html><html lang="uz"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root{--bg:5 12 14;--fg:255 255 255;--ink:242 246 247;--i3:168 172 172;--ac:0 180 204;--ac2:0 114 138;--good:119 208 162;--bad:246 135 113;--warn:235 189 87;--e:cubic-bezier(.22,.8,.24,1)}
+*{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}
+body{font:15px/1.35 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:rgb(var(--ink));padding:16px;
+background:radial-gradient(120% 70% at 0 0,rgb(var(--ac)/.16),transparent 60%),radial-gradient(90% 60% at 100% 100%,rgb(var(--ac2)/.22),transparent 60%),rgb(var(--bg))}
+.lb{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:rgb(var(--i3))}
+.hd{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:14px}
+h1{font-size:22px;font-weight:650;letter-spacing:-.02em;margin-top:2px}
+.pl{display:inline-flex;gap:5px;align-items:center;font-size:13px;font-weight:600;padding:5px 10px;border-radius:99px;background:rgb(var(--c)/.12);border:1px solid rgb(var(--c)/.25);color:rgb(var(--c));font-variant-numeric:tabular-nums}
+.pl+.pl{margin-left:6px}
+#bd{position:relative;padding:22px 8px 16px;border-radius:20px;background:rgb(var(--fg)/.035);border:1px solid rgb(var(--fg)/.08);box-shadow:inset 0 1px 0 rgb(var(--fg)/.05);text-align:center}
+#rg{position:absolute;inset:-1px;width:calc(100% + 2px);height:calc(100% + 2px);pointer-events:none;overflow:visible}
+#rg rect{fill:none;stroke:rgb(var(--ac));stroke-width:2;stroke-linecap:round;stroke-dasharray:100 100;opacity:0}
+#rg.on rect{opacity:1;animation:tm var(--d) linear forwards}#rg.lo rect{stroke:rgb(var(--warn))}
+@keyframes tm{to{stroke-dashoffset:100}}
+#q{display:flex;justify-content:center;gap:4px}
+#q span{flex:0 1 30px;min-width:0;height:42px;border-radius:9px;display:grid;place-items:center;font-size:21px;font-weight:650;background:rgb(var(--fg)/.05);border:1px solid rgb(var(--fg)/.08);transition:all .5s var(--e)}
+#q .x{border:1.5px dashed rgb(var(--ac)/.7);background:rgb(var(--ac)/.08);animation:p 2.4s ease-in-out infinite;cursor:pointer}
+#q .x.f{animation:none;border-style:solid;color:rgb(var(--ac))}
+#q .x.ok{animation:none;border:1.5px solid rgb(var(--good));background:rgb(var(--good)/.16);color:rgb(var(--good));transform:scale(1.08)}
+#q .x.no{animation:none;border:1.5px solid rgb(var(--warn));background:rgb(var(--warn)/.14);color:rgb(var(--warn))}
+@keyframes p{50%{background:rgb(var(--ac)/.2)}}
+#hn{font-size:12px;color:rgb(var(--i3));margin-top:12px;min-height:16px}
+#os{display:grid;grid-template-columns:repeat(var(--k,3),1fr);gap:10px;margin-top:12px}
+#os button{all:unset;cursor:pointer;text-align:center;padding:14px 0;font-size:28px;font-weight:650;border-radius:16px;background:rgb(var(--fg)/.035);border:1px solid rgb(var(--fg)/.1);transition:transform .15s var(--e),background .3s,border-color .3s}
+#os button:active{transform:scale(.95)}
+#os .ok{background:rgb(var(--good)/.18);border-color:rgb(var(--good))}
+#os .no{background:rgb(var(--bad)/.16);border-color:rgb(var(--bad));animation:s .45s var(--e)}
+@keyframes s{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+#ms{height:20px;margin-top:10px;text-align:center;font-size:13px;color:rgb(var(--i3));transition:opacity .4s}
+#ms.up{color:rgb(var(--ac));font-weight:600}
+.busy #os,.busy #q{pointer-events:none}
+</style></head><body>
+<div class="hd"><div><div class="lb" id="lv">Öyin</div><h1>Harfni top</h1></div>
+<div><span class="pl" style="--c:var(--warn)">🔥 <b id="s">0</b></span><span class="pl" style="--c:var(--ac)">Rekord <b id="b">0</b></span></div></div>
+<div id="bd"><svg id="rg"><rect x="1" y="1" rx="20" pathLength="100" width="0" height="0"/></svg><div id="q"></div><div id="hn"></div></div>
+<div id="os"></div><div id="ms"></div>
+<script>
+var W=window.TelegramWidget,L=["Oson","Örta","Qiyin"],
+D=W?{s:0,b:0,l:0,q:"",o:"",t:0}:{s:0,b:0,l:0,q:"?ahar",o:"ŞÇĞ",a:"Ş",t:0},S=D,busy=0,hold=0,pk=[],tmr,lv=-1,to=0;
+function $(i){return document.getElementById(i)}
+function load(){S=D;try{var j=W&&W.chatData&&JSON.parse(W.chatData);if(j)S=Object.assign({},D,j)}catch(e){}}
+function slots(){return [].slice.call(document.querySelectorAll("#q .x"))}
+function draw(){if(hold)return;load();pk=[];$("s").textContent=S.s;$("b").textContent=S.b;
+$("lv").textContent="Öyin · "+L[S.l||0];var m=$("ms");m.className="";m.textContent="";
+if(lv>=0&&S.l>lv){m.textContent=L[S.l]+" daraja!";m.className="up"}lv=S.l||0;
+var q=$("q");q.textContent="";(S.q||"").split("").forEach(function(c){var e=document.createElement("span");
+if(c=="?"){e.className="x";e.onclick=function(){var i=slots().indexOf(e);if(i<pk.length){pk.splice(i);fill()}}}else e.textContent=c;q.appendChild(e)});
+var n=slots().length;$("hn").textContent=n>1?"Ikkala katakni töldiring":"Böş katakka qaysi harf tuşadi?";
+var os=$("os");os.textContent="";os.style.setProperty("--k",S.o.length);
+S.o.split("").forEach(function(c,i){var b=document.createElement("button");b.textContent=c;b.onclick=function(){pick(i)};os.appendChild(b)});
+ring()}
+function ring(){var r=$("rg"),bd=$("bd"),x=r.firstChild;clearTimeout(tmr);r.className.baseVal="";
+if(!S.t)return;x.setAttribute("width",bd.offsetWidth);x.setAttribute("height",bd.offsetHeight);
+r.style.setProperty("--d",S.t+"s");void r.offsetWidth;r.className.baseVal="on";
+tmr=setTimeout(function(){r.className.baseVal="on lo"},(S.t-3)*1000);
+setTimeout(function(){if(!hold&&S.t)send("g:t")},S.t*1000)}
+function fill(){slots().forEach(function(e,i){e.textContent=pk[i]!=null?S.o[pk[i]]:"";e.className="x"+(pk[i]!=null?" f":"")})}
+function pick(i){if(busy||hold)return;var n=slots().length;if(pk.length<n){pk.push(i);fill()}if(pk.length==n)send("g:"+pk.join(""))}
+function res(r){var ok=r=="ok",t=ok?"":r.slice(3),x=slots();clearTimeout(tmr);$("rg").className.baseVal="";
+x.forEach(function(e,i){e.textContent=ok?S.o[pk[i]]:t[i]||"";e.className="x "+(ok?"ok":"no")});
+pk.forEach(function(i){$("os").children[i].className=ok?"ok":"no"});
+$("ms").className="";$("ms").textContent=ok?"Töğri!":(to?"Vaqt tugadi. ":"")+"Töğri javob: "+t;
+hap(ok?"success":"error");hold=1;setTimeout(function(){hold=0;draw()},1500)}
+function hap(t){try{W.HapticFeedback.notificationOccurred(t)}catch(e){}}
+function send(r){to=r=="g:t";if(!W){var g=pk.map(function(i){return S.o[i]}).join(""),ok=r!="g:t"&&g==S.a;
+D.s=ok?D.s+1:0;D.b=Math.max(D.b,D.s);return res(ok?"ok":"no:"+S.a)}
+busy=1;document.body.className="busy";
+W.request(r).then(function(a){busy=0;document.body.className="";var x=a&&a.result;
+if(x=="ok"||(x&&x.indexOf("no:")==0))res(x);else{pk=[];fill();$("ms").textContent="Xatolik. Qayta bosing."}},
+function(){busy=0;document.body.className="";pk=[];fill();$("ms").textContent="Xatolik. Qayta bosing."})}
+draw();if(W){W.onEvent("chatDataChanged",draw);W.onEvent("activated",function(){W.request("r:g")});W.ready&&W.ready()}
+</script></body></html>

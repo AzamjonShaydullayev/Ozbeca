@@ -24,7 +24,6 @@ public static class Texts
     public const string FileDone = "Tayyor! Fayl yangi alifboda.";
     public const string FileDoneOld = "Tayyor! Fayl eski alifboda.";
 
-    public const string CardCaption = "Özbeça — yangi alifbo";
     public const string CopyButton = "Nusxa";
     public const string ReverseButton = "Teskari";
     public const string SettingsTitle = "Sozlamalar. Tugmani bosib özgartiring.";
@@ -63,4 +62,23 @@ public static class Texts
     public const string BroadcastStopped = "Tarqatiş töxtatildi.";
     public const string NotAdmin = "Bu buyruq faqat admin uçun.";
     public const string Flood = "Juda tez yozyapsiz. Biroz kuting.";
+
+    // /start menyusi va widget'lar
+    public const string MenuSettings = "Sozlama";
+    public const string MenuLetters = "Harflar";
+    public const string MenuGame = "Öyin";
+    public const string MenuStats = "Statistika";
+    public const string MenuFile = "Fayl";
+    public const string MenuHelp = "Yordam";
+    public const string CmdGame = "Harfni top öyini";
+    public const string CmdStats = "Mening statistikam";
+    public const string CmdLetters = "Yangi alifbo harflari";
+    public const string FileHelp =
+        "Faylni şu çatga yuboring — formatini saqlab ögiraman: Word (.docx), Excel (.xlsx), PowerPoint (.pptx) yoki matn (.txt, .csv, .srt, .md). 20 MB gaça.\n" +
+        "Yönaliş sozlamadan olinadi: eskidan yangiga yoki yangidan eskiga.";
+    public const string CardHint = "Karta körinmasa, Telegramʼni yangilang.";
+    public const string CapSettings = "Sozlama. Yönaliş: {0}.";
+    public const string CapLetters = "Yangi alifbo harflari. Harfni bosing — nusxa olinadi.";
+    public const string CapGame = "Harfni top. Seriya: {0}, rekord: {1}.";
+    public const string CapStats = "Bugun {0} belgi ögirildi.";
 }

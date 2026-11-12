@@ -4,20 +4,23 @@ using Ozbeca.Bot.Data;
 
 namespace Ozbeca.Bot.Widget;
 
-/// <summary>Kartaning chat_data JSON'i (≤ 1024 bayt): d/c/w/f — sozlamalar, t — bugungi belgilar, s/b — seriya/eng yaxshi, q/o — o'yin.</summary>
+/// <summary>Widget'lar chat_data JSON'i (≤ 1024 bayt). "k" — tur: s (sozlama), h (harflar), g (o'yin), t (statistika).</summary>
 public static class WidgetState
 {
     private static readonly JsonSerializerOptions Opts = new() { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
 
-    public static string Build(UserRow u, Puzzle? p)
-    {
-        var s = u.Settings;
-        var d = new Dictionary<string, object>
-        {
-            ["d"] = s.Reverse ? 1 : 0, ["c"] = s.Cyrillic ? 1 : 0, ["w"] = s.Dictionary ? 1 : 0, ["f"] = s.LongAsFile ? 1 : 0,
-            ["t"] = u.CharsToday, ["s"] = u.Streak, ["b"] = u.Best,
-        };
-        if (p != null) { d["q"] = p.Masked; d["o"] = p.Options; }
-        return JsonSerializer.Serialize(d, Opts);
-    }
+    private static string Json(object o) => JsonSerializer.Serialize(o, Opts);
+
+    public const string Letters = "{\"k\":\"h\"}";
+
+    public static string Settings(Settings s) =>
+        Json(new { k = "s", d = s.Reverse ? 1 : 0, c = s.Cyrillic ? 1 : 0, w = s.Dictionary ? 1 : 0, f = s.LongAsFile ? 1 : 0 });
+
+    /// <summary>Javob (Answer) chat_data'ga kirmaydi.</summary>
+    public static string Game(UserRow u, Puzzle p) =>
+        Json(new { k = "g", s = u.Streak, b = u.Best, l = p.Level, q = p.Masked, o = p.Options, t = p.Timer });
+
+    /// <summary>week — 7 kun eskidan bugunga; t = week[6] (bugun).</summary>
+    public static string Stats(int[] week, (long Chars, int Files) totals, int best) =>
+        Json(new { k = "t", t = week[6], w = week, a = totals.Chars, f = totals.Files, b = best });
 }

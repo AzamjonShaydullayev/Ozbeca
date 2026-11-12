@@ -45,6 +45,9 @@ try
         {
             new { command = "start", description = Texts.CmdStart },
             new { command = "sozlama", description = Texts.CmdSettings },
+            new { command = "oyin", description = Texts.CmdGame },
+            new { command = "statistika", description = Texts.CmdStats },
+            new { command = "harflar", description = Texts.CmdLetters },
             new { command = "help", description = Texts.CmdHelp },
         },
     }, cts.Token);

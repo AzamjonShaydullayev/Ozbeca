@@ -6,4 +6,7 @@ public static class Clock
 
     /// <summary>Toshkent sanasi (UTC+5, yozgi vaqt yo'q).</summary>
     public static DateOnly Today() => DateOnly.FromDateTime(UtcNow().AddHours(5));
+
+    /// <summary>Hozirgi vaqt, millisekund (o'yin taymeri uchun).</summary>
+    public static long Ms() => UtcNow().Ticks / TimeSpan.TicksPerMillisecond;
 }

@@ -36,7 +36,7 @@ journalctl -u ozbeca-bot -f
 - `/setinline` - placeholder yangi alifboda (masalan: `Matn yozing`)
 - `/setinlinefeedback` - `Enabled`
 
-Buyruqlar (`/start`, `/sozlama`, `/help`) bot ishga tushganda o'zi o'rnatadi.
+Buyruqlar (`/start`, `/sozlama`, `/oyin`, `/statistika`, `/harflar`, `/help`) bot ishga tushganda o'zi o'rnatadi. `WORK_DIR` fayl tizimi ildizi, `DB_PATH` katalogi yoki uning otasi bo'lsa bot ishga tushmaydi (ish papkasi startda tozalanadi).
 
 ## 4. Yangilash
 

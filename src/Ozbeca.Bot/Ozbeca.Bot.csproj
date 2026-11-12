@@ -13,7 +13,7 @@
 
   <ItemGroup>
     <EmbeddedResource Include="Assets\*.json" LogicalName="%(Filename)%(Extension)" />
-    <EmbeddedResource Include="Assets\game_words.txt;Widget\card.html" LogicalName="%(Filename)%(Extension)" />
+    <EmbeddedResource Include="Assets\game_words.txt;Assets\game_words_long.txt;Widget\*.html" LogicalName="%(Filename)%(Extension)" />
   </ItemGroup>
 
   <ItemGroup>

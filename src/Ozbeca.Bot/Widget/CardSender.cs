@@ -5,41 +5,82 @@ using Ozbeca.Bot.Ui;
 
 namespace Ozbeca.Bot.Widget;
 
-/// <summary>Boshqaruv kartasi: sendWidget; widget rad etilsa — oddiy xabar + set: tugmalari (zaxira).</summary>
+/// <summary>
+/// Bo'lim widget'lari (s — sozlama, h — harflar, g — o'yin, t — statistika): sendWidget + qisqa holat caption'i.
+/// Widget rad etilsa — zaxira: sozlama uchun set: tugmali xabar, boshqalari uchun caption matni.
+/// Oxirgi chat_data xotirada ((chat, message) → JSON), o'zgarmagan holat qayta edit qilinmaydi.
+/// </summary>
 public sealed class CardSender(Sender sender, Store store)
 {
-    internal static readonly string Html = LoadHtml();
-
-    private static string LoadHtml()
+    internal static readonly IReadOnlyDictionary<char, string> Html = new Dictionary<char, string>
     {
-        using var s = typeof(CardSender).Assembly.GetManifestResourceStream("card.html")
-                      ?? throw new InvalidOperationException("card.html resursi yo'q");
+        ['s'] = Load("sozlama.html"), ['h'] = Load("harflar.html"), ['g'] = Load("oyin.html"), ['t'] = Load("stat.html"),
+    };
+
+    private static string Load(string name)
+    {
+        using var s = typeof(CardSender).Assembly.GetManifestResourceStream(name)
+                      ?? throw new InvalidOperationException(name + " resursi yo'q");
         return new StreamReader(s).ReadToEnd();
     }
 
-    /// <summary>u — Touch qilingan user. Yangi topishmoq Store'ga yoziladi.</summary>
-    public async Task Send(long chatId, UserRow u, CancellationToken ct)
+    private const int CacheMax = 10_000;
+    private readonly Dictionary<(long, long), string> _last = new();
+    private readonly Queue<(long, long)> _order = new();
+
+    internal bool Unchanged(long chatId, long messageId, string data)
     {
-        var p = Game.Next(Random.Shared);
+        lock (_last) return _last.TryGetValue((chatId, messageId), out var d) && d == data;
+    }
+
+    internal void Remember(long chatId, long messageId, string data)
+    {
+        lock (_last)
+        {
+            var key = (chatId, messageId);
+            if (!_last.TryAdd(key, data)) { _last[key] = data; return; }
+            _order.Enqueue(key);
+            if (_order.Count > CacheMax) _last.Remove(_order.Dequeue());   // eng eskisi
+        }
+    }
+
+    /// <summary>Yangi topishmoq (daraja seriyadan) Store'ga yoziladi. u — Touch qilingan, Streak/Best — saqlanadigan qiymatlar.</summary>
+    internal Puzzle NewPuzzle(UserRow u)
+    {
+        var p = Game.Next(Random.Shared, Game.LevelFor(u.Streak), Clock.Ms());
         store.SetGame(u.Id, Game.Pack(p), u.Streak, u.Best);
+        return p;
+    }
+
+    internal string StatsState(UserRow u) => WidgetState.Stats(store.UserWeek(u.Id), store.UserTotals(u.Id), u.Best);
+
+    /// <summary>kind: s|h|g|t. u — Touch qilingan user.</summary>
+    public async Task Send(char kind, long chatId, UserRow u, CancellationToken ct)
+    {
+        var (data, caption) = kind switch
+        {
+            's' => (WidgetState.Settings(u.Settings),
+                    string.Format(Texts.CapSettings, u.Settings.Reverse ? Texts.SetNewToOld : Texts.SetOldToNew)),
+            'h' => (WidgetState.Letters, Texts.CapLetters),
+            'g' => (WidgetState.Game(u, NewPuzzle(u)), string.Format(Texts.CapGame, u.Streak, u.Best)),
+            't' => (StatsState(u), string.Format(Texts.CapStats, u.CharsToday)),
+            _ => throw new ArgumentOutOfRangeException(nameof(kind)),
+        };
+        caption += "\n" + Texts.CardHint;
         try
         {
-            await sender.Send("sendWidget", new()
+            var r = await sender.Send("sendWidget", new()
             {
-                ["chat_id"] = chatId,
-                ["html"] = Html,
-                ["chat_data"] = WidgetState.Build(u, p),
-                ["caption"] = Texts.CardCaption,
-                ["allow_queries"] = true,
+                ["chat_id"] = chatId, ["html"] = Html[kind], ["chat_data"] = data, ["caption"] = caption, ["allow_queries"] = true,
             }, ct);
+            if (r.Long("message_id") is { } mid) Remember(chatId, mid, data);
         }
         catch (BotApiException e)
         {
-            Log.Info($"sendWidget rad etildi ({e.Code}) — tugmali zaxira");
-            await sender.Send("sendMessage", new()
-            {
-                ["chat_id"] = chatId, ["text"] = Texts.SettingsTitle, ["reply_markup"] = Keyboard(u.Settings),
-            }, ct);
+            Log.Info($"sendWidget rad etildi ({e.Code}) — zaxira");
+            await sender.Send("sendMessage", kind == 's'
+                ? new() { ["chat_id"] = chatId, ["text"] = Texts.SettingsTitle, ["reply_markup"] = Keyboard(u.Settings) }
+                : new() { ["chat_id"] = chatId, ["text"] = caption }, ct);
         }
     }
 

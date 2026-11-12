@@ -9,12 +9,13 @@ using Ozbeca.Bot.Widget;
 namespace Ozbeca.Bot.Handlers;
 
 /// <summary>Lichkadagi matn oqimi: buyruqlar, matn/caption o'girish, "Teskari" tugmasi. Foydalanuvchi matni saqlanmaydi.</summary>
-internal sealed class PrivateHandler(BotApi api, Sender sender, Store store, PremiumEmoji emoji)
+internal sealed class PrivateHandler(BotApi api, Sender sender, Store store, PremiumEmoji emoji, CardSender card)
 {
     private const int MaxPart = 4000;      // Telegram chegarasi 4096; sarlavhaga joy qoladi
     private const int ExpandableOver = 500;
     private const int CopyMax = 256;
-    private readonly CardSender _card = new(sender, store);   // TASK8
+
+    internal CardSender Card => card;
 
     public async Task Handle(JsonElement msg, UserRow user, CancellationToken ct)
     {
@@ -39,19 +40,33 @@ internal sealed class PrivateHandler(BotApi api, Sender sender, Store store, Pre
         var cmd = parts[0].Split('@')[0].ToLowerInvariant();
         switch (cmd)
         {
-            case "/sozlama":   // TASK8: karta qayta yuboriladi
-                await _card.Send(chatId, user, ct);
-                break;
-            case "/start":
+            case "/start" or "/menu":   // parametr (parts[1], masalan "inline") ahamiyatsiz
                 var (t, e) = new MessageBuilder(emoji, user.Id).Emoji("greeting").Text(" " + Texts.Greeting).Build();
-                await Say(chatId, t, e, ct: ct);
-                await _card.Send(chatId, user, ct);   // TASK8: parametr (parts[1], masalan "inline") karta uchun ahamiyatsiz
+                await Say(chatId, t, e, Menu, ct);
                 break;
+            case "/sozlama": await card.Send('s', chatId, user, ct); break;
+            case "/oyin": await card.Send('g', chatId, user, ct); break;
+            case "/harflar": await card.Send('h', chatId, user, ct); break;
+            case "/statistika": await card.Send('t', chatId, user, ct); break;
             default:   // /help va noma'lum buyruqlar
                 await Say(chatId, Texts.Help, ct: ct);
                 break;
         }
     }
+
+    private static readonly object Menu = Buttons.Markup(
+        [Buttons.Callback("⚙️ " + Texts.MenuSettings, "m:s"), Buttons.Callback("🔤 " + Texts.MenuLetters, "m:h")],
+        [Buttons.Callback("🎮 " + Texts.MenuGame, "m:g"), Buttons.Callback("📊 " + Texts.MenuStats, "m:t")],
+        [Buttons.Callback("📄 " + Texts.MenuFile, "m:f"), Buttons.Callback("❓ " + Texts.MenuHelp, "m:y")]);
+
+    /// <summary>Menyu tugmalari (m:*). answerCallbackQuery'ni Router beradi. Noma'lum qiymat — hech narsa.</summary>
+    public Task OnMenu(string data, UserRow user, CancellationToken ct) => data switch
+    {
+        "m:s" or "m:h" or "m:g" or "m:t" => card.Send(data[2], user.Id, user, ct),
+        "m:f" => Say(user.Id, Texts.FileHelp, ct: ct),
+        "m:y" => Say(user.Id, Texts.Help, ct: ct),
+        _ => Task.CompletedTask,
+    };
 
     /// <summary>"Teskari" tugmasi: xabardagi blockquote'ni qarama-qarshi yo'nalishda o'girib yangi xabar yuboradi. Matn saqlanmaydi.</summary>
     public async Task OnReverse(JsonElement cq, UserRow user, CancellationToken ct)

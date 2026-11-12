@@ -14,12 +14,11 @@ public sealed class Router(BotApi api, Sender sender, Store store, PremiumEmoji 
 {
     internal BotConfig Config => cfg;   // TASK10: admin ID'lari uchun
 
-    private readonly PrivateHandler _private = new(api, sender, store, emoji);
+    private readonly PrivateHandler _private = new(api, sender, store, emoji, new CardSender(sender, store));
     private readonly InlineHandler _inline = new(sender, store);   // TASK9
     internal AdminHandler Admin { get; } = new(api, sender, store, cfg);   // TASK10
     private readonly FileHandler _file = new(api, sender, store, emoji, cfg.WorkDir);   // TASK7
-    private readonly WidgetHandler _widget = new(sender, store);   // TASK8
-    private readonly CardSender _card = new(sender, store);        // TASK8
+    private WidgetHandler? _widget;   // TASK8: _private.Card bilan (chat_data xotirasi umumiy); holatsiz, dangasa yaratiladi
     private readonly FloodGuard _flood = new();
 
     // Mazmunli xabar turlari; ro'yxatda yo'q (xizmat xabarlari: pinned_message, ...) e'tiborsiz.
@@ -72,7 +71,8 @@ public sealed class Router(BotApi api, Sender sender, Store store, PremiumEmoji 
         var data = cq.Str("data") ?? "";
 
         if (data.StartsWith("rev:", StringComparison.Ordinal)) { await AnswerCallback(cq, ct); await _private.OnReverse(cq, user, ct); }
-        else if (data.StartsWith("set:", StringComparison.Ordinal)) await _card.OnCallback(cq, user, ct);   // TASK8: handler o'zi answerCallbackQuery qiladi
+        else if (data.StartsWith("set:", StringComparison.Ordinal)) await _private.Card.OnCallback(cq, user, ct);   // TASK8: handler o'zi answerCallbackQuery qiladi
+        else if (data.StartsWith("m:", StringComparison.Ordinal)) { await AnswerCallback(cq, ct); await _private.OnMenu(data, user, ct); }   // /start menyusi
         else if (data.StartsWith("bc:", StringComparison.Ordinal)) await Admin.OnCallback(cq, user, ct);   // TASK10
         else await AnswerCallback(cq, ct);   // noma'lum — shunchaki javob
     }
@@ -84,7 +84,7 @@ public sealed class Router(BotApi api, Sender sender, Store store, PremiumEmoji 
     }
 
     private Task OnChosenInline(JsonElement c, CancellationToken ct) => _inline.HandleChosen(c);      // TASK9
-    private Task OnWidgetQuery(JsonElement q, CancellationToken ct) => _widget.Handle(q, ct);    // TASK8
+    private Task OnWidgetQuery(JsonElement q, CancellationToken ct) => (_widget ??= new(sender, store, _private.Card)).Handle(q, ct);    // TASK8
 
     private async Task AnswerCallback(JsonElement cq, CancellationToken ct)
     {
