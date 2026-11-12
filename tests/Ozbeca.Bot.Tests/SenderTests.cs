@@ -85,4 +85,34 @@ public class SenderTests
         await Assert.ThrowsAsync<BotApiException>(() => sender.Send("sendMessage", Payload()));
         Assert.Single(fake.Calls);
     }
+
+    [Fact]
+    public async Task Sender_strips_inside_inline_results()
+    {
+        var fake = new FakeTelegram { Respond = (_, _) => Flip() };
+        var sender = new Sender(new BotApi(fake, "1:X"));
+        var payload = new Dictionary<string, object?>
+        {
+            ["inline_query_id"] = "q",
+            ["results"] = new List<object>
+            {
+                new Dictionary<string, object?>
+                {
+                    ["type"] = "article", ["id"] = "1", ["title"] = "t",
+                    ["input_message_content"] = new Dictionary<string, object?>
+                    {
+                        ["message_text"] = "A b",
+                        ["entities"] = new List<object> { new Entity("custom_emoji", 0, 1, CustomEmojiId: "9").ToJson(), new Entity("bold", 2, 1).ToJson() },
+                    },
+                    ["reply_markup"] = Buttons.Markup(new object[] { Buttons.Callback("T", "d", "success", "5") }),
+                },
+            },
+        };
+        await sender.Send("answerInlineQuery", payload);
+        var raw = fake.Calls[1].Body.GetRawText();
+        Assert.DoesNotContain("custom_emoji", raw);
+        Assert.DoesNotContain("icon_custom_emoji_id", raw);
+        Assert.DoesNotContain("\"style\"", raw);
+        Assert.Contains("bold", raw);
+    }
 }

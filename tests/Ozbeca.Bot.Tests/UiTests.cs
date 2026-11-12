@@ -6,6 +6,48 @@ namespace Ozbeca.Bot.Tests;
 
 public class UiTests
 {
+    private static readonly Dictionary<string, string> OldSpelling = new()
+    {
+        ["Greeting"] = "Salom! Matn yuboring — yangi alifboga o'giraman.",
+        ["Help"] = "Matn yuboring — yangi alifboga o'giraman. Faylni (Word, Excel, PowerPoint yoki matn) yuborsangiz, formatini saqlab o'giraman.\nTeskari tugma yangi alifbodan eski alifboga qaytaradi. Boshqa chatda @ozbecauzbot deb yozsangiz ham ishlayman.",
+        ["NewHeader"] = "Yangi alifboda:",
+        ["OldHeader"] = "Eski alifboda:",
+        ["NoChange"] = "Bu matnda o'giradigan narsa yo'q.",
+        ["SendText"] = "Matn yuboring.",
+        ["FileBusy"] = "Avval oldingi faylni tugatay, biroz kuting.",
+        ["FileTooBig"] = "Fayl juda katta. 20 MB gacha fayl yuboring.",
+        ["FileUnsupported"] = "Bu fayl turini o'girolmayman. Word, Excel, PowerPoint yoki matn fayl yuboring.",
+        ["FileBroken"] = "Faylni o'qiy olmadim. Fayl buzilgan bo'lishi mumkin.",
+        ["FileNoChange"] = "Faylda o'giradigan narsa yo'q.",
+        ["FileDone"] = "Tayyor! Fayl yangi alifboda.",
+        ["CardCaption"] = "O'zbecha — yangi alifbo",
+        ["CopyButton"] = "Nusxa",
+        ["ReverseButton"] = "Teskari",
+        ["InlineNewTitle"] = "Yangi alifbo",
+        ["InlineOldTitle"] = "Eski alifbo",
+        ["InlineHint"] = "Matn yozing",
+        ["InlineLongButton"] = "Uzun matn — botda o'girish",
+        ["StatTitle"] = "Statistika",
+        ["BroadcastAsk"] = "Xabarni yuboring. Barcha foydalanuvchilarga tarqataman.",
+        ["BroadcastDone"] = "Tarqatish tugadi.",
+        ["BroadcastStopped"] = "Tarqatish to'xtatildi.",
+        ["NotAdmin"] = "Bu buyruq faqat admin uchun.",
+        ["Flood"] = "Juda tez yozyapsiz. Biroz kuting.",
+    };
+
+    [Fact]
+    public void Texts_match_correct_old_spelling_converted()
+    {
+        var fields = typeof(Texts).GetFields(BindingFlags.Public | BindingFlags.Static)
+            .Where(f => f.IsLiteral && f.FieldType == typeof(string)).ToList();
+        foreach (var f in fields)
+        {
+            Assert.True(OldSpelling.TryGetValue(f.Name, out var old), $"{f.Name}: eski imlo jadvalida yo'q");
+            Assert.Equal(Ozbeca.Core.Transliterator.ToNewAlphabet(old!), (string)f.GetRawConstantValue()!);
+        }
+        Assert.Equal(fields.Count, OldSpelling.Count);
+    }
+
     [Fact]
     public void All_texts_are_in_new_alphabet()
     {
@@ -75,6 +117,16 @@ public class UiTests
         Assert.Contains(ents, x => x.Type == "bold" && x.Offset == 0 && x.Length == 1);
         Assert.Contains(ents, x => x.Type == "expandable_blockquote" && x.Offset == 1 && x.Length == 3);
         Assert.DoesNotContain(ents, x => x.Type == "custom_emoji");
+    }
+
+    [Fact]
+    public void Buttons_reject_oversized_data()
+    {
+        Buttons.Callback("T", new string('a', 64));
+        Assert.Throws<ArgumentException>(() => Buttons.Callback("T", new string('a', 65)));
+        Assert.Throws<ArgumentException>(() => Buttons.Callback("T", new string('ö', 33)));   // 66 bayt
+        Buttons.Copy("N", new string('a', 256));
+        Assert.Throws<ArgumentException>(() => Buttons.Copy("N", new string('a', 257)));
     }
 
     [Fact]

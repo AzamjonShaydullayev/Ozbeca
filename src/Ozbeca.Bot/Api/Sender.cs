@@ -36,6 +36,18 @@ public sealed class Sender(BotApi api)
 
     private static void Strip(JsonNode root)
     {
+        StripOne(root);
+        // answerInlineQuery: results[].input_message_content va results[].reply_markup
+        if (root["results"] is JsonArray results)
+            foreach (var r in results.OfType<JsonObject>())
+            {
+                StripOne(r);
+                if (r["input_message_content"] is JsonObject imc) StripOne(imc);
+            }
+    }
+
+    private static void StripOne(JsonNode root)
+    {
         foreach (var key in new[] { "entities", "caption_entities" })
             if (root[key] is JsonArray arr)
                 for (var i = arr.Count - 1; i >= 0; i--)

@@ -4,10 +4,14 @@ namespace Ozbeca.Bot.Ui;
 public static class Buttons
 {
     public static object Callback(string text, string data, string? style = null, string? iconId = null) =>
-        Make(text, "callback_data", data, style, iconId);
+        System.Text.Encoding.UTF8.GetByteCount(data) > 64
+            ? throw new ArgumentException("callback_data 64 baytdan oshdi", nameof(data))
+            : Make(text, "callback_data", data, style, iconId);
 
     public static object Copy(string text, string copy, string? style = null) =>
-        Make(text, "copy_text", new Dictionary<string, object?> { ["text"] = copy }, style, null);
+        copy.Length > 256
+            ? throw new ArgumentException("copy_text 256 belgidan oshdi", nameof(copy))
+            : Make(text, "copy_text", new Dictionary<string, object?> { ["text"] = copy }, style, null);
 
     public static object Markup(params object[][] rows) =>
         new Dictionary<string, object?> { ["inline_keyboard"] = rows };
