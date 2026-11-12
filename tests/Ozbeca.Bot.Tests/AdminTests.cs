@@ -117,4 +117,58 @@ public class AdminTests
         Assert.Contains(h.Sent("editMessageText"), b => b.Str("text")!.StartsWith(Texts.BroadcastStopped));
         Assert.True(h.Sent("copyMessage").Count < 100);
     }
+
+    [Fact]
+    public async Task Http_timeout_counts_as_failed_and_run_continues()
+    {
+        using var h = new BotHarness();
+        foreach (var id in new long[] { 1, 2, 3 }) h.Store.Touch(id);
+        h.Fake.Respond = (m, b) => m == "copyMessage" && b.Long("chat_id") == 2 ? throw new TaskCanceledException() : FakeTelegram.DefaultResponse;
+        var (sent, failed) = await Make(h).Run(99, 5, [1, 2, 3], new Progress<(int, int, int)>(), CancellationToken.None);
+        Assert.Equal((2, 1), (sent, failed));
+    }
+
+    [Fact]
+    public async Task Progress_edit_network_error_keeps_single_flight_and_final_message()
+    {
+        using var h = new BotHarness();
+        for (long i = 1; i <= 30; i++) h.Store.Touch(i);
+        h.Router.Admin.ProgressEvery = TimeSpan.FromMilliseconds(20);
+        h.Fake.Respond = (m, b) => m == "editMessageText" && b.Str("text")!.StartsWith(Texts.BroadcastRunning)
+            ? throw new HttpRequestException("net") : FakeTelegram.DefaultResponse;
+        await h.Callback("bc:go:77", null, null, uid: 99);
+        var run = h.Router.Admin.Current!;
+        await Task.Delay(150);
+        Assert.False(run.IsCompleted);
+        await h.Callback("bc:go:78", null, null, uid: 99);
+        Assert.Contains(h.Sent("answerCallbackQuery"), b => b.Str("text") == Texts.BroadcastBusy);
+        await run;
+        Assert.Equal(31, h.Sent("copyMessage").Count);   // 30 + admin, faqat bitta tarqatish
+        Assert.Contains(h.Sent("editMessageText"), b => b.Str("text")!.StartsWith(Texts.BroadcastDone));
+    }
+
+    [Fact]
+    public async Task Late_bc_go_for_same_message_is_refused_and_buttons_removed()
+    {
+        using var h = new BotHarness();
+        h.Store.Touch(1);
+        await h.Callback("bc:go:77", null, null, uid: 99);
+        await h.Router.Admin.Current!;
+        var copies = h.Sent("copyMessage").Count;
+        Assert.Contains(h.Sent("editMessageText"), b => b.Str("text") == Texts.BroadcastRunning && b.Long("message_id") == 5
+            && (!b.TryGetProperty("reply_markup", out var rm) || rm.ValueKind == System.Text.Json.JsonValueKind.Null));
+        await h.Callback("bc:go:77", null, null, uid: 99);
+        Assert.Equal(copies, h.Sent("copyMessage").Count);
+        Assert.Contains(h.Sent("answerCallbackQuery"), b => b.Str("text") == Texts.BroadcastDone);
+    }
+
+    [Fact]
+    public async Task Unparseable_bc_go_is_answered_and_starts_nothing()
+    {
+        using var h = new BotHarness();
+        await h.Callback("bc:go:xyz", null, null, uid: 99);
+        Assert.Single(h.Sent("answerCallbackQuery"));
+        Assert.Empty(h.Sent("copyMessage"));
+        Assert.Null(h.Router.Admin.Current);
+    }
 }

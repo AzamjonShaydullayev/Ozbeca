@@ -13,6 +13,7 @@ internal sealed class AdminHandler(BotApi api, Sender sender, Store store, BotCo
     private readonly Broadcaster _broadcaster = new(api, store, TimeSpan.FromMilliseconds(40));   // ~25/s
     private readonly object _lock = new();
     private CancellationTokenSource? _cts;
+    private readonly HashSet<int> _started = [];   // allaqachon tarqatilgan manba xabarlar (kech bosilgan bc:go qayta tarqatmasin)
 
     /// <summary>Oxirgi broadcast vazifasi. Testlar kutishi uchun.</summary>
     internal Task? Current { get; private set; }
@@ -59,7 +60,11 @@ internal sealed class AdminHandler(BotApi api, Sender sender, Store store, BotCo
         {
             if (data.StartsWith("bc:go:", StringComparison.Ordinal) && int.TryParse(data.AsSpan(6), out var target))
             {
-                if (!Start(user.Id, target)) answer = Texts.BroadcastBusy;
+                var r = Start(user.Id, target);
+                if (r == StartResult.Busy) answer = Texts.BroadcastBusy;
+                else if (r == StartResult.AlreadySent) answer = Texts.BroadcastDone;
+                else if (cq.Obj("message")?.Int("message_id") is { } cm)
+                    await Edit(user.Id, cm, Texts.BroadcastRunning, null, ct);   // tugmalarsiz: kech bosish qayta tarqatmasin
             }
             else if (data == "bc:stop") { lock (_lock) _cts?.Cancel(); }
             else if (data == "bc:no" && cq.Obj("message")?.Int("message_id") is { } mid)
@@ -70,20 +75,24 @@ internal sealed class AdminHandler(BotApi api, Sender sender, Store store, BotCo
         catch (BotApiException) { }
     }
 
-    private bool Start(long adminId, int target)
+    private enum StartResult { Started, Busy, AlreadySent }
+
+    private StartResult Start(long adminId, int target)
     {
         lock (_lock)
         {
-            if (Current is { IsCompleted: false }) return false;
+            if (Current is { IsCompleted: false }) return StartResult.Busy;
+            if (!_started.Add(target)) return StartResult.AlreadySent;
             var cts = _cts = new CancellationTokenSource();
             // poller token'i ataylab uzatilmaydi: broadcast per-user zanjirdan mustaqil, to'xtatish — bc:stop
             Current = Task.Run(() => RunBroadcast(adminId, target, cts.Token));
         }
-        return true;
+        return StartResult.Started;
     }
 
     private async Task RunBroadcast(long adminId, int target, CancellationToken ct)
     {
+        Task<(int Sent, int Failed)>? run = null;
         try
         {
             var ids = store.ActiveUserIds();
@@ -92,7 +101,7 @@ internal sealed class AdminHandler(BotApi api, Sender sender, Store store, BotCo
             var progressMsg = first.Int("message_id");
 
             var last = (Sent: 0, Failed: 0, Left: ids.Count);
-            var run = _broadcaster.Run(adminId, target, ids, new Progress(v => last = v), ct);
+            run = _broadcaster.Run(adminId, target, ids, new Progress(v => last = v), ct);
             while (await Task.WhenAny(run, Task.Delay(ProgressEvery)) != run)
                 if (progressMsg is { } pm) await Edit(adminId, pm, Summary(Texts.BroadcastRunning, last), stopMarkup, default);
             var (sent, failed) = await run;
@@ -101,6 +110,11 @@ internal sealed class AdminHandler(BotApi api, Sender sender, Store store, BotCo
             else await Say(adminId, final, null, default);
         }
         catch (Exception e) { Log.Error($"broadcast: {e.GetType().Name}"); }
+        finally
+        {
+            // single-flight uyasi (Current) faqat Run tugagach bo'shaydi
+            if (run != null) { try { await run; } catch (Exception) { } }
+        }
     }
 
     private static string Summary(string title, (int Sent, int Failed, int Left) v) =>
@@ -112,7 +126,7 @@ internal sealed class AdminHandler(BotApi api, Sender sender, Store store, BotCo
     private async Task Edit(long chatId, int messageId, string text, object? markup, CancellationToken ct)
     {
         try { await sender.Send("editMessageText", new() { ["chat_id"] = chatId, ["message_id"] = messageId, ["text"] = text, ["reply_markup"] = markup }, ct); }
-        catch (BotApiException) { }   // "message is not modified" va h.k. — muhim emas
+        catch (Exception e) when (e is BotApiException or HttpRequestException or OperationCanceledException) { }   // "message is not modified", tarmoq xatosi — muhim emas
     }
 
     private sealed class Progress(Action<(int, int, int)> set) : IProgress<(int Sent, int Failed, int Left)>

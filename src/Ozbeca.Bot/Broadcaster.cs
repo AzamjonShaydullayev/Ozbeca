@@ -46,6 +46,7 @@ public sealed class Broadcaster(BotApi api, Store store, TimeSpan delay)
                 return false;
             }
             catch (HttpRequestException) { return false; }
+            catch (OperationCanceledException) when (!ct.IsCancellationRequested) { return false; }   // HttpClient timeout, to'xtatish emas
         }
     }
 }
