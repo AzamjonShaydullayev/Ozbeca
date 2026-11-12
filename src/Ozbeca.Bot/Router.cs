@@ -14,7 +14,11 @@ public sealed class Router(BotApi api, Sender sender, Store store, PremiumEmoji 
     internal BotConfig Config => cfg;   // TASK10: admin ID'lari uchun
 
     private readonly PrivateHandler _private = new(api, sender, store, emoji);
+<<<<<<< HEAD
     private readonly InlineHandler _inline = new(sender, store);   // TASK9
+=======
+    internal AdminHandler Admin { get; } = new(api, sender, store, cfg);   // TASK10
+>>>>>>> feat/bot-t10
     private readonly FloodGuard _flood = new();
 
     // Mazmunli xabar turlari; ro'yxatda yo'q (xizmat xabarlari: pinned_message, ...) e'tiborsiz.
@@ -51,7 +55,7 @@ public sealed class Router(BotApi api, Sender sender, Store store, PremiumEmoji 
         }
         var user = store.Touch(userId);
 
-        // TASK10: admin buyruqlari shu yerda (birinchi): if (await _admin.TryHandle(m, user, ct)) return;
+        if (await Admin.TryHandle(m, user, ct)) return;   // TASK10: admin buyruqlari
         if (m.TryGetProperty("document", out _)) await OnDocument(m, user, ct);   // TASK7: shu metod tanasini FileHandler'ga almashtiring
         else await _private.Handle(m, user, ct);
     }
@@ -68,7 +72,7 @@ public sealed class Router(BotApi api, Sender sender, Store store, PremiumEmoji 
 
         if (data.StartsWith("rev:", StringComparison.Ordinal)) { await AnswerCallback(cq, ct); await _private.OnReverse(cq, user, ct); }
         // TASK8: else if (data.StartsWith("set:", StringComparison.Ordinal)) await _settings.OnCallback(cq, user, ct);   (handler o'zi answerCallbackQuery qiladi)
-        // TASK10: else if (data.StartsWith("bc:", StringComparison.Ordinal)) await _admin.OnCallback(cq, user, ct);
+        else if (data.StartsWith("bc:", StringComparison.Ordinal)) await Admin.OnCallback(cq, user, ct);   // TASK10
         else await AnswerCallback(cq, ct);   // set:/bc: hozircha band, boshqa noma'lum — shunchaki javob
     }
 
