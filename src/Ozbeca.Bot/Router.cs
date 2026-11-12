@@ -14,6 +14,7 @@ public sealed class Router(BotApi api, Sender sender, Store store, PremiumEmoji 
     internal BotConfig Config => cfg;   // TASK10: admin ID'lari uchun
 
     private readonly PrivateHandler _private = new(api, sender, store, emoji);
+    private readonly InlineHandler _inline = new(sender, store);   // TASK9
     private readonly FloodGuard _flood = new();
 
     // Mazmunli xabar turlari; ro'yxatda yo'q (xizmat xabarlari: pinned_message, ...) e'tiborsiz.
@@ -71,8 +72,13 @@ public sealed class Router(BotApi api, Sender sender, Store store, PremiumEmoji 
         else await AnswerCallback(cq, ct);   // set:/bc: hozircha band, boshqa noma'lum — shunchaki javob
     }
 
-    private Task OnInlineQuery(JsonElement q, CancellationToken ct) => Task.CompletedTask;       // TASK9
-    private Task OnChosenInline(JsonElement c, CancellationToken ct) => Task.CompletedTask;      // TASK9
+    private async Task OnInlineQuery(JsonElement q, CancellationToken ct)   // TASK9
+    {
+        if (q.Obj("from") is not { } from || from.Long("id") is not { } userId || !_flood.Allow(userId)) return;   // limitdan oshsa — javobsiz
+        await _inline.HandleQuery(q, ct);
+    }
+
+    private Task OnChosenInline(JsonElement c, CancellationToken ct) => _inline.HandleChosen(c);      // TASK9
     private Task OnWidgetQuery(JsonElement q, CancellationToken ct) => Task.CompletedTask;       // TASK8
 
     private async Task AnswerCallback(JsonElement cq, CancellationToken ct)
