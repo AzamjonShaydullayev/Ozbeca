@@ -24,6 +24,42 @@ public class WordListTests
     [InlineData("'ozbek'", "'özbek'")]            // tirnoq ichida ham
     public void FixesMissingApostrophe(string input, string expected) => Assert.Equal(expected, T(input));
 
+    // Yozishmalardagi qisqargan shakllar (build_wordlist.py: colloquial).
+    [Theory]
+    [InlineData("bomadi", "bömadi")]
+    [InlineData("bomayapti", "bömayapti")]
+    [InlineData("bolmayapti", "bölmayapti")]
+    [InlineData("torimas", "törimas")]
+    [InlineData("togrimas", "töğrimas")]
+    [InlineData("bopti", "böpti")]
+    [InlineData("togirlash", "töğirlaş")]
+    [InlineData("togirlashimiz", "töğirlaşimiz")]
+    [InlineData("togirlab", "töğirlab")]
+    public void FixesColloquialForms(string input, string expected) => Assert.Equal(expected, T(input));
+
+    // Qisqargan shakli boshqa so'zga to'g'ri keladi — tegilmaydi: bo'ldi → bodi, bo'lsa → bosa, to'g'risi → tori+si.
+    [Theory]
+    [InlineData("bodi bosa bop tori torisi")]
+    public void LeavesAmbiguousColloquial(string input) => Assert.Equal(input, T(input));
+
+    [Fact]
+    public void ColloquialAfterPause()
+    {
+        // "togirlash" + pauza (→ "togirlaş") + "imiz" + probel — lug'at asl yozilganini tekshiradi.
+        var b = new TokenBuffer();
+        string screen = "";
+        void Type(string s) { foreach (char c in s) { b.Add(c); screen += c; } }
+        void Apply(int del, string rep) => screen = screen.Substring(0, screen.Length - del) + rep;
+
+        Type("togirlash");
+        Assert.True(b.TryConvertAtPause(out int d, out string r));
+        Apply(d, r);
+        Type("imiz");
+        Assert.True(b.TryComplete(out d, out r));
+        Apply(d, r);
+        Assert.Equal("töğirlaşimiz", screen);
+    }
+
     // Ikki ma'noli: tutuqsiz shakli ham haqiqiy so'z — tegilmaydi.
     [Theory]
     [InlineData("qol")]       // qol / qo'l

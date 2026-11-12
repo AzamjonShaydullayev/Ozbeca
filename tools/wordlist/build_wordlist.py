@@ -98,6 +98,38 @@ def classes(s):
     return out
 
 
+VOWELS = set("aeiou")
+# Yozishmalarda ko'p uchraydigan qisqargan shakllar (bo'lmoq, to'g'ri). Kengaytirish: user so'zni aytsa — shu yerga.
+COLLOQUIAL = ["to'g'rimas", "to'rimas", "to'g'rimasmi", "to'rimasmi", "bo'pti", "bo'ptimi", "bo'ptiku", "bo'pqoldi",
+              "bo'pqopti", "bo'mapti", "bo'mabdi", "bo'votti", "bo'vottimi", "bo'masa", "bo'mas", "bo'maydi",
+              "bo'maydimi", "bo'mayapti", "bo'vurdi", "bo'tti", "bo'ttimi", "bo'ttiku"]
+# Unli bilan tugaydigan fe'l o'zagi qo'shimchalari (to'g'irla + sh, to'g'irla + shimiz) — so'zlashuv o'zaklari uchun.
+STEM_ENDINGS = ["", "b", "bman", "bsan", "bdi", "bdimi", "di", "dim", "ding", "dik", "dingiz", "dilar", "dimi",
+                "dingmi", "sa", "sam", "sang", "sak", "sangiz", "salar", "sh", "shim", "shing", "shi", "shimiz", "shingiz",
+                "shga", "shni", "shdan", "shda", "shadi", "shamiz", "shasiz", "shyapti", "shib", "shgan", "shmoqchi",
+                "y", "yman", "ysan", "ydi", "ymiz", "ysiz", "ydilar", "ymi", "ylik", "yapman", "yapti", "yapmiz",
+                "yapsiz", "yaptimi", "ng", "nglar", "ngchi", "gan", "ganman", "gani", "ganmiz", "sin", "sinlar",
+                "moq", "moqchi", "moqchiman", "vchi", "vdi", "vdim", "vurdi", "volsa", "volaman", "ttim", "tti"]
+COLLOQUIAL_STEMS = ["to'g'irla", "to'g'rila"]
+
+
+def colloquial(forms):
+    """Lug'atdagi shakllardan so'zlashuv shakllari: bo'lmadi → bo'madi, bo'lib → bo'p, to'g'rimi → to'rimi,
+    to'g'rilash → to'g'irlash; yana COLLOQUIAL va COLLOQUIAL_STEMS + STEM_ENDINGS.
+    Har biri keyin ambiguous() dan o'tadi: bo'ldi → bo'di (bodi), to'g'risi → to'risi (tor+i) tushib qoladi."""
+    out = set(COLLOQUIAL) | {s + e for s in COLLOQUIAL_STEMS for e in STEM_ENDINGS}
+    for f in forms:
+        if f.startswith("bo'lib"):
+            out.add("bo'p" + f[6:])
+        elif f.startswith("bo'l") and not f.startswith("bo'lmach") and len(f) > 4 and f[4] not in VOWELS and f[4] != "'":
+            out.add("bo'" + f[4:])
+        if f.startswith("to'g'ri") and not f.startswith("to'g'ril"):
+            out.add("to'ri" + f[7:])
+        if f.startswith("to'g'rila"):
+            out.add("to'g'irla" + f[9:])
+    return out
+
+
 def norm(w):
     w = w.lower()
     for a in APOS:
@@ -151,7 +183,7 @@ def read_corpus(paths):
 
 
 def main():
-    out_path, en_path, dic_path, *sentences = sys.argv[1:]
+    out_path, en_path, dic_path, *sentences = [a for a in sys.argv[1:] if a != "-v"]
     full, form, clean = read_corpus(sentences)
     en = {w.strip() for w in open(en_path, encoding="utf-8") if w.strip()}
 
@@ -179,43 +211,62 @@ def main():
         pf = family(p, clean, clean_sorted, cls)
         return pf > ABS and pf > RATIO * family(p, full, full_sorted, cls)
 
-    result, stats = [], collections.Counter()
-    for k, n in full.items():
-        f = form[k]
-        if n < MIN_FULL or len(k) < 3 or not re.fullmatch(r"[a-z']+", f):
-            continue
+    def ambiguous(k, f, n):
+        """Tutuqsiz kalit boshqa haqiqiy so'z bo'la oladimi — sababi yoki None."""
         if k in en or k in ENGLISH_HOMOGRAPHS:
-            stats["inglizcha"] += 1
-            continue
+            return "inglizcha"
         if k in lemmas:
-            stats["hunspell lemma"] += 1
-            continue
+            return "hunspell lemma"
         if clean[k] > ABS and clean[k] > RATIO * n:
-            stats["korpus: o'zi"] += 1
-            continue
-        why = None
+            return "korpus: o'zi"
         for cut in range(max(2, last_mark(f) + 1), len(k) + 1):
             p, s = k[:cut], k[cut:]
             cls = classes(s) if s else {"N", "V"}
             if not cls:
                 continue
             if s and ((p in verbs and "V" in cls) or (p in nouns and "N" in cls)):
-                why = "hunspell o'zak"
-                break
+                return "hunspell o'zak"
             if (not s or full[p] >= STEM_MIN) and corpus_ambiguous(p, frozenset(cls)):
-                why = "korpus: o'zak"
-                break
+                return "korpus: o'zak"
+        return None
+
+    result, stats = [], collections.Counter()
+    for k, n in full.items():
+        f = form[k]
+        if n < MIN_FULL or len(k) < 3 or not re.fullmatch(r"[a-z']+", f):
+            continue
+        why = ambiguous(k, f, n)
         if why:
             stats[why] += 1
             continue
         result.append(f)
+
+    # So'zlashuv shakllari (bo'madi, to'rimas, to'g'irlash) — korpusda deyarli yo'q, qoida bilan yasaladi va
+    # xuddi shu tekshiruvlardan o'tadi. n = MIN_FULL: korpusda tutuqsiz uchrasa ham ikki ma'noli deb olinadi.
+    keys = {key(f) for f in result}
+    added = []
+    for f in sorted(colloquial(result)):
+        k = key(f)
+        if k in keys or len(k) < 3:
+            continue
+        why = ambiguous(k, f, MIN_FULL)
+        if why:
+            stats["so'zlashuv: " + why] += 1
+            if "-v" in sys.argv:
+                print("  rad:", f, "-", why)
+            continue
+        keys.add(k)
+        added.append(f)
+    result += added
 
     result.sort()
     with open(out_path, "w", encoding="utf-8", newline="\n") as f:
         f.write("# Özbeça — tutuqsiz yozilgan o'/g' so'zlar (bir ma'noli). tools/wordlist/build_wordlist.py bilan yasalgan.\n")
         f.write("# Manba: Leipzig Corpora Collection (uzb_community_2017, uzb_wikipedia_2021_100K), CC BY 4.0.\n")
         f.write("\n".join(result) + "\n")
-    print(len(result), "so'z;", "chiqarildi:", dict(stats))
+    print(len(result), "so'z (shundan so'zlashuv:", len(added), ");", "chiqarildi:", dict(stats))
+    if "-v" in sys.argv:
+        print("so'zlashuv:", " ".join(added))
 
 
 if __name__ == "__main__":
