@@ -50,7 +50,9 @@ public class CodeGuardTests
     [InlineData("Please check the school chart", "Please check the school chart")]       // inglizcha so'zlar — tegilmaydi
     [InlineData("Check, should; (which)", "Check, should; (which)")]
     [InlineData("chat va match", "çat va matç")]                                         // o'zbekchada ham bor — o'giriladi
-    [InlineData("checkni shoshma", "çeckni şoşma")]                                      // qo'shimchali — ro'yxatda yo'q
+    [InlineData("checkni shoshma", "checkni şoşma")]                                     // h siz c — o'zbekcha emas
+    [InlineData("That's why she'd say Chicago, Washington", "That's why she'd say Chicago, Washington")]
+    [InlineData("Ta'm, so'm, o't, ra'd va ko's", "Taʼm, söm, öt, raʼd va kös")]
     [InlineData("U 'Yaxshi tong' dedi, bog' katta", "U 'Yaxşi tong' dedi, boğ katta")]  // tirnoq so'zdan so'zga o'tadi
     [InlineData("'Yaxshi\r\ntog' baland", "'Yaxşi\r\ntoğ baland")]                      // lekin qatordan qatorga emas
     [InlineData("", "")]
@@ -64,7 +66,28 @@ public class CodeGuardTests
     [InlineData("match", false)]     // matç
     [InlineData("finish", false)]    // finiş
     [InlineData("shahar", false)]
-    [InlineData("checkni", false)]
+    [InlineData("checkni", true)]    // h siz c — o'zbek lotinida yo'q
+    [InlineData("schoolchildren", true)]
+    [InlineData("doesn't", true)]
+    [InlineData("they’re", true)]
+    [InlineData("Obama's", true)]
+    [InlineData("I'm", true)]
+    [InlineData("so'm", false)]
+    [InlineData("ta'm", false)]
+    [InlineData("o't", false)]
+    [InlineData("ra'd", false)]
+    [InlineData("ko's", false)]
+    [InlineData("chop", false)]      // o'zbekcha çop
+    [InlineData("bosh", false)]
+    [InlineData("Toshkent", false)]
+    [InlineData("much", true)]
+    [InlineData("high-tech", true)]
+    [InlineData("T-shirt", true)]
+    [InlineData("qo'llab-quvvatlash", false)]
+    [InlineData("ship-shiydon", false)]
+    [InlineData("O'Brien", true)]
+    [InlineData("O'zbekiston", false)]
+    [InlineData("O'ZBEKISTON", false)]
     [InlineData("", false)]
     public void EnglishWords(string token, bool expected)
     {

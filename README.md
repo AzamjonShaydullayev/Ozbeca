@@ -147,8 +147,8 @@ Hech narsa qilish shart emas — odatdagidek yozing:
 | `Yaxshimisan?` + Enter | `Yaxşimisan?` |
 | Ctrl+V: `Bog'da choy ichdik` | `Boğda çoy içdik` |
 
-- So'z o'zgarishini istamasangiz — darhol <kbd>Backspace</kbd>: so'z yozganingizdek qaytadi (`çess` → `chess`) va qayta o'girilmaydi.
-- Ko'p uchraydigan inglizcha so'zlar (`check`, `should`, `school`, `which`…) yozish paytida o'zgarmaydi.
+- So'z o'zgarishini istamasangiz — darhol <kbd>Backspace</kbd>: so'z yozganingizdek qaytadi (`Riçard` → `Richard`) va qayta o'girilmaydi.
+- Inglizcha so'zlar (`check`, `should`, `school`, `much`… ~4 900 ta), qisqartmalar (`that's`, `don't`, `Obama's`) va o'zbekchada yo'q harfli so'zlar (`Chicago`, `Washington`) yozish paytida o'zgarmaydi. O'zbekchada ham shunday yoziladiganlari (`chat`, `chop`, `bosh`) o'giriladi.
 - Ism, brend yoki login o'zgarmasin desangiz — sozlamalarda **O'girilmaydigan so'zlar** ga qo'shing. Bir so'zni ikki marta <kbd>Backspace</kbd> bilan qaytarsangiz, u o'zi qo'shiladi.
 - Vaqtincha o'chirish: <img src="docs/icon.png" width="14" alt="Ö"> belgisi ustida o'ng tugma → **Yozish paytida o'girish**.
 
@@ -290,7 +290,7 @@ Batafsil: [docs/M4_SINOV.md](docs/M4_SINOV.md).
 <summary><b>Keraksiz so'z o'zgarib ketdi</b></summary>
 <br>
 
-So'z o'zgargan zahoti <kbd>Backspace</kbd> ni bosing — u yozganingizdek qaytadi va qayta o'girilmaydi. Ko'p uchraydigan inglizcha so'zlar (`check`, `should`, `school`) o'zi tanilib, o'zgarmaydi; kamroq uchraydiganlari o'zgarishi mumkin (`chess` → `çess`). Ko'p inglizcha yozayotgan bo'lsangiz, Ö belgisi ustida o'ng tugma → **Yozish paytida o'girish** ni vaqtincha o'chiring yoki sozlamalarda **Qaysi dasturlarda** faqat kerakli dasturlarni belgilang.
+So'z o'zgargan zahoti <kbd>Backspace</kbd> ni bosing — u yozganingizdek qaytadi va qayta o'girilmaydi. Inglizcha so'zlar (`check`, `should`, `school`, `chess`) va qisqartmalar (`that's`) o'zi tanilib, o'zgarmaydi; inglizcha ismlar o'zgarishi mumkin (`Richard` → `Riçard`). Ko'p inglizcha yozayotgan bo'lsangiz, Ö belgisi ustida o'ng tugma → **Yozish paytida o'girish** ni vaqtincha o'chiring yoki sozlamalarda **Qaysi dasturlarda** faqat kerakli dasturlarni belgilang.
 </details>
 
 <details>
@@ -390,6 +390,7 @@ dotnet build src/Ozbeca.App -c Release
 Natija: `src/Ozbeca.App/bin/Release/net48/Ozbeca.exe`. README rasmlari: `python tools/make_readme_art.py`.
 
 Tutuqsiz so'zlar lug'ati [Leipzig Corpora Collection](https://wortschatz.uni-leipzig.de/) (uzb_community_2017, uzb_wikipedia_2021_100K, CC BY 4.0) asosida `tools/wordlist/build_wordlist.py` bilan yasalgan (yozishmalardagi qisqargan shakllar — skriptdagi qoidalar bilan); ikki ma'noli so'zlarni ajratishda [uz-hunspell](https://github.com/uzbek-net/uz-hunspell) ishlatilgan.
+Inglizcha so'zlar ro'yxati — [SCOWL](http://wordlist.aspell.net/) (© 2000–2018 Kevin Atkinson va boshqalar, ruxsat beruvchi litsenziya); o'zbekcha bilan to'qnashuvlar [bitg](https://github.com/dtwinuz/bitg) (MIT / Apache-2.0) chastota jadvali bilan ajratilgan — `tools/wordlist/build_english.py`.
 
 <br>
 

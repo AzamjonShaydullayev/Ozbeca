@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <EmbeddedResource Include="words.txt" LogicalName="Ozbeca.words.txt" />
+    <EmbeddedResource Include="english.txt" LogicalName="Ozbeca.english.txt" />
   </ItemGroup>
 
 </Project>

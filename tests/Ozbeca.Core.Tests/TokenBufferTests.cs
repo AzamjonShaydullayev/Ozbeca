@@ -204,15 +204,15 @@ public class TokenBufferTests
     }
 
     [Theory]
-    [InlineData("chess \b", "chess ")]                 // o'girildi (çess) → Backspace → asliga qaytdi, probel joyida
+    [InlineData("chass \b", "chass ")]                 // o'girildi (çass) → Backspace → asliga qaytdi, probel joyida
     [InlineData("ozbek \b", "ozbek ")]                 // lug'at tuzatishi ham qaytadi
-    [InlineData("Men chess \b", "Men chess ")]
-    [InlineData("chess \b\b", "chess")]                // ikkinchi Backspace — odatdagidek probelni o'chiradi
-    [InlineData("chess \b\b ", "chess ")]              // qaytarilgan so'z qayta o'girilmaydi
-    [InlineData("chess \bqildim ", "chess qildim ")]   // keyingi so'zlar odatdagidek
-    [InlineData("chess \bchoy ", "chess çoy ")]
+    [InlineData("Men chass \b", "Men chass ")]
+    [InlineData("chass \b\b", "chass")]                // ikkinchi Backspace — odatdagidek probelni o'chiradi
+    [InlineData("chass \b\b ", "chass ")]              // qaytarilgan so'z qayta o'girilmaydi
+    [InlineData("chass \bqildim ", "chass qildim ")]   // keyingi so'zlar odatdagidek
+    [InlineData("chass \bchoy ", "chass çoy ")]
     [InlineData("shahr \b\b\bar ", "şahar ")]          // qaytarib, xatosi tuzatilgan so'z — o'giriladi
-    [InlineData("chess \b\b\bs ", "chess ")]          // o'chirib, o'sha harfni qayta yozdi — hamon rad etilgan so'z
+    [InlineData("chass \b\b\bs ", "chass ")]          // o'chirib, o'sha harfni qayta yozdi — hamon rad etilgan so'z
     [InlineData("maktab \b", "maktab")]                // o'girilmagan so'z — oddiy Backspace
     [InlineData("choy n\b\b", "çoy")]                  // orada boshqa tugma bosildi — qaytarish yo'q
     [InlineData("choy \b\b\b ", "ço ")]                // qaytarilgan so'z qisqartirildi — endi boshqa so'z, o'giriladi
@@ -300,7 +300,7 @@ public class TokenBufferTests
     [InlineData("Should, ", "Should, ")]
     [InlineData("I should check the school ", "I should check the school ")]
     [InlineData("chat ", "çat ")]                      // o'zbekchada ham shunday yoziladi
-    [InlineData("checkni ", "çeckni ")]
+    [InlineData("checkni ", "checkni ")]
     public void EnglishWordsAreNotConvertedWhileTyping(string keys, string expected) =>
         Assert.Equal(expected, new Typist().Type(keys).Screen);
 
@@ -333,26 +333,26 @@ public class TokenBufferTests
         Assert.Equal("organish ", t.Type("\b").Screen);
 
         // Pauzada o'girilib, probelda o'zgarmagan so'z ham qaytadi.
-        t = new Typist().Type("chess").Pause().Type(" ");
-        Assert.Equal("çess ", t.Screen);
-        Assert.Equal("chess ", t.Type("\b").Screen);
+        t = new Typist().Type("chass").Pause().Type(" ");
+        Assert.Equal("çass ", t.Screen);
+        Assert.Equal("chass ", t.Type("\b").Screen);
     }
 
     [Fact]
     public void PauseDoesNotBreakUndo()
     {
         // Probeldan keyin pauza taymeri ishlasa ham qaytarish imkoni qoladi.
-        Assert.Equal("chess ", new Typist().Type("chess ").Pause().Type("\b").Screen);
+        Assert.Equal("chass ", new Typist().Type("chass ").Pause().Type("\b").Screen);
         // Qaytarilgan so'z pauzada ham qayta o'girilmaydi; o'zgartirilsa — o'giriladi.
-        var t = new Typist().Type("chess \b\b").Pause();
-        Assert.Equal("chess", t.Screen);
-        Assert.Equal("çesss", t.Type("s").Pause().Screen);
+        var t = new Typist().Type("chass \b\b").Pause();
+        Assert.Equal("chass", t.Screen);
+        Assert.Equal("çasss", t.Type("s").Pause().Screen);
     }
 
     [Fact]
     public void UndoIsForgottenOnReset()
     {
-        var t = new Typist().Type("chess ");
+        var t = new Typist().Type("chass ");
         t.B.Reset(); // sichqoncha, boshqa oyna
         Assert.False(t.B.TryUndo(out _, out _));
     }

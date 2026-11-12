@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace Ozbeca.Core;
 
@@ -16,29 +18,65 @@ public static class CodeGuard
     // So'z ichida bo'lsa — bu kod/identifikator: user_name, x=5, print(choy), a<b, $var, path\to, a*b, a&b, a|b
     private const string CodeChars = "_=(){}[]<>$\\*&|^~#@/";
 
-    // Ko'p uchraydigan inglizcha so'zlar: yozish paytida va Ctrl+V da buzilmasin (check → çeck).
-    // O'zbekchada ham xuddi shunday yoziladiganlari ataylab yo'q: chat, match, finish, shop, much, chop, chin, char.
-    // Ro'yxat g'oyasi — XakimovNosirbek (PR #1).
-    private static readonly HashSet<string> EnglishWords = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "she", "shall", "should", "shape", "share", "shared", "sharp", "shell", "shift", "ship", "shipping", "shopping",
-        "short", "shortcut", "shot", "show", "showed", "showing", "shown", "shut", "chain", "chance", "change", "changed", "changes",
-        "changing", "channel", "chapter", "character", "charge", "chart", "charts", "cheap", "check", "checked",
-        "checking", "checkout", "checks", "chief", "child", "children", "choice", "choose", "chrome", "church", "cache", "schedule",
-        "scheme", "school", "which", "such", "each", "reach", "teach", "touch", "watch", "catch", "march", "search",
-        "searching", "speech", "branch", "lunch", "launch", "tech", "technical", "technology", "machine", "merchant", "purchase",
-        "architecture", "english", "finished", "publish", "published", "push", "pushed", "crash",
-        "refresh", "wish", "dish", "wash", "cash", "hash", "trash", "brush", "dash", "slash", "splash", "mesh", "fashion",
-    };
+    // sh/ch bor inglizcha so'zlar (SCOWL): yozish paytida va Ctrl+V da buzilmasin (check → çeck).
+    // O'zbekchada ham shunday yoziladiganlari yo'q (chat, match, chop, chap, bosh) — tools/wordlist/build_english.py.
+    private static readonly Lazy<HashSet<string>> EnglishWords = new(LoadEnglish);
 
-    /// <summary>Token (chetidagi tinish belgilarisiz) ko'p uchraydigan inglizcha so'zmi.</summary>
+    // Inglizcha qisqartma: that's, don't, we'll, they're, I've, Obama's. O'zbekcha ta'm, so'm, o't, ra'd, ko's — emas.
+    private static readonly Regex Contraction = new(
+        @"^(?:[A-Za-z]+n['’]t|[A-Za-z]+['’](?:ll|re|ve)|[A-Za-z]*[A-FH-NP-Za-fh-np-z]['’]s|(?:I|you|he|she|we|they|who|it|that|there)['’]d|I['’]m)$",
+        RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
+
+    /// <summary>
+    /// Token (chetidagi tinish belgilarisiz) inglizcha so'zmi: ro'yxatda bor, inglizcha qisqartma yoki o'zbek lotinida
+    /// yo'q harf bor — w yoki h siz c (Chicago, Washington, check, Facebook).
+    /// </summary>
     public static bool IsEnglishWord(string token)
     {
         if (string.IsNullOrEmpty(token)) return false;
         int start = 0, end = token.Length;
         while (start < end && EdgePunctuation.IndexOf(token[start]) >= 0) start++;
         while (end > start && EdgePunctuation.IndexOf(token[end - 1]) >= 0) end--;
-        return end > start && EnglishWords.Contains(token.Substring(start, end - start));
+        if (end <= start) return false;
+        string word = token.Substring(start, end - start);
+        if (IrishName.IsMatch(word)) return true;
+        // Chiziqchali: push-up, high-tech, T-shirt — bir qismi inglizcha, sh/ch li qolgan qismlari ham inglizcha
+        // (ship-shiydon — o'zbekcha).
+        bool english = false;
+        foreach (string part in word.Split('-'))
+        {
+            if (part.Length == 0) continue;
+            if (IsEnglishPart(part)) english = true;
+            else if (part.IndexOf("sh", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                     part.IndexOf("ch", StringComparison.OrdinalIgnoreCase) >= 0) return false;
+        }
+        return english;
+    }
+
+    // O'Brien, O’Malley — o'zbekchada O' dan keyin kichik harf (O'zbekiston) yoki hammasi katta (O'ZBEK).
+    private static readonly Regex IrishName = new(@"^O['’][A-Z][a-z]+$", RegexOptions.CultureInvariant);
+
+    private static bool IsEnglishPart(string word)
+    {
+        if (EnglishWords.Value.Contains(word) || Contraction.IsMatch(word)) return true;
+        for (int i = 0; i < word.Length; i++)
+        {
+            char c = char.ToLowerInvariant(word[i]);
+            if (c == 'w' || (c == 'c' && (i + 1 == word.Length || char.ToLowerInvariant(word[i + 1]) != 'h'))) return true;
+        }
+        return false;
+    }
+
+    private static HashSet<string> LoadEnglish()
+    {
+        var set = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        using var stream = typeof(CodeGuard).Assembly.GetManifestResourceStream("Ozbeca.english.txt");
+        if (stream == null) return set;
+        using var reader = new StreamReader(stream, Encoding.UTF8);
+        string? line;
+        while ((line = reader.ReadLine()) != null)
+            if (line.Length > 0 && line[0] != '#') set.Add(line);
+        return set;
     }
 
     /// <summary>Avtomatik o'girishda tegilmaydigan token: kod yoki inglizcha so'z.</summary>

@@ -25,6 +25,7 @@
     <!-- Core kodi exe ichiga kiradi — alohida DLL bo'lmasin (bitta fayl). -->
     <Compile Include="..\Ozbeca.Core\*.cs" Link="Core\%(Filename)%(Extension)" />
     <EmbeddedResource Include="..\Ozbeca.Core\words.txt" LogicalName="Ozbeca.words.txt" Link="Core\words.txt" />
+    <EmbeddedResource Include="..\Ozbeca.Core\english.txt" LogicalName="Ozbeca.english.txt" Link="Core\english.txt" />
   </ItemGroup>
 
   <ItemGroup>
