@@ -55,7 +55,14 @@ public sealed class BotApi
         }
     }
 
+    // Log uchun: BotApiException qaysi metoddan kelganini Data["method"] da saqlaymiz.
     private async Task<JsonElement> Send(string method, HttpContent content, CancellationToken ct)
+    {
+        try { return await SendCore(method, content, ct); }
+        catch (BotApiException e) { e.Data["method"] = method; throw; }
+    }
+
+    private async Task<JsonElement> SendCore(string method, HttpContent content, CancellationToken ct)
     {
         using var resp = await Guard(() => _http.PostAsync($"{_baseUrl}/bot{_token}/{method}", content, ct));
         var body = await resp.Content.ReadAsStringAsync(ct);
