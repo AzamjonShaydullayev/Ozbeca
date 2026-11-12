@@ -38,9 +38,17 @@ public partial class NoticeWindow : Window
         bool fresh = !IsVisible || Opacity < 0.5;
         if (!IsVisible) Show();
         UpdateLayout();
-        var work = SystemParameters.WorkArea; // asosiy monitor — tray o'sha yerda
-        Left = work.Right - ActualWidth;
-        Top = work.Bottom - ActualHeight;
+        // Asosiy monitor (tray o'sha yerda), fizik piksellarda: PerMonitorV2'da SystemParameters.WorkArea va Left/Top
+        // boshqa masshtabli monitorda mos kelmaydi. Ikki marta — masshtab o'zgarsa, WPF oynani qayta o'lchaydi.
+        IntPtr hwnd = new WindowInteropHelper(this).Handle;
+        var mi = new MONITORINFO { cbSize = System.Runtime.InteropServices.Marshal.SizeOf<MONITORINFO>() };
+        GetMonitorInfo(MonitorFromPoint(default, MONITOR_DEFAULTTOPRIMARY), ref mi);
+        for (int pass = 0; pass < 2; pass++)
+        {
+            GetWindowRect(hwnd, out var r);
+            SetWindowPos(hwnd, IntPtr.Zero, mi.rcWork.Right - (r.Right - r.Left), mi.rcWork.Bottom - (r.Bottom - r.Top), 0, 0,
+                SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
+        }
 
         BeginAnimation(OpacityProperty, new DoubleAnimation(1, TimeSpan.FromMilliseconds(180)));
         if (fresh)

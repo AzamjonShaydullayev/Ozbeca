@@ -54,16 +54,21 @@ public partial class ToastWindow : Window
 
     private void PlaceNearCursor()
     {
+        // Hammasi fizik piksellarda (PerMonitorV2). Ikki marta: boshqa masshtabli monitorga o'tsa, birinchi siljishdan
+        // keyin WPF oynani o'sha monitor masshtabiga qayta o'lchaydi — chetga yopishishni yangi o'lcham bilan hisoblaymiz.
         var p = AnchorPoint();
-        GetWindowRect(_hwnd, out var r);
-        int w = r.Right - r.Left, h = r.Bottom - r.Top;
         var mi = new MONITORINFO { cbSize = System.Runtime.InteropServices.Marshal.SizeOf<MONITORINFO>() };
         GetMonitorInfo(MonitorFromPoint(p, MONITOR_DEFAULTTONEAREST), ref mi);
         var work = mi.rcWork;
-        int x = Compat.Clamp(p.X + 16, work.Left, Math.Max(work.Left, work.Right - w));
-        int y = p.Y + 20 + h <= work.Bottom ? p.Y + 20 : p.Y - h - 8;
-        y = Compat.Clamp(y, work.Top, Math.Max(work.Top, work.Bottom - h));
-        SetWindowPos(_hwnd, IntPtr.Zero, x, y, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
+        for (int pass = 0; pass < 2; pass++)
+        {
+            GetWindowRect(_hwnd, out var r);
+            int w = r.Right - r.Left, h = r.Bottom - r.Top;
+            int x = Compat.Clamp(p.X + 16, work.Left, Math.Max(work.Left, work.Right - w));
+            int y = p.Y + 20 + h <= work.Bottom ? p.Y + 20 : p.Y - h - 8;
+            y = Compat.Clamp(y, work.Top, Math.Max(work.Top, work.Bottom - h));
+            SetWindowPos(_hwnd, IntPtr.Zero, x, y, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
+        }
     }
 
     private void FadeTo(double to, bool hideAfter)

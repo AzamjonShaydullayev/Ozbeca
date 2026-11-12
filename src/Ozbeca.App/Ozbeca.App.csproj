@@ -14,6 +14,7 @@
     <AssemblyName>Ozbeca</AssemblyName>
     <RootNamespace>Ozbeca.App</RootNamespace>
     <ApplicationIcon>Assets\ozbeca.ico</ApplicationIcon>
+    <ApplicationManifest>app.manifest</ApplicationManifest> <!-- PerMonitorV2: 2 monitorda xira emas -->
     <Product>Özbeça</Product>
     <Version>1.7.0</Version>
     <Copyright>AzamjonShaydullayev</Copyright>
