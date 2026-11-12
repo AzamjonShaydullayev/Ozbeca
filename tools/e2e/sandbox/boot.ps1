@@ -28,6 +28,17 @@ try {
     & $script -Exe (Join-Path $Local 'Ozbeca.exe') @E2EArgs *>&1 | Tee-Object -FilePath (Join-Path $Out 'console.log')
     "Sinov tugadi: $(Get-Date -Format s)"
 
+    # UI skrinshoti: Sozlamalar oynasi (ikkinchi ishga tushirish ishlab turgan nusxaga "sozlamalarni och" deydi)
+    try {
+        Start-Process (Join-Path $Local 'Ozbeca.exe'); Start-Sleep -Seconds 6
+        Start-Process (Join-Path $Local 'Ozbeca.exe'); Start-Sleep -Seconds 5
+        Add-Type -AssemblyName System.Windows.Forms, System.Drawing
+        $b = [Windows.Forms.Screen]::PrimaryScreen.Bounds
+        $bmp = New-Object Drawing.Bitmap $b.Width, $b.Height
+        [Drawing.Graphics]::FromImage($bmp).CopyFromScreen($b.Location, [Drawing.Point]::Empty, $b.Size)
+        $bmp.Save((Join-Path $Out 'settings.png'))
+    } catch { "Skrinshot olinmadi: $_" }
+
     $res = Join-Path $dst 'results'
     if (Test-Path $res) { Copy-Item (Join-Path $res '*') $Out -Force -ErrorAction SilentlyContinue }
     $log = Join-Path $env:APPDATA 'Ozbeca\ozbeca.log'
