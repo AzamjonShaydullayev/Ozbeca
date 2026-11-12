@@ -12,7 +12,7 @@ public partial class App : Application
 
     private Mutex? _mutex;
     private EventWaitHandle? _showEvent, _exitEvent;
-    private HotkeyService _hotkey = null!;
+    private HotkeyService _hotkey = null!, _reverseHotkey = null!;
     private ConvertEngine _engine = null!;
     private WinForms.NotifyIcon _tray = null!;
     private WinForms.ToolStripMenuItem _enabledItem = null!, _autostartItem = null!, _autoTypeItem = null!;
@@ -78,11 +78,14 @@ public partial class App : Application
         _hotkey = new HotkeyService();
         _engine = new ConvertEngine(_hotkey.Handle);
         _hotkey.Pressed += _engine.Trigger;
+        _reverseHotkey = new HotkeyService(0x0E8B);
+        _reverseHotkey.Pressed += _engine.TriggerReverse;
         _autoType = new AutoType(_hotkey.Handle);
         _autoType.SetAllowedApps(Settings.AutoTypeApps.Select(a => a.Process));
         _engine.Notify += msg => Dispatcher.BeginInvoke(() => Toast(msg));
         ApplyDelay();
         Ozbeca.Core.Transliterator.RestoreApostrophes = Settings.RestoreApostrophes;
+        Ozbeca.Core.Transliterator.SetExceptions(Settings.Exceptions);
         ThreadPool.QueueUserWorkItem(_ => Ozbeca.Core.Transliterator.ToNewAlphabet("ozbek")); // lug'atni oldindan yuklash
 
         CreateTray();
@@ -114,6 +117,7 @@ public partial class App : Application
     {
         if (_tray != null) { _tray.Visible = false; _tray.Dispose(); }
         _hotkey?.Dispose();
+        _reverseHotkey?.Dispose();
         _autoType?.Dispose();
         _showEvent?.Dispose();
         _exitEvent?.Dispose();
@@ -166,10 +170,24 @@ public partial class App : Application
     /// <summary>Joriy sozlamaga ko'ra hotkey'ni yoqadi/o'chiradi. Xato matni yoki null.</summary>
     private string? ApplyHotkeyState()
     {
-        if (!Settings.Enabled) { _hotkey.Unregister(); UpdateTrayText(); return null; }
+        if (!Settings.Enabled) { _hotkey.Unregister(); _reverseHotkey.Unregister(); UpdateTrayText(); return null; }
         string? error = Register(Settings.Hotkey);
+        RegisterReverse();
         UpdateTrayText();
         return error;
+    }
+
+    /// <summary>Teskari o'girish tugmasi (settings.json: ReverseHotkey). Band bo'lsa — faqat logga, asosiy ish to'xtamaydi.</summary>
+    private void RegisterReverse()
+    {
+        if (!HotkeyService.TryParse(Settings.ReverseHotkey, out uint mods, out int vk) || Settings.ReverseHotkey == Settings.Hotkey)
+        {
+            _reverseHotkey.Unregister();
+            Log.Write("Teskari o'girish tugmasi noto'g'ri: " + Settings.ReverseHotkey);
+            return;
+        }
+        if (_reverseHotkey.Register(mods, (uint)vk)) _engine.ReverseHotkeyVk = vk;
+        else Log.Write($"Teskari o'girish tugmasi {Settings.ReverseHotkey} boshqa dasturda band");
     }
 
     private string? Register(string combo)
@@ -201,6 +219,8 @@ public partial class App : Application
     /// <summary>Hook faqat ikkala sozlama yoqilganda o'rnatiladi.</summary>
     private void ApplyAutoType()
     {
+        _autoType.PauseConvert = Settings.PauseConvert;
+        _autoType.PasteConvert = Settings.PasteConvert;
         if (Settings.Enabled && Settings.AutoType) _autoType.Start();
         else _autoType.Stop();
     }
@@ -231,7 +251,29 @@ public partial class App : Application
         Log.Write("Avto-o'girish dasturlari: " + (apps.Count == 0 ? "hammasi" : string.Join(", ", apps.Select(a => a.Process))));
     }
 
-    internal void SuspendHotkey() => _hotkey.Unregister();
+    internal void SetPauseConvert(bool on)
+    {
+        Settings.PauseConvert = on;
+        Settings.Save();
+        ApplyAutoType();
+    }
+
+    internal void SetPasteConvert(bool on)
+    {
+        Settings.PasteConvert = on;
+        Settings.Save();
+        ApplyAutoType();
+    }
+
+    internal void SetExceptions(List<string> words)
+    {
+        Settings.Exceptions = words.Select(x => x.Trim()).Where(x => x.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+        Settings.Save();
+        Ozbeca.Core.Transliterator.SetExceptions(Settings.Exceptions);
+        Log.Write($"Istisnolar: {Settings.Exceptions.Count} ta so'z");
+    }
+
+    internal void SuspendHotkey() { _hotkey.Unregister(); _reverseHotkey.Unregister(); }
     internal string? ResumeHotkey() => ApplyHotkeyState();
     internal void ApplyDelay() => _engine.RestoreDelayMs = Settings.RestoreDelayMs;
 

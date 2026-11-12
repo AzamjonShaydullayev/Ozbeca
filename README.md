@@ -149,6 +149,7 @@ Hech narsa qilish shart emas — odatdagidek yozing:
 
 - So'z o'zgarishini istamasangiz — darhol <kbd>Backspace</kbd>: so'z yozganingizdek qaytadi (`çess` → `chess`) va qayta o'girilmaydi.
 - Ko'p uchraydigan inglizcha so'zlar (`check`, `should`, `school`, `which`…) yozish paytida o'zgarmaydi.
+- Ism, brend yoki login o'zgarmasin desangiz — sozlamalarda **O'girilmaydigan so'zlar** ga qo'shing.
 - Vaqtincha o'chirish: <img src="docs/icon.png" width="14" alt="Ö"> belgisi ustida o'ng tugma → **Yozish paytida o'girish**.
 
 ### ⚡ Tayyor matnni o'girish
@@ -156,6 +157,9 @@ Hech narsa qilish shart emas — odatdagidek yozing:
 1. Matnni **belgilang** (hammasi uchun <kbd>Ctrl</kbd>+<kbd>A</kbd>).
 2. <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>O</kbd> ni bosing — eslab qolish oson: **O → Ö**.
 3. Yonida **«Özbeça ✓»** chiqadi. Bekor qilish — <kbd>Ctrl</kbd>+<kbd>Z</kbd>.
+
+- **Kirill** matn ham yangi lotinga o'giriladi: `Ўзбекистон` → `Özbekiston`, `шаҳар` → `şahar`.
+- **Teskari** — yangi harflarni qabul qilmaydigan saytlar uchun: <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>O</kbd> — `Özbekiston` → `O'zbekiston`.
 
 ### 💻 Kod yozayotganda
 
@@ -186,6 +190,9 @@ Soat yonidagi <img src="docs/icon.png" width="16" alt="Ö"> belgisini yoki ish s
 | **Tutuqsiz so'zlar** | `ozbek` → `özbek`. Ikki ma'noli so'zlar (`qol`, `ot`, `bor`) o'zgarmaydi |
 | **Xabar ko'rsatish** | O'girilganda kursor yonida «Özbeça ✓» |
 | **Windows bilan** | Kompyuter yoqilganda ishga tushadi |
+| **Ctrl+V da** | Qo'yilayotgan matnni ham o'giradi (parol maydoni va Excel kataklariga tegilmaydi) |
+| **Pauzada** | 1 soniya to'xtasangiz, probel bosilmasa ham so'z o'giriladi |
+| **O'girilmaydigan so'zlar** | Ismlar, brendlar, loginlar — har qatorga bittadan. Ular hech qachon o'zgarmaydi |
 | **Qaysi dasturlarda** | Yozish paytida o'girish faqat tanlangan dasturlarda ishlaydi |
 
 ### Qaysi dasturlarda ishlasin

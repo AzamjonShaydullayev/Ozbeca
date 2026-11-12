@@ -54,6 +54,13 @@ internal sealed class AutoType : IDisposable
 
     // Fokusdagi maydon parolmi (UI Automation). null — hali bilmaymiz; sichqoncha, Tab, boshqa oyna — qayta tekshiriladi.
     private bool? _focusPassword;
+
+    /// <summary>1 s pauzada probelsiz o'girish (sozlamalardan o'chiriladi).</summary>
+    public bool PauseConvert { get; set; } = true;
+
+    /// <summary>Ctrl+V da qo'yilayotgan matnni o'girish (sozlamalardan o'chiriladi).</summary>
+    public bool PasteConvert { get; set; } = true;
+
     private readonly byte[] _keyState = new byte[256];
     private readonly StringBuilder _chars = new(8);
 
@@ -351,7 +358,7 @@ internal sealed class AutoType : IDisposable
         // Ctrl+V: qo'yilayotgan matn (probel yoki yangi qatori bo'lsa) ham o'giriladi.
         // Tegilmaydi: parol maydoni (UIA bilan ma'lum bo'lsa ham) va Office'ga qo'yilayotgan Excel kataklari —
         // oddiy matnga aylantirilsa formulalar va jadval yo'qolardi.
-        if (vk == VK_V && _mode == Mode.Prose && InputSender.IsDown(VK_CONTROL) && !InputSender.IsDown(VK_MENU) &&
+        if (vk == VK_V && PasteConvert && _mode == Mode.Prose && InputSender.IsDown(VK_CONTROL) && !InputSender.IsDown(VK_MENU) &&
             !InputSender.IsDown(VK_LWIN) && !InputSender.IsDown(VK_RWIN) && !IsPasswordFocus(fg) && _focusPassword != true &&
             !(ConvertEngine.IsOfficeWindow(fg) && ClipboardSwap.HasSpreadsheetCells))
         {
@@ -541,7 +548,7 @@ internal sealed class AutoType : IDisposable
 
     private void ConvertOnPause()
     {
-        if (!IsRunning || _mode == Mode.Off || _pending > 0 || _settling > 0 || _held.Count > 0) return;
+        if (!PauseConvert || !IsRunning || _mode == Mode.Off || _pending > 0 || _settling > 0 || _held.Count > 0) return;
         IntPtr fg = GetForegroundWindow();
         if (fg != _lastWindow) return; // boshqa oynaga o'tilgan — so'z u yerda emas
         // Ushlab turilgan modifier bilan Backspace boshqa ma'no beradi (Ctrl+Backspace — butun so'zni o'chiradi).

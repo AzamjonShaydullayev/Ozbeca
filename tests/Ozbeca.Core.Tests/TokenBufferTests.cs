@@ -218,6 +218,23 @@ public class TokenBufferTests
     [InlineData("choy \b\b\b ", "ço ")]                // qaytarilgan so'z qisqartirildi — endi boshqa so'z, o'giriladi
     public void BackspaceUndoesConversion(string keys, string expected) => Assert.Equal(expected, new Typist().Type(keys).Screen);
 
+    // Userning o'girilmaydigan so'zlari (statik holat — boshqa testlarda shu so'zlar yo'q).
+    [Fact]
+    public void UserExceptions()
+    {
+        try
+        {
+            Transliterator.SetExceptions(new[] { "Shohjahon", " chorsu ", "", "Chevrolet" });
+            Assert.Equal("Shohjahon bilan Chorsu'da çoy", Transliterator.ToNewAlphabet("Shohjahon bilan Chorsu'da choy"));
+            Assert.Equal("CHEVROLET şahar", Transliterator.ToNewAlphabet("CHEVROLET shahar"));
+            Assert.Equal("Şohjahonov", Transliterator.ToNewAlphabet("Shohjahonov")); // butun so'z emas — o'giriladi
+            Assert.Equal("Shohjahon ", new Typist().Type("Shohjahon ").Screen);
+            Assert.Equal("Shohjahon ", new Typist().Type("Shoh").Pause().Type("jahon ").Screen); // pauzada o'girilgani qaytadi
+        }
+        finally { Transliterator.SetExceptions(null); }
+        Assert.Equal("Şohjahon", Transliterator.ToNewAlphabet("Shohjahon"));
+    }
+
     // Yozish paytida: tirnoq bir so'zda ochilib, boshqasida yopiladi ('Yaxshi tong' → tonğ bo'lib qolardi).
     [Theory]
     [InlineData("'Yaxshi tong' ", "'Yaxşi tong' ")]

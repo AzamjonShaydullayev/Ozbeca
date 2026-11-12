@@ -25,10 +25,32 @@ public static class Transliterator
 
     // Tegilmaydigan qismlar: URL, email, https'siz havola (t.me/shahar, kun.uz/choy), @username, #hashtag.
     // Email @username'dan va domendan oldin turishi shart. Domen — faqat tanish zona bilan: "tugadi.Keyin" havola emas.
-    private static readonly Regex Protected = new(
+    private const string ProtectedPattern =
         @"(?:https?://|www\.)\S+|[\w.+-]+@[\w-]+(?:\.[\w-]+)+" +
         @"|(?<![\w.@-])(?:[\w-]+\.)+(?:uz|com|org|net|ru|me|io|info|biz|edu|gov|tv|app|dev|ai|co|kz|tj|kg|tm|tr|uk|us|de|be|ly)(?![\w-])(?:[/?#]\S*)?" +
-        @"|[@#]\w+", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+        @"|[@#]\w+";
+
+    private const RegexOptions ProtectedOptions = RegexOptions.IgnoreCase | RegexOptions.CultureInvariant;
+
+    // Userning o'girilmaydigan so'zlari (ismlar, brendlar: Shohjahon, Chevrolet) ham shu regex'ga qo'shiladi.
+    private static volatile Regex Protected = new(ProtectedPattern, ProtectedOptions);
+
+    /// <summary>Hech qachon o'girilmaydigan so'zlar (katta-kichik harf farqsiz, butun so'z). Bo'sh/null — istisno yo'q.</summary>
+    public static void SetExceptions(IEnumerable<string>? words)
+    {
+        var list = new List<string>();
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (string? w in words ?? Array.Empty<string>())
+        {
+            string t = (w ?? "").Trim();
+            if (t.Length > 0 && seen.Add(t)) list.Add(Regex.Escape(t));
+        }
+        list.Sort((x, y) => y.Length.CompareTo(x.Length)); // uzuni avval: "Chevrolet Malibu" "Chevrolet"dan oldin
+        // Oldidan harf/tutuq kelmasin, keyin harf kelmasin; tutuq + qo'shimcha bo'lishi mumkin: Chorsu'da.
+        Protected = new Regex(list.Count == 0 ? ProtectedPattern
+            : ProtectedPattern + @"|(?<![\p{L}\p{M}\d" + Apostrophes + @"])(?:" + string.Join("|", list) + @")(?![\p{L}\p{M}\d])",
+            ProtectedOptions);
+    }
 
     /// <summary>
     /// Tutuqsiz yozilgan so'zlarni lug'at bo'yicha tuzatish (ozbek → özbek, togri → toğri). Sozlamalardan o'chiriladi.

@@ -24,6 +24,18 @@ internal sealed class Settings
     /// <summary>Avto-o'girish faqat shu dasturlarda (jarayon nomi). Bo'sh — hamma dasturlarda.</summary>
     [DataMember] public List<AllowedApp> AutoTypeApps { get; set; } = new();
 
+    /// <summary>Teskari o'girish (ö → o', ş → sh): yangi harflarni qabul qilmaydigan saytlar uchun.</summary>
+    [DataMember] public string ReverseHotkey { get; set; } = "Ctrl+Alt+Shift+O";
+
+    /// <summary>Hech qachon o'girilmaydigan so'zlar: ismlar, brendlar, loginlar.</summary>
+    [DataMember] public List<string> Exceptions { get; set; } = new();
+
+    /// <summary>Yozish to'xtaganda (1 s) tugamagan so'zni o'girish. Standart — yoqilgan.</summary>
+    [DataMember] public bool PauseConvert { get; set; } = true;
+
+    /// <summary>Ctrl+V bilan qo'yilgan matnni o'girish. Standart — yoqilgan.</summary>
+    [DataMember] public bool PasteConvert { get; set; } = true;
+
     // DataContract konstruktorni chaqirmaydi — faylda yo'q maydonlar standart qiymatda qolsin.
     [OnDeserializing]
     private void SetDefaults(StreamingContext _)
@@ -35,6 +47,10 @@ internal sealed class Settings
         AutoType = true;
         RestoreApostrophes = true;
         AutoTypeApps = new();
+        ReverseHotkey = "Ctrl+Alt+Shift+O";
+        Exceptions = new();
+        PauseConvert = true;
+        PasteConvert = true;
     }
 
     /// <summary>settings.json hali yo'q — birinchi ishga tushirish (o'rnatish oynasi ko'rsatiladi).</summary>
@@ -56,6 +72,9 @@ internal sealed class Settings
                 s.Hotkey ??= "Ctrl+Alt+O";
                 s.AutoTypeApps ??= new();
                 s.AutoTypeApps.RemoveAll(a => a == null || string.IsNullOrWhiteSpace(a.Process));
+                s.ReverseHotkey ??= "Ctrl+Alt+Shift+O";
+                s.Exceptions ??= new();
+                s.Exceptions.RemoveAll(string.IsNullOrWhiteSpace);
                 s.RestoreDelayMs = Math.Max(0, Math.Min(5000, s.RestoreDelayMs));
                 return s;
             }

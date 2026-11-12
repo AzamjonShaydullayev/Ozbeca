@@ -42,7 +42,15 @@ internal sealed class ConvertEngine
     /// <summary>Foydalanuvchiga ko'rsatiladigan xabar (toast).</summary>
     public event Action<string>? Notify;
 
-    public void Trigger()
+    /// <summary>Teskari o'girish tugmasining asosiy tugmasi.</summary>
+    public int ReverseHotkeyVk { get; set; } = 0x4F;
+
+    public void Trigger() => Start(reverse: false);
+
+    /// <summary>Yangi alifbodan eskisiga: ö → o', ş → sh (yangi harflarni qabul qilmaydigan saytlar uchun).</summary>
+    public void TriggerReverse() => Start(reverse: true);
+
+    private void Start(bool reverse)
     {
         if (Interlocked.CompareExchange(ref _busy, 1, 0) != 0)
         {
@@ -51,7 +59,7 @@ internal sealed class ConvertEngine
         }
         var t = new Thread(() =>
         {
-            try { Run(); }
+            try { Run(reverse); }
             catch (Exception ex) { Log.Write("Xato: " + ex); }
             finally { Volatile.Write(ref _busy, 0); }
         }) { IsBackground = true, Name = "OzbecaConvert" };
@@ -59,7 +67,7 @@ internal sealed class ConvertEngine
         t.Start();
     }
 
-    private void Run()
+    private void Run(bool reverse)
     {
         IntPtr hwnd = GetForegroundWindow();
         if (hwnd == IntPtr.Zero) return;
@@ -81,7 +89,7 @@ internal sealed class ConvertEngine
         }
 
         if (InputSender.IsDown(VK_MENU)) InputSender.SendMask();
-        InputSender.WaitKeysReleased(HotkeyVk);
+        InputSender.WaitKeysReleased(reverse ? ReverseHotkeyVk : HotkeyVk);
         if (!Same(hwnd)) return;
 
         var snapshot = _clip.Save();
@@ -103,7 +111,10 @@ internal sealed class ConvertEngine
         // Telegram: stillar (qalin, chiziqli, premium emoji) alohida formatda — ularni ham surib qaytaramiz.
         List<(string, byte[])>? extras = null;
         string converted;
-        if (TryTelegram(_clip, out var tgOld, out var tgNew, out var tgTags))
+        // Teskari va kirill o'girishda harflar soni o'zgaradi (я → ya) — Telegram stillari xaritasi yo'q, oddiy matn.
+        if (reverse) converted = ReverseConverter.ToOldLatin(text);
+        else if (CyrillicConverter.HasCyrillic(text)) converted = CyrillicConverter.ToNewLatin(Transliterator.ToNewAlphabet(text));
+        else if (TryTelegram(_clip, out var tgOld, out var tgNew, out var tgTags))
         {
             text = tgOld;
             converted = tgNew;
