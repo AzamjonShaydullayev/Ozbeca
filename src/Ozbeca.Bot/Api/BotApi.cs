@@ -59,9 +59,15 @@ public sealed class BotApi
     {
         using var resp = await Guard(() => _http.PostAsync($"{_baseUrl}/bot{_token}/{method}", content, ct));
         var body = await resp.Content.ReadAsStringAsync(ct);
-        using var doc = JsonDocument.Parse(body);
+        var status = (int)resp.StatusCode;
+        JsonDocument doc;
+        try { doc = JsonDocument.Parse(body); }
+        catch (JsonException) { throw new BotApiException(status, "non-JSON response", null); }
+        using var _ = doc;
         var root = doc.RootElement;
-        if (root.TryGetProperty("ok", out var ok) && ok.ValueKind == JsonValueKind.True)
+        if (root.ValueKind != JsonValueKind.Object || !root.TryGetProperty("ok", out var ok))
+            throw new BotApiException(status, "non-JSON response", null);
+        if (ok.ValueKind == JsonValueKind.True)
             return root.TryGetProperty("result", out var r) ? r.Clone() : default;
         throw new BotApiException(root.Int("error_code") ?? (int)resp.StatusCode,
             root.Str("description") ?? "unknown error",

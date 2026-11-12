@@ -16,6 +16,7 @@ public class BotApiTests
         Assert.Equal(1, r.Int("message_id"));
         var (method, body) = Assert.Single(fake.Calls);
         Assert.Equal("sendMessage", method);
+        Assert.Equal("/bot123:SECRET/sendMessage", Assert.Single(fake.Urls));
         Assert.Equal(42, body.GetProperty("chat_id").GetInt32());
         Assert.Equal("salom", body.Str("text"));
     }
@@ -82,6 +83,24 @@ public class BotApiTests
         var api = new BotApi(new ThrowingHandler(), Token);
         var ex = await Assert.ThrowsAsync<HttpRequestException>(() => api.Call("getMe"));
         Assert.DoesNotContain("SECRET", ex.ToString());
+    }
+
+    [Theory]
+    [InlineData(502, "<html>Bad Gateway</html>")]
+    [InlineData(503, "")]
+    [InlineData(200, "[]")]
+    [InlineData(200, "null")]
+    [InlineData(200, "{}")]
+    public async Task Non_json_or_non_object_response_throws_BotApiException_with_status(int status, string body)
+    {
+        var fake = new FakeTelegram { RespondRaw = (_, _) => (status, body) };
+        var api = new BotApi(fake, Token);
+        var ex = await Assert.ThrowsAsync<BotApiException>(() => api.Call("getMe"));
+        Assert.Equal(status, ex.Code);
+        Assert.Equal($"{status}: non-JSON response", ex.Message);
+        var up = await Assert.ThrowsAsync<BotApiException>(() => api.Upload("sendDocument",
+            new Dictionary<string, string>(), "document", "a.txt", new MemoryStream()));
+        Assert.Equal(status, up.Code);
     }
 
     private sealed class ThrowingHandler : HttpMessageHandler

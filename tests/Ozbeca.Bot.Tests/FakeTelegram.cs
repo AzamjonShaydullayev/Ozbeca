@@ -18,6 +18,13 @@ internal sealed class FakeTelegram : HttpMessageHandler
     /// <summary>(method, body) -> javob JSON matni. Null bo'lsa standart javob.</summary>
     public Func<string, JsonElement, string>? Respond { get; set; }
 
+    /// <summary>HTTP darajasidagi javob: (status, xom tana). Respond'dan ustun.</summary>
+    public Func<string, JsonElement, (int Status, string Body)>? RespondRaw { get; set; }
+
+    /// <summary>So'rov URL yo'llari (Calls bilan bir xil tartibda), masalan "/bot123:X/sendMessage".</summary>
+    public List<string> Urls { get { lock (_lock) return _urls.ToList(); } }
+    private readonly List<string> _urls = new();
+
     /// <summary>Fayl yuklab olish: "/file/bot&lt;token&gt;/" dan keyingi yo'l -> baytlar.</summary>
     public Dictionary<string, byte[]> Files { get; } = new();
 
@@ -28,7 +35,7 @@ internal sealed class FakeTelegram : HttpMessageHandler
         {
             var rest = path.Substring("/file/bot".Length);
             var filePath = rest.Substring(rest.IndexOf('/') + 1);
-            lock (_lock) _calls.Add(("download:" + filePath, default));
+            lock (_lock) { _calls.Add(("download:" + filePath, JsonDocument.Parse("{}").RootElement.Clone())); _urls.Add(path); }
             return Files.TryGetValue(filePath, out var bytes)
                 ? new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent(bytes) }
                 : new HttpResponseMessage(HttpStatusCode.NotFound);
@@ -53,7 +60,12 @@ internal sealed class FakeTelegram : HttpMessageHandler
             body = JsonDocument.Parse(text).RootElement.Clone();
         }
 
-        lock (_lock) _calls.Add((method, body));
+        lock (_lock) { _calls.Add((method, body)); _urls.Add(path); }
+        if (RespondRaw != null)
+        {
+            var (status, raw) = RespondRaw(method, body);
+            return new HttpResponseMessage((HttpStatusCode)status) { Content = new StringContent(raw, Encoding.UTF8) };
+        }
         var json = Respond?.Invoke(method, body) ?? DefaultResponse;
         return new HttpResponseMessage(HttpStatusCode.OK)
         {
