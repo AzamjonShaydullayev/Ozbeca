@@ -110,7 +110,7 @@ internal sealed class AdminHandler(BotApi api, Sender sender, Store store, BotCo
             // tahrir o'xshamasa (xabar o'chirilgan, 400) — yakun yangi xabar bilan, admin "Yuborilmoqda." da qolmasin
             if (progressMsg is not { } m || !await Edit(adminId, m, final, null, default)) await Say(adminId, final, null, default);
         }
-        catch (Exception e) { Log.Error($"broadcast: {e.GetType().Name}"); }
+        catch (Exception e) { Log.Error($"broadcast: {Poller.Describe(e)}"); }
         finally
         {
             // single-flight uyasi (Current) faqat Run tugagach bo'shaydi

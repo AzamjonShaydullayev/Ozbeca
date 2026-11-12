@@ -4,6 +4,23 @@ namespace Ozbeca.Bot.Tests;
 
 public sealed class PollerTests
 {
+    [Fact]
+    public void Describe_includes_telegram_description_truncated()
+    {
+        var e = new Ozbeca.Bot.Api.BotApiException(400, "Bad Request: object expected as reply markup", null);
+        e.Data["method"] = "sendMessage";
+        Assert.Equal("BotApiException code=400 method=sendMessage desc=Bad Request: object expected as reply markup", Poller.Describe(e));
+
+        var longDesc = "Bad Request:\n" + new string('x', 500);
+        var d = Poller.Describe(new Ozbeca.Bot.Api.BotApiException(400, longDesc, null));
+        var desc = d[(d.IndexOf("desc=", StringComparison.Ordinal) + 5)..];
+        Assert.Equal(200, desc.Length);
+        Assert.DoesNotContain('\n', d);   // journald'da bitta qator
+
+        // boshqa xatolar: faqat tur (xabar matnida URL/token bo'lishi mumkin)
+        Assert.Equal("HttpRequestException", Poller.Describe(new HttpRequestException("https://api.telegram.org/bot1:SECRET/getMe")));
+    }
+
     private static string Upd(int id, int uid, string text) =>
         $"{{\"update_id\":{id},\"message\":{{\"message_id\":1,\"date\":1,\"chat\":{{\"id\":{uid},\"type\":\"private\"}},\"from\":{{\"id\":{uid},\"is_bot\":false}},\"text\":\"{text}\"}}}}";
 

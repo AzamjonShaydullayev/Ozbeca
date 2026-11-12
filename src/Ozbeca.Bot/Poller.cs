@@ -97,7 +97,13 @@ public sealed class Poller(BotApi api, Router router)
         await Task.WhenAny(Task.WhenAll(running.Keys), Task.Delay(TimeSpan.FromSeconds(10)));   // ishlayotgan handler'larni kutamiz (ko'pi bilan 10 s)
     }
 
-    // Faqat tur va kod/metod: xabar matni va token yozilmaydi.
-    private static string Describe(Exception e) =>
-        e is BotApiException b ? $"{nameof(BotApiException)} code={b.Code} method={b.Data["method"] ?? "?"}" : e.GetType().Name;
+    // Tur, kod/metod va Telegram'ning description'i (Telegram matni, tokensiz; 200 belgi, bitta qator) — 400 ni journald'dan
+    // tushunish uchun. Boshqa xatolarda faqat tur: ularning matnida URL (token) bo'lishi mumkin.
+    internal static string Describe(Exception e)
+    {
+        if (e is not BotApiException b) return e.GetType().Name;
+        var d = b.Description.ReplaceLineEndings(" ");
+        if (d.Length > 200) d = d[..(char.IsHighSurrogate(d[199]) ? 199 : 200)];
+        return $"{nameof(BotApiException)} code={b.Code} method={b.Data["method"] ?? "?"} desc={d}";
+    }
 }
