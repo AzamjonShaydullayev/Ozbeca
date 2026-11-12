@@ -8,6 +8,7 @@ using Ozbeca.Bot.Ui;
 
 namespace Ozbeca.Bot.Tests;
 
+[Collection("Clock")]   // Store kunini (Clock) o'qiydi — Clock'ni almashtiruvchi testlar bilan parallel emas
 public class FileHandlerTests : IDisposable
 {
     /// <summary>sendDocument multipart ichidagi fayl baytlarini ushlaydi (FakeTelegram faqat nomini saqlaydi).</summary>

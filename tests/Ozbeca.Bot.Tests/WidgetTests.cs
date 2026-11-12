@@ -321,8 +321,21 @@ public sealed class WidgetTests : IDisposable
         Assert.Equal("ok", Answer());
         Assert.Equal(11, _h.Store.Get(1)!.Streak);
         var p = Game.Unpack(_h.Store.Get(1)!.GameAnswer)!;
-        Assert.Equal((2, Ms(_now)), (p.Level, p.IssuedMs));   // yangi topishmoq — yangi vaqt
+        Assert.Equal((2, Ms(_now) + Game.ResultHoldMs), (p.Level, p.IssuedMs));   // klient natijani 1.5 s ko'rsatadi
         Assert.Equal(10, ChatData(_h.Sent("editMessageWidgetData")[^1]).GetProperty("t").GetInt32());
+    }
+
+    [Fact]
+    public async Task Next_timed_puzzle_clock_starts_after_result_hold()
+    {
+        SetPuzzle(new Puzzle("qö?iq?i", "ÖĞŞÇ", "ŞÇ", 2, Ms(_now)), 10, 10);
+        await Query("g:23");   // keyingi topishmoq: taymer 1.5 s keyin boshlanadi
+        var next = Game.Unpack(_h.Store.Get(1)!.GameAnswer)!;
+        var picks = string.Concat(next.Answer.Select(a => next.Options.IndexOf(a)));
+        _now = _now.AddSeconds(1.5 + 12.9);   // klient taymeri bo'yicha 12.9 s (10 + zaxira ichida)
+        await Query("g:" + picks);
+        Assert.Equal("ok", Answer());
+        Assert.Equal(12, _h.Store.Get(1)!.Streak);
     }
 
     [Fact]
@@ -380,10 +393,39 @@ public sealed class WidgetTests : IDisposable
         await Query("r:g");
         Assert.Equal(timed, Game.Unpack(_h.Store.Get(1)!.GameAnswer));   // yangi — tegilmaydi
         _now = _now.AddMinutes(5);
-        await Query("r:g");   // karta keyinroq ochildi: eski taymerli topishmoq yangilanadi
-        var fresh = Game.Unpack(_h.Store.Get(1)!.GameAnswer)!;
-        Assert.Equal((2, Ms(_now)), (fresh.Level, fresh.IssuedMs));
-        Assert.Equal(10, _h.Store.Get(1)!.Streak);
+        await Query("r:g");   // vaqti o'tgan taymerli topishmoq — vaqt tugadi (R21)
+        var u = _h.Store.Get(1)!;
+        Assert.Equal((0, 10), (u.Streak, u.Best));
+        var fresh = Game.Unpack(u.GameAnswer)!;
+        Assert.Equal((0, Ms(_now)), (fresh.Level, fresh.IssuedMs));
+        Assert.Equal(0, ChatData(_h.Sent("editMessageWidgetData")[^1]).GetProperty("s").GetInt32());
+    }
+
+    [Fact]
+    public async Task Game_command_reuses_stored_puzzle()
+    {
+        var timed = new Puzzle("qö?iq?i", "ÖĞŞÇ", "ŞÇ", 2, Ms(_now));
+        SetPuzzle(timed, 12, 12);
+        _now = _now.AddSeconds(5);
+        await _h.Text("/oyin", entities: Cmd(5));
+        await _h.Callback("m:g", "menyu", null);   // qayta bosish topishmoqni almashtirmaydi
+        Assert.Equal(timed, Game.Unpack(_h.Store.Get(1)!.GameAnswer));
+        Assert.All(_h.Sent("sendWidget"), w => Assert.Equal("qö?iq?i", ChatData(w).GetProperty("q").GetString()));
+        Assert.Equal(12, _h.Store.Get(1)!.Streak);
+    }
+
+    [Fact]
+    public async Task Game_command_with_expired_timed_puzzle_is_timeout()
+    {
+        SetPuzzle(new Puzzle("qö?iq?i", "ÖĞŞÇ", "ŞÇ", 2, Ms(_now)), 12, 12);
+        _now = _now.AddSeconds(14);
+        await _h.Text("/oyin", entities: Cmd(5));
+        var u = _h.Store.Get(1)!;
+        Assert.Equal((0, 12), (u.Streak, u.Best));
+        Assert.Equal(0, Game.Unpack(u.GameAnswer)!.Level);
+        var w = Assert.Single(_h.Sent("sendWidget"));
+        Assert.Equal((0, 0), (ChatData(w).GetProperty("s").GetInt32(), ChatData(w).GetProperty("l").GetInt32()));
+        Assert.StartsWith(string.Format(Texts.CapGame, 0, 12), w.GetProperty("caption").GetString());
     }
 
     [Fact]

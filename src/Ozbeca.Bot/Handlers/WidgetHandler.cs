@@ -46,9 +46,8 @@ internal sealed class WidgetHandler(Sender sender, Store store, CardSender card)
                 state = card.StatsState(u);
                 break;
             case "r:g":
-                // taymerli topishmoq vaqti o'tgan (karta keyinroq ochildi) — yangisi, seriyaga tegilmaydi
-                var p = Game.Unpack(u.GameAnswer);
-                if (p == null || Game.Expired(p, Clock.Ms())) p = card.NewPuzzle(u);
+                // taymerli topishmoq vaqti o'tgan — vaqt tugadi (R21): seriya 0, yangi topishmoq
+                (u, var p) = card.CurrentPuzzle(u);
                 state = WidgetState.Game(u, p);
                 break;
             case ['g', ':', ..]:
@@ -60,7 +59,8 @@ internal sealed class WidgetHandler(Sender sender, Store store, CardSender card)
                 var streak = right ? u.Streak + 1 : 0;
                 u = u with { Streak = streak, Best = Math.Max(u.Best, streak) };
                 answer = right ? "ok" : "no:" + cur.Answer;
-                state = WidgetState.Game(u, card.NewPuzzle(u));   // har javobdan keyin yangi topishmoq — takror hisoblanmaydi
+                // har javobdan keyin yangi topishmoq — takror hisoblanmaydi; klient natijani ResultHoldMs ko'rsatib, keyin taymerni boshlaydi
+                state = WidgetState.Game(u, card.NewPuzzle(u, Game.ResultHoldMs));
                 break;
             default:
                 await Answer(id, "err", ct);

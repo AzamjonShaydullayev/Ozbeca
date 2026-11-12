@@ -44,12 +44,27 @@ public sealed class CardSender(Sender sender, Store store)
         }
     }
 
-    /// <summary>Yangi topishmoq (daraja seriyadan) Store'ga yoziladi. u — Touch qilingan, Streak/Best — saqlanadigan qiymatlar.</summary>
-    internal Puzzle NewPuzzle(UserRow u)
+    /// <summary>
+    /// Yangi topishmoq (daraja seriyadan) Store'ga yoziladi. u — Touch qilingan, Streak/Best — saqlanadigan qiymatlar.
+    /// delayMs — klient taymeri shuncha keyin boshlanadi (javobdan keyingi natija ko'rsatilishi).
+    /// </summary>
+    internal Puzzle NewPuzzle(UserRow u, long delayMs = 0)
     {
-        var p = Game.Next(Random.Shared, Game.LevelFor(u.Streak), Clock.Ms());
+        var p = Game.Next(Random.Shared, Game.LevelFor(u.Streak), Clock.Ms() + delayMs);
         store.SetGame(u.Id, Game.Pack(p), u.Streak, u.Best);
         return p;
+    }
+
+    /// <summary>
+    /// Saqlangan topishmoq (yangi topishmoq bilan o'tkazib yuborib bo'lmaydi). Yo'q bo'lsa — yangisi; taymerli va vaqti
+    /// o'tgan bo'lsa — vaqt tugadi (R21): seriya 0 (rekord qoladi), yangi topishmoq.
+    /// </summary>
+    internal (UserRow U, Puzzle P) CurrentPuzzle(UserRow u)
+    {
+        var p = Game.Unpack(u.GameAnswer);
+        if (p != null && !Game.Expired(p, Clock.Ms())) return (u, p);
+        if (p != null) u = u with { Streak = 0 };
+        return (u, NewPuzzle(u));
     }
 
     internal string StatsState(UserRow u) => WidgetState.Stats(store.UserWeek(u.Id), store.UserTotals(u.Id), u.Best);
@@ -57,12 +72,14 @@ public sealed class CardSender(Sender sender, Store store)
     /// <summary>kind: s|h|g|t. u — Touch qilingan user.</summary>
     public async Task Send(char kind, long chatId, UserRow u, CancellationToken ct)
     {
+        Puzzle? puzzle = null;
+        if (kind == 'g') (u, puzzle) = CurrentPuzzle(u);
         var (data, caption) = kind switch
         {
             's' => (WidgetState.Settings(u.Settings),
                     string.Format(Texts.CapSettings, u.Settings.Reverse ? Texts.SetNewToOld : Texts.SetOldToNew)),
             'h' => (WidgetState.Letters, Texts.CapLetters),
-            'g' => (WidgetState.Game(u, NewPuzzle(u)), string.Format(Texts.CapGame, u.Streak, u.Best)),
+            'g' => (WidgetState.Game(u, puzzle!), string.Format(Texts.CapGame, u.Streak, u.Best)),
             't' => (StatsState(u), string.Format(Texts.CapStats, u.CharsToday)),
             _ => throw new ArgumentOutOfRangeException(nameof(kind)),
         };

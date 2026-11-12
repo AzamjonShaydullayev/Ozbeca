@@ -4,6 +4,7 @@ using Ozbeca.Bot.Ui;
 
 namespace Ozbeca.Bot.Tests;
 
+[Collection("Clock")]   // Store kunini (Clock) o'qiydi — Clock'ni almashtiruvchi testlar bilan parallel emas
 public sealed class InlineTests : IDisposable
 {
     private readonly BotHarness _h = new();

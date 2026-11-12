@@ -23,6 +23,8 @@ public static class Game
     private const string Letters = "ÖĞŞÇ";
     internal const int Seconds = 10;
     private const int GraceMs = 3000;
+    /// <summary>oyin.html javob natijasini shuncha ko'rsatadi (setTimeout 1500), keyin yangi topishmoq taymeri boshlanadi.</summary>
+    internal const long ResultHoldMs = 1500;
 
     /// <summary>Yangi alifbodagi so'zlar (kichik harf).</summary>
     internal static readonly IReadOnlyList<string> Words = Load("game_words.txt");
