@@ -61,6 +61,9 @@ internal sealed class AutoType : IDisposable
     /// <summary>Ctrl+V da qo'yilayotgan matnni o'girish (sozlamalardan o'chiriladi).</summary>
     public bool PasteConvert { get; set; } = true;
 
+    /// <summary>User o'girishni Backspace bilan qaytarib, so'zni shu holicha qoldirdi (asl so'z).</summary>
+    public event Action<string>? WordRejected;
+
     private readonly byte[] _keyState = new byte[256];
     private readonly StringBuilder _chars = new(8);
 
@@ -425,10 +428,12 @@ internal sealed class AutoType : IDisposable
                 if (_mode == Mode.Prose && !IsPasswordFocus(fg) &&
                     _word.TryCompleteAtEnter(out int enterDel, out string enterWord))
                 {
+                    ReportRejected();
                     Replace(enterDel, enterWord, new[] { Key(VK_RETURN, false), Key(VK_RETURN, true) });
                     ForgetFocus(); // pastdagi izohga qarang; Replace joriy maydon javobini olib bo'ldi
                     return true; // Enter ushlandi — so'z almashgach o'zimiz yuboramiz
                 }
+                ReportRejected();
                 _word.ResetNewLine();
                 // Enter fokusni ko'chirishi mumkin: login → Enter → o'sha oynada parol maydoni (Google, Telegram Web).
                 // Eski maydonning "parol emas" javobi yangi maydonga o'tib ketmasin.
@@ -479,6 +484,7 @@ internal sealed class AutoType : IDisposable
                 return true;
             }
             foreach (char ch in typed) _word.Add(ch);
+            ReportRejected();
             PrefetchPassword();
             // Pauzada o'girilgan so'z davomi bilan manzil/kodga aylandi (şerzod + @gmail.com) — yozilganidek qaytaramiz.
             // Bu tugma ushlanadi va so'z bilan birga o'zimiz yozamiz (tartib aniq bo'lsin). Shift/AltGr bosilgan paytda
@@ -561,9 +567,18 @@ internal sealed class AutoType : IDisposable
     private bool CompleteWord(IntPtr fg)
     {
         if (IsPasswordFocus(fg)) { ResetWord(); return false; }
-        if (!_word.TryComplete(out int deleteCount, out string replacement)) return false;
+        bool ok = _word.TryComplete(out int deleteCount, out string replacement);
+        ReportRejected();
+        if (!ok) return false;
         Replace(deleteCount, replacement, UnicodeKeys(' '));
         return true;
+    }
+
+    /// <summary>Qaytarilgan so'z shu holicha qoldirildi — App sanaydi (hook ichida oyna ochmaymiz).</summary>
+    private void ReportRejected()
+    {
+        if (_word.TakeRejected() is string word)
+            _dispatcher.BeginInvoke(new Action(() => WordRejected?.Invoke(word)));
     }
 
     private static INPUT[] UnicodeKeys(char ch) => new[] { Unicode(ch, false), Unicode(ch, true) };

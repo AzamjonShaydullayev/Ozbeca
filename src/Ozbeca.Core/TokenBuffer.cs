@@ -32,6 +32,7 @@ public sealed class TokenBuffer
     private string? _undoFrom, _undoTo;
     private string? _undone;                      // hozirgina qaytarilgan so'z — probeli o'chirilsa bufferga qaytadi
     private string? _keep;                        // user o'girishni rad etgan so'z: o'zgarmaguncha qayta o'girilmaydi
+    private string? _rejected;                    // qaytarilib, shu holicha qoldirilgan so'z (TakeRejected)
     private bool _quoteOpen;                      // oldingi so'zlarda tirnoq ochilgan va yopilmagan ('Yaxshi tong')
     private bool _lineKnown;                      // qator boshidan beri hamma narsani ko'rdikmi
     private bool _inString;
@@ -95,6 +96,7 @@ public sealed class TokenBuffer
     /// <summary>Probel/Enter bo'lmagan, ko'rinadigan belgi.</summary>
     public void Add(char c)
     {
+        if (_undone != null) _rejected = _undone; // qaytarilgan so'zdan keyin yozishda davom etdi — o'girishni rad etdi
         ForgetUndo();
         AppendLine(c);
         if (_codeMode && c == '"' && !IsEscaped(_line.Length - 1))
@@ -221,6 +223,7 @@ public sealed class TokenBuffer
         ClearWord();
         deleteCount = 0;
         replacement = "";
+        if (kept && dictionary) _rejected = word; // qaytarib, o'zgartirmasdan tugatdi
         if (overflow || kept || word.Length == 0) return false;
         if (_codeMode && !InString) return false;        // kod: faqat qo'shtirnoq ichi
 
@@ -267,6 +270,17 @@ public sealed class TokenBuffer
     }
 
     private void ForgetUndo() => _undoFrom = _undoTo = _undone = null;
+
+    /// <summary>
+    /// User o'girishni Backspace bilan qaytarib, so'zni shu holicha qoldirdi (keyingi so'zni yozdi yoki o'zgartirmasdan
+    /// tugatdi) — o'sha so'z, bir marta. Ilova uni sanaydi va ikkinchi safar istisnolarga qo'shadi.
+    /// </summary>
+    public string? TakeRejected()
+    {
+        string? r = _rejected;
+        _rejected = null;
+        return r;
+    }
 
     private void AppendLine(char c)
     {

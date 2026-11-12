@@ -142,9 +142,9 @@ public partial class SettingsWindow : Window
 
     private void EditExceptions_Click(object sender, RoutedEventArgs e)
     {
-        var words = ExceptionsDialog.Edit(this, _app.Settings.Exceptions);
-        if (words == null) return;
-        _app.SetExceptions(words);
+        var w = new ExceptionsWindow(_app.Settings.Exceptions) { Owner = this };
+        if (w.ShowDialog() != true || w.Result == null) return;
+        _app.SetExceptions(w.Result);
         ShowExceptionsSummary();
     }
 

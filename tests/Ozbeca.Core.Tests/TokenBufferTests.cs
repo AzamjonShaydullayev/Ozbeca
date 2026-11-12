@@ -218,6 +218,22 @@ public class TokenBufferTests
     [InlineData("choy \b\b\b ", "ço ")]                // qaytarilgan so'z qisqartirildi — endi boshqa so'z, o'giriladi
     public void BackspaceUndoesConversion(string keys, string expected) => Assert.Equal(expected, new Typist().Type(keys).Screen);
 
+    // Qaytarilgan so'z shu holicha qoldirildi — ilova sanaydi, ikkinchi safar istisnoga qo'shadi.
+    [Theory]
+    [InlineData("choy \bv", "choy")]            // qaytardi va keyingi so'zni yozdi
+    [InlineData("choy \b\b ", "choy")]          // probelni o'chirib, o'zgartirmasdan tugatdi
+    [InlineData("osh \b\bxona ", null)]         // davom ettirdi (oshxona) — rad etish emas
+    [InlineData("choy v", null)]                // qaytarmadi
+    [InlineData("choy \b\b\b ", null)]          // qisqartirdi — boshqa so'z
+    public void RejectedWord(string keys, string? expected)
+    {
+        var t = new Typist();
+        string? got = null;
+        foreach (char c in keys) { t.Type(c.ToString()); got ??= t.B.TakeRejected(); }
+        Assert.Equal(expected, got);
+        Assert.Null(t.B.TakeRejected()); // bir marta
+    }
+
     // Userning o'girilmaydigan so'zlari (statik holat — boshqa testlarda shu so'zlar yo'q).
     [Fact]
     public void UserExceptions()

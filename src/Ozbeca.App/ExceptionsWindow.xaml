@@ -1,0 +1,122 @@
+<Window x:Class="Ozbeca.App.ExceptionsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Özbeça — o'girilmaydigan so'zlar" Width="540" SizeToContent="Height"
+        ResizeMode="NoResize" WindowStartupLocation="CenterOwner" ShowInTaskbar="False"
+        FontFamily="{StaticResource UiFont}" FontSize="13"
+        Background="{DynamicResource Bg}" Foreground="{DynamicResource Fg}">
+
+    <Window.Resources>
+        <!-- So'z yonidagi kichik × tugmasi -->
+        <Style x:Key="RemoveButton" TargetType="Button">
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Width" Value="20" />
+            <Setter Property="Height" Value="20" />
+            <Setter Property="Foreground" Value="{DynamicResource Muted}" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" CornerRadius="10" Background="Transparent">
+                            <TextBlock Text="&#xE711;" FontFamily="{StaticResource IconFont}" FontSize="9"
+                                       Foreground="{TemplateBinding Foreground}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource KeyCapLine}" />
+                                <Setter Property="Foreground" Value="{DynamicResource Fg}" />
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource KeyCapLine}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <StackPanel Margin="24,14,24,22">
+        <!-- Sarlavha -->
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Grid Width="44" Height="44" VerticalAlignment="Top">
+                <Border CornerRadius="12" Background="{StaticResource AccentGradient}" />
+                <Border CornerRadius="12" Background="{StaticResource Gloss}" />
+                <TextBlock Text="&#xE72E;" FontFamily="{StaticResource IconFont}" FontSize="19" Foreground="White"
+                           HorizontalAlignment="Center" VerticalAlignment="Center" />
+            </Grid>
+            <StackPanel Grid.Column="1" Margin="14,0,0,0" VerticalAlignment="Center">
+                <TextBlock Text="O'girilmaydigan so'zlar" Style="{StaticResource PageTitle}" FontSize="20" />
+                <TextBlock Text="Ismlar, brendlar, loginlar — bu so'zlar hech qachon o'zgarmaydi." Style="{StaticResource RowHint}" />
+            </StackPanel>
+        </Grid>
+
+        <!-- Qo'shish -->
+        <Border Margin="0,18,0,0" Height="42" CornerRadius="10" Background="{DynamicResource Field}"
+                BorderBrush="{DynamicResource KeyCapLine}" BorderThickness="1">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="&#xE710;" FontFamily="{StaticResource IconFont}" FontSize="13" Foreground="{DynamicResource Muted}"
+                           VerticalAlignment="Center" Margin="13,0,0,0" IsHitTestVisible="False" />
+                <TextBlock x:Name="InputHint" Text="Yangi so'z, masalan Shohjahon" Foreground="{DynamicResource Muted}"
+                           VerticalAlignment="Center" Margin="36,0,0,0" IsHitTestVisible="False" />
+                <TextBox x:Name="InputBox" Background="Transparent" BorderThickness="0" Foreground="{DynamicResource Fg}"
+                         CaretBrush="{DynamicResource Fg}" VerticalContentAlignment="Center" Padding="32,0,8,0"
+                         TextChanged="InputBox_TextChanged" PreviewKeyDown="InputBox_PreviewKeyDown"
+                         AutomationProperties.Name="Yangi so'z" />
+                <Button Grid.Column="1" Content="Qo'shish" Style="{StaticResource SubtleButton}" Padding="14,5"
+                        Margin="0,0,5,0" VerticalAlignment="Center" Click="Add_Click" />
+            </Grid>
+        </Border>
+
+        <!-- So'zlar -->
+        <Border Style="{StaticResource Group}" Margin="0,12,0,0" Padding="10" MinHeight="132">
+            <Grid>
+                <ScrollViewer MaxHeight="232" VerticalScrollBarVisibility="Auto" Focusable="False">
+                    <ItemsControl x:Name="WordList" Focusable="False">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Margin="3" CornerRadius="15" Padding="12,5,5,5" Background="{DynamicResource AccentSoft}"
+                                        BorderBrush="{DynamicResource AccentLine}" BorderThickness="1">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="{Binding}" VerticalAlignment="Center" FontSize="13" />
+                                        <Button Style="{StaticResource RemoveButton}" Margin="6,0,0,0" Tag="{Binding}"
+                                                Click="Remove_Click" ToolTip="Olib tashlash"
+                                                AutomationProperties.Name="{Binding StringFormat='{}{0} — olib tashlash'}" />
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+                <StackPanel x:Name="EmptyState" HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="360">
+                    <TextBlock Text="Hali so'z yo'q" HorizontalAlignment="Center" FontSize="14" FontWeight="SemiBold"
+                               Foreground="{DynamicResource Muted}" />
+                    <TextBlock Style="{StaticResource RowHint}" TextAlignment="Center" Margin="0,4,0,0"
+                               Text="Yuqoriga yozing yoki bir so'zni ikki marta Backspace bilan qaytaring — o'zi shu yerga qo'shiladi." />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Pastki qator -->
+        <Grid Margin="0,16,0,0">
+            <TextBlock x:Name="CountText" VerticalAlignment="Center" Foreground="{DynamicResource Muted}" FontSize="12.5" />
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Content="Bekor qilish" IsCancel="True" Style="{StaticResource SubtleButton}" Padding="14,8" Margin="0,0,10,0" />
+                <Button Content="Saqlash" Style="{StaticResource PrimaryButton}" MinWidth="120" Click="Save_Click" />
+            </StackPanel>
+        </Grid>
+    </StackPanel>
+</Window>

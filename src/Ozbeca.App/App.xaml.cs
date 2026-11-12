@@ -21,6 +21,7 @@ public partial class App : Application
     private NoticeWindow? _notice;
     private SettingsWindow? _settingsWindow;
     private bool _ready; // ishga tushish tugadi (tray bor)
+    private readonly Dictionary<string, int> _rejected = new(StringComparer.OrdinalIgnoreCase); // Backspace bilan qaytarilgan so'zlar
 
     internal Settings Settings { get; private set; } = null!;
 
@@ -82,6 +83,7 @@ public partial class App : Application
         _reverseHotkey.Pressed += _engine.TriggerReverse;
         _autoType = new AutoType(_hotkey.Handle);
         _autoType.SetAllowedApps(Settings.AutoTypeApps.Select(a => a.Process));
+        _autoType.WordRejected += OnWordRejected;
         _engine.Notify += msg => Dispatcher.BeginInvoke(() => Toast(msg));
         ApplyDelay();
         Ozbeca.Core.Transliterator.RestoreApostrophes = Settings.RestoreApostrophes;
@@ -263,6 +265,18 @@ public partial class App : Application
         Settings.PasteConvert = on;
         Settings.Save();
         ApplyAutoType();
+    }
+
+    /// <summary>Bir so'z ikki marta Backspace bilan qaytarilsa — o'girilmaydigan so'zlarga qo'shiladi (user qarori, 2026-11-12).</summary>
+    private void OnWordRejected(string word)
+    {
+        string w = word.Trim('"', '\'', '(', ')', '[', ']', ',', '.', '!', '?', ':', ';', '«', '»', '“', '”');
+        if (w.Length < 2 || Settings.Exceptions.Contains(w, StringComparer.OrdinalIgnoreCase)) return;
+        _rejected[w] = _rejected.TryGetValue(w, out int n) ? n + 1 : 1;
+        if (_rejected[w] < 2) return;
+        _rejected.Remove(w);
+        SetExceptions(Settings.Exceptions.Concat(new[] { w }).ToList());
+        Notice($"«{w}» endi o'girilmaydi", "Ikki marta qaytardingiz — o'girilmaydigan so'zlarga qo'shildi. Sozlamalardan olib tashlash mumkin.");
     }
 
     internal void SetExceptions(List<string> words)
