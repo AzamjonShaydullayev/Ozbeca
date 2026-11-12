@@ -5,13 +5,21 @@ namespace Ozbeca.Core;
 /// <summary>2026-yilgi yangi lotin matnini eski (1995) lotin alifbosiga qaytaradi: ö → o', ş → sh, ʼ → '.</summary>
 public static class ReverseConverter
 {
-    public static string ToOldLatin(string input)
+    public static string ToOldLatin(string input) => ToOldLatin(input, null);
+
+    /// <param name="map">null yoki input.Length + 1: map[i] — kirishdagi i-belgi chiqishda qayerdan boshlanadi, map[input.Length] — chiqish uzunligi.</param>
+    public static string ToOldLatin(string input, int[]? map)
     {
-        if (string.IsNullOrEmpty(input)) return input ?? string.Empty;
+        if (string.IsNullOrEmpty(input))
+        {
+            if (map != null) map[0] = 0;
+            return input ?? string.Empty;
+        }
 
         var sb = new StringBuilder(input.Length + input.Length / 8);
         for (int i = 0; i < input.Length; i++)
         {
+            if (map != null) map[i] = sb.Length;
             char c = input[i];
             switch (c)
             {
@@ -27,6 +35,7 @@ public static class ReverseConverter
                 default: sb.Append(c); break;
             }
         }
+        if (map != null) map[input.Length] = sb.Length;
         return sb.ToString();
     }
 

@@ -116,7 +116,11 @@ public static class CodeGuard
 
     /// <param name="cyrillic">Kirill so'zlar ham o'girilsin (fayl o'girish: faylda o'zbek kirill harflari bo'lsa).</param>
     /// <param name="map">null yoki text.Length + 1: map[i] — kirishdagi i-belgi chiqishda qayerdan boshlanadi.</param>
-    public static string ConvertProse(string text, bool cyrillic, int[]? map)
+    public static string ConvertProse(string text, bool cyrillic, int[]? map) =>
+        ConvertProse(text, new ConvertOptions(false, cyrillic, Transliterator.RestoreApostrophes), map);
+
+    /// <summary>options.Reverse — yangi → eski lotin; Dictionary — global RestoreApostrophes o'rniga shu chaqiruv uchun.</summary>
+    public static string ConvertProse(string text, ConvertOptions options, int[]? map)
     {
         if (string.IsNullOrEmpty(text))
         {
@@ -143,10 +147,14 @@ public static class CodeGuard
                 int[]? tm = null;
                 string result;
                 if (ShouldSkip(token)) result = token;
-                else if (cyrillic && CyrillicConverter.HasCyrillic(token))
+                else if (options.Cyrillic && CyrillicConverter.HasCyrillic(token))
+                {
                     result = CyrillicConverter.ToNewLatin(token, tm = map != null ? new int[token.Length + 1] : null);
-                else if (map != null) result = Transliterator.ToNewAlphabet(token, Transliterator.RestoreApostrophes, ref quoteOpen, out tm);
-                else result = Transliterator.ToNewAlphabet(token, Transliterator.RestoreApostrophes, ref quoteOpen);
+                    if (options.Reverse) result = ToOld(result, ref tm);
+                }
+                else if (options.Reverse) result = ToOldLatinMapped(token, map != null, out tm);
+                else if (map != null) result = Transliterator.ToNewAlphabet(token, options.Dictionary, ref quoteOpen, out tm);
+                else result = Transliterator.ToNewAlphabet(token, options.Dictionary, ref quoteOpen);
                 if (map != null) Fill(map, i, j - i, sb.Length, result.Length, tm);
                 sb.Append(result);
             }
@@ -154,6 +162,22 @@ public static class CodeGuard
         }
         if (map != null) map[text.Length] = sb.Length;
         return sb.ToString();
+    }
+
+    private static string ToOldLatinMapped(string token, bool withMap, out int[]? tm)
+    {
+        tm = withMap ? new int[token.Length + 1] : null;
+        return ReverseConverter.ToOldLatin(token, tm);
+    }
+
+    // Kirill → yangi lotin → eski lotin: ikki xarita kompozitsiyasi (m[i] = m2[m1[i]]).
+    private static string ToOld(string latin, ref int[]? tm)
+    {
+        if (tm == null) return ReverseConverter.ToOldLatin(latin);
+        var m2 = new int[latin.Length + 1];
+        string old = ReverseConverter.ToOldLatin(latin, m2);
+        for (int k = 0; k < tm.Length; k++) tm[k] = m2[tm[k]];
+        return old;
     }
 
     // Token xaritasi umumiy xaritaga; xarita yo'q (o'zgarmagan yoki NFC emas) — uzunlik bo'yicha proporsional.

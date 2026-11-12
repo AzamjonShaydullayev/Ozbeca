@@ -42,6 +42,34 @@ public class DocumentConverterTests : IDisposable
     }
 
     [Fact]
+    public void Txt_Reverse_ConvertsToOldAlphabet()
+    {
+        string input = Path.Combine(_dir, "r.txt");
+        File.WriteAllText(input, "Şahar öğil", new UTF8Encoding(false));
+        string output = DocumentConverter.OutputPath(input, true);
+        Assert.EndsWith("r (eski alifbo).txt", output);
+        Assert.True(DocumentConverter.Convert(input, output, new ConvertOptions(true, false, true)));
+        Assert.Equal("Shahar o'g'il", File.ReadAllText(output));
+    }
+
+    [Fact]
+    public void Docx_Reverse_SplitRunsKeepRunCount()
+    {
+        string doc = $"<w:document {Wns}><w:body><w:p><w:r><w:t>Ş</w:t></w:r><w:r><w:rPr><w:b/></w:rPr><w:t>ahar</w:t></w:r></w:p></w:body></w:document>";
+        string input = Zip("r.docx", Xml("[Content_Types].xml", "<Types/>"), Xml("word/document.xml", doc));
+        string output = DocumentConverter.OutputPath(input, true);
+        Assert.True(DocumentConverter.Convert(input, output, new ConvertOptions(true, false, true)));
+        string xml = Read(output, "word/document.xml");
+        Assert.Equal(2, System.Text.RegularExpressions.Regex.Matches(xml, "<w:t[ >]").Count);
+        Assert.Contains("<w:t>Sh</w:t>", xml);
+        Assert.Contains("<w:b /></w:rPr><w:t>ahar</w:t>", xml);
+    }
+
+    [Fact]
+    public void OutputPath_Reverse() =>
+        Assert.Equal(Path.Combine("C:\a", "Hisobot (eski alifbo).docx"), DocumentConverter.OutputPath(Path.Combine("C:\a", "Hisobot.docx"), true));
+
+    [Fact]
     public void Docx_SplitRunsKeepFormatting()
     {
         // Word "O'zbekiston" ni ikki run'ga bo'lgan: O | 'zbekiston (qalin). Tab — so'zlar yopishmasin.

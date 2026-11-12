@@ -40,27 +40,39 @@ public static class DocumentConverter
     }
 
     /// <summary>"Hisobot.docx" → "Hisobot (yangi alifbo).docx" (band bo'lsa — "(yangi alifbo 2)").</summary>
-    public static string OutputPath(string path)
+    public static string OutputPath(string path) => OutputPath(path, false);
+
+    /// <summary>reverse — "Hisobot (eski alifbo).docx".</summary>
+    public static string OutputPath(string path, bool reverse)
     {
+        string label = reverse ? "eski alifbo" : "yangi alifbo";
         string dir = Path.GetDirectoryName(path) ?? "", name = Path.GetFileNameWithoutExtension(path), ext = Path.GetExtension(path);
         for (int n = 1; ; n++)
         {
-            string p = Path.Combine(dir, $"{name} (yangi alifbo{(n > 1 ? " " + n : "")}){ext}");
+            string p = Path.Combine(dir, $"{name} ({label}{(n > 1 ? " " + n : "")}){ext}");
             if (!File.Exists(p)) return p;
         }
     }
 
     /// <summary>input → output. false — eski alifbodagi matn topilmadi (fayl yozilmaydi). Xatoda — exception (o'zbekcha).</summary>
-    public static bool Convert(string input, string output)
+    public static bool Convert(string input, string output) => Convert(input, output, null);
+
+    /// <param name="options">null — kirill avto-aniqlanadi (o'zbek harflari bo'lsa), lug'at — global sozlama.</param>
+    public static bool Convert(string input, string output, ConvertOptions? options)
     {
         string ext = Path.GetExtension(input).ToLowerInvariant();
-        if (TextExtensions.Contains(ext)) return ConvertTextFile(input, output);
-        if (OfficeExtensions.Contains(ext)) return ConvertPackage(input, output);
+        if (TextExtensions.Contains(ext)) return ConvertTextFile(input, output, options);
+        if (OfficeExtensions.Contains(ext)) return ConvertPackage(input, output, options);
         throw new NotSupportedException($"{ext} fayllari o'girilmaydi.");
     }
 
     /// <summary>Butun matn (txt). Kirill — matnda o'zbek kirill harflari bo'lsa.</summary>
-    public static string ConvertText(string text) => CodeGuard.ConvertProse(text, HasUzbekCyrillic(text), null);
+    public static string ConvertText(string text) => ConvertText(text, null);
+
+    public static string ConvertText(string text, ConvertOptions? options) =>
+        CodeGuard.ConvertProse(text, options ?? Auto(HasUzbekCyrillic(text)), null);
+
+    private static ConvertOptions Auto(bool cyrillic) => new(false, cyrillic, Transliterator.RestoreApostrophes);
 
     // Word/Excel'da ochiq turgan fayl ham o'qilsin (ular yozish huquqi bilan ushlab turadi).
     private static FileStream OpenShared(string path) =>
@@ -71,7 +83,7 @@ public static class DocumentConverter
 
     // ---- matn fayllari ----
 
-    private static bool ConvertTextFile(string input, string output)
+    private static bool ConvertTextFile(string input, string output, ConvertOptions? options)
     {
         byte[] bytes;
         using (var s = OpenShared(input)) { bytes = new byte[s.Length]; int n = 0; while (n < bytes.Length) n += s.Read(bytes, n, bytes.Length - n); }
@@ -94,7 +106,7 @@ public static class DocumentConverter
             }
         }
 
-        string converted = ConvertText(text);
+        string converted = ConvertText(text, options);
         if (converted == text) return false;
         using var fs = File.Create(output);
         byte[] bom = enc.GetPreamble(), body = enc.GetBytes(converted);
@@ -105,7 +117,7 @@ public static class DocumentConverter
 
     // ---- Office (OOXML: ZIP ichida XML) ----
 
-    private static bool ConvertPackage(string input, string output)
+    private static bool ConvertPackage(string input, string output, ConvertOptions? options)
     {
         ZipArchive src;
         var stream = OpenShared(input);
@@ -127,13 +139,13 @@ public static class DocumentConverter
                 using (var r = new StreamReader(e.Open(), Encoding.UTF8, true)) xml = r.ReadToEnd();
                 if (HasText.IsMatch(xml)) parts.Add((e.FullName, xml));
             }
-            bool cyrillic = parts.Any(p => HasUzbekCyrillic(p.Xml));
+            var o = options ?? Auto(parts.Any(p => HasUzbekCyrillic(p.Xml)));
 
             var renames = new Dictionary<string, string>(); // Excel jadval ustunlari: eski nom → yangi
             var docs = parts.Select(p => (p.Name, Doc: XDocument.Parse(p.Xml, LoadOptions.PreserveWhitespace))).ToList();
             var touched = new HashSet<string>();
             foreach (var (name, doc) in docs)
-                if (ConvertXml(doc, cyrillic, renames)) touched.Add(name);
+                if (ConvertXml(doc, o, renames)) touched.Add(name);
             if (renames.Count > 0)
                 foreach (var (name, doc) in docs)
                     if (RenameStructuredRefs(doc, renames)) touched.Add(name);
@@ -176,18 +188,18 @@ public static class DocumentConverter
     }
 
     /// <summary>Hujjat qismidagi barcha paragraflar (+ Excel jadval ustun nomlari). true — nimadir o'zgardi.</summary>
-    private static bool ConvertXml(XDocument doc, bool cyrillic, Dictionary<string, string> renames)
+    private static bool ConvertXml(XDocument doc, ConvertOptions options, Dictionary<string, string> renames)
     {
         bool changed = false;
         foreach (var p in doc.Descendants().Where(IsParagraph).ToList())
-            changed |= ConvertParagraph(p, cyrillic);
+            changed |= ConvertParagraph(p, options);
 
         // Jadval ustuni nomi sarlavha katagidagi matnga teng bo'lishi shart, aks holda Excel faylni "tiklaydi".
         foreach (var col in doc.Descendants(X + "tableColumn"))
         {
             var a = col.Attribute("name");
             if (a == null) continue;
-            string v = CodeGuard.ConvertProse(a.Value, cyrillic, null);
+            string v = CodeGuard.ConvertProse(a.Value, options, null);
             if (v == a.Value) continue;
             renames[a.Value] = v;
             a.Value = v;
@@ -222,7 +234,7 @@ public static class DocumentConverter
     private static bool IsText(XElement e) =>
         e.Name == W + "t" || e.Name == A + "t" || e.Name == X + "t" && e.Parent?.Name != X + "rPh"; // rPh — yapon o'qilishi
 
-    private static bool ConvertParagraph(XElement p, bool cyrillic)
+    private static bool ConvertParagraph(XElement p, ConvertOptions options)
     {
         var texts = new List<XElement>();
         var starts = new List<int>();
@@ -251,7 +263,7 @@ public static class DocumentConverter
 
         string old = sb.ToString();
         var map = new int[old.Length + 1];
-        string conv = CodeGuard.ConvertProse(old, cyrillic, map);
+        string conv = CodeGuard.ConvertProse(old, options, map);
         if (conv == old) return false;
 
         int prevEnd = 0;
