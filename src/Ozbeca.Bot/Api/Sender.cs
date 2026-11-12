@@ -13,6 +13,7 @@ public sealed class Sender(BotApi api)
     {
         // JsonNode nusxasi: chaqiruvchi payload'iga tegmaymiz, strip shu nusxada.
         var node = JsonSerializer.SerializeToNode(payload, Json.Options)!;
+        DropNulls(node);   // lug'atdagi null qiymatlar WhenWritingNull'ga bo'ysunmaydi: "reply_markup":null yuborilmasin
         var retried429 = false;
         var stripped = false;
         while (true)
@@ -33,6 +34,14 @@ public sealed class Sender(BotApi api)
 
     internal static bool IsDecorationError(string d) =>
         d.Contains("emoji", StringComparison.OrdinalIgnoreCase) || d.Contains("style", StringComparison.OrdinalIgnoreCase);
+
+    private static void DropNulls(JsonNode? n)
+    {
+        if (n is JsonObject o)
+            foreach (var (k, v) in o.ToList()) { if (v is null) o.Remove(k); else DropNulls(v); }
+        else if (n is JsonArray a)
+            foreach (var v in a) DropNulls(v);
+    }
 
     private static void Strip(JsonNode root)
     {

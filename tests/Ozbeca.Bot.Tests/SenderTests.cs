@@ -87,6 +87,31 @@ public class SenderTests
     }
 
     [Fact]
+    public async Task Null_values_are_not_sent()
+    {
+        var fake = new FakeTelegram();
+        await new Sender(new BotApi(fake, "1:X")).Send("sendMessage", new()
+        {
+            ["chat_id"] = 1, ["text"] = "a", ["reply_markup"] = null,
+            ["extra"] = new Dictionary<string, object?> { ["k"] = null, ["v"] = 1 },
+        });
+        var body = Assert.Single(fake.Calls).Body;
+        Assert.DoesNotContain("null", body.GetRawText());
+        Assert.False(body.TryGetProperty("reply_markup", out _));
+        Assert.Equal(1, body.GetProperty("extra").GetProperty("v").GetInt32());
+    }
+
+    [Fact]
+    public async Task Callback_answer_without_text_has_no_null_text()
+    {
+        using var h = new BotHarness();
+        h.Store.Touch(5);
+        await h.Callback("bc:go:77", null, null, uid: 5);   // admin emas: javob matnsiz
+        var a = Assert.Single(h.Sent("answerCallbackQuery"));
+        Assert.False(a.TryGetProperty("text", out _), a.GetRawText());
+    }
+
+    [Fact]
     public async Task Sender_strips_inside_inline_results()
     {
         var fake = new FakeTelegram { Respond = (_, _) => Flip() };
