@@ -16,7 +16,7 @@ internal sealed class InlineHandler(Sender sender, Store store)
     {
         if (q.Str("id") is not { } id || q.Obj("from") is not { } from || from.Long("id") is not { } userId) return;
         var query = (q.Str("query") ?? "").Trim();
-        if (query.Length > MaxQuery) query = query[..MaxQuery];
+        query = Cut(query, MaxQuery);
 
         var results = new List<object>();
         if (query.Length > 0)
@@ -48,8 +48,12 @@ internal sealed class InlineHandler(Sender sender, Store store)
         return new
         {
             type = "article", id, title,
-            description = text.Length > MaxDescription ? text[..MaxDescription] : text,
+            description = Cut(text, MaxDescription),
             input_message_content = new { message_text = text },
         };
     }
+
+    /// <summary>max UTF-16 birlikkacha; surrogate juft (emoji) bo'linmaydi — yolg'iz yarmi Telegram'da 400 beradi.</summary>
+    private static string Cut(string s, int max) =>
+        s.Length <= max ? s : s[..(char.IsHighSurrogate(s[max - 1]) ? max - 1 : max)];
 }

@@ -184,7 +184,7 @@ internal sealed class FileHandler(BotApi api, Sender sender, Store store, Premiu
         var ext = Path.GetExtension(n);
         var stem = Path.GetFileNameWithoutExtension(n).TrimStart('.');
         if (stem.Length == 0) stem = "file";
-        if (stem.Length > 80) stem = stem[..80];
+        if (stem.Length > 80) stem = stem[..(char.IsHighSurrogate(stem[79]) ? 79 : 80)];   // emoji juftini bo'lmaymiz
         return stem + ext;
     }
 

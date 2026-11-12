@@ -71,6 +71,18 @@ public sealed class InlineTests : IDisposable
     }
 
     [Fact]
+    public async Task Cuts_do_not_split_surrogate_pairs()
+    {
+        await Query(new string('a', 255) + "😀");   // 257 birlik: 256 da kesish juftni bo'lardi
+        Assert.Equal(new string('a', 255), Msg(Answer().GetProperty("results")[0]));
+
+        using var h2 = new BotHarness();
+        await h2.Handle(new { update_id = 1, inline_query = new { id = "iq2", from = new { id = 7, is_bot = false }, query = new string('a', 99) + "😀b", offset = "" } });
+        var r = Assert.Single(h2.Sent("answerInlineQuery")).GetProperty("results")[0];
+        Assert.Equal(new string('a', 99), r.GetProperty("description").GetString());
+    }
+
+    [Fact]
     public async Task Empty_query_returns_button_only()
     {
         await Query("  ");

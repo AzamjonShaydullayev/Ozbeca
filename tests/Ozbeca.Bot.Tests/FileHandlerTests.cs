@@ -215,6 +215,10 @@ public class FileHandlerTests : IDisposable
         Assert.True(Encoding.UTF8.GetByteCount(sent) < 255);
     }
 
+    [Fact]
+    public void SafeName_does_not_split_emoji() =>
+        Assert.Equal(new string('a', 79) + ".txt", FileHandler.SafeName(new string('a', 79) + "😀b.txt"));
+
     [Theory]
     [InlineData("../../x.txt", "x (yangi alifbo).txt")]
     [InlineData("..\\..\\x.txt", "x (yangi alifbo).txt")]
