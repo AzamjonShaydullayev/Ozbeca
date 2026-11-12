@@ -259,4 +259,75 @@ public class FileHandlerTests : IDisposable
         await Make().Handle(Msg("r.txt", 6), User(), default);
         Assert.Equal(2, _h.Sent("sendDocument").Count);
     }
+
+    // ---- C1: zararli Office XML (chuqur ichma-ich, element portlashi, DTD) ----
+
+    private const string WNs = "xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\"";
+
+    private static byte[] Pkg(params (string Name, string Xml)[] entries)
+    {
+        var ms = new MemoryStream();
+        using (var zip = new ZipArchive(ms, ZipArchiveMode.Create, true))
+            foreach (var (name, xml) in entries)
+                using (var s = zip.CreateEntry(name, CompressionLevel.Optimal).Open()) s.Write(Encoding.UTF8.GetBytes(xml));
+        return ms.ToArray();
+    }
+
+    private static string WordBody(string inner) => $"<w:document {WNs}><w:body>{inner}</w:body></w:document>";
+
+    private async Task AssertBrokenFast(byte[] bytes)
+    {
+        Serve("x.docx", bytes);
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        await Make().Handle(Msg("x.docx", bytes.Length), User(), default);
+        sw.Stop();
+        Assert.Equal(Texts.FileBroken, LastText());
+        Assert.Empty(_h.Sent("sendDocument"));
+        Assert.True(sw.Elapsed < TimeSpan.FromSeconds(3), $"sekin: {sw.Elapsed}");
+        Assert.Empty(Directory.GetFileSystemEntries(_work));
+    }
+
+    [Fact]
+    public async Task Deep_nesting_rejected_fast()
+    {
+        const int depth = 20_000;
+        var xml = WordBody("<w:p>" + string.Concat(Enumerable.Repeat("<w:r>", depth)) + "<w:t>Shahar</w:t>"
+            + string.Concat(Enumerable.Repeat("</w:r>", depth)) + "</w:p>");
+        await AssertBrokenFast(Pkg(("word/document.xml", xml)));
+    }
+
+    [Fact]
+    public async Task Element_count_blowup_rejected()
+    {
+        var xml = WordBody(string.Concat(Enumerable.Repeat("<w:p/>", 1_000_001)) + "<w:p><w:r><w:t>Shahar</w:t></w:r></w:p>");
+        await AssertBrokenFast(Pkg(("word/document.xml", xml)));
+    }
+
+    [Theory]
+    [InlineData("word/document.xml")]
+    [InlineData("_rels/.rels")]
+    public async Task Doctype_rejected(string part)
+    {
+        var dtd = "<?xml version=\"1.0\"?><!DOCTYPE r [<!ENTITY e \"Shahar\">]>";
+        var doc = WordBody("<w:p><w:r><w:t>" + (part == "word/document.xml" ? "&e;" : "Shahar") + "</w:t></w:r></w:p>");
+        var bytes = part == "word/document.xml"
+            ? Pkg(("word/document.xml", dtd.Replace("<!DOCTYPE r", "<!DOCTYPE w:document") + doc))
+            : Pkg(("_rels/.rels", dtd + "<r/>"), ("word/document.xml", doc));
+        await AssertBrokenFast(bytes);
+    }
+
+    [Theory]
+    [InlineData("a.docx", "word/document.xml", "<w:document " + WNs + "><w:body><w:p><w:r><w:t>Shahar</w:t></w:r></w:p></w:body></w:document>")]
+    [InlineData("a.xlsx", "xl/sharedStrings.xml", "<sst xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"><si><t>Shahar</t></si></sst>")]
+    [InlineData("a.pptx", "ppt/slides/slide1.xml", "<p:sld xmlns:p=\"http://schemas.openxmlformats.org/presentationml/2006/main\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\"><p:cSld><p:spTree><p:sp><p:txBody><a:p><a:r><a:t>Shahar</a:t></a:r></a:p></p:txBody></p:sp></p:spTree></p:cSld></p:sld>")]
+    public async Task Normal_office_files_still_convert(string name, string part, string xml)
+    {
+        const string rels = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\"><Relationship Id=\"rId1\" Type=\"t\" Target=\"x.xml\"/></Relationships>";
+        Serve(name, Pkg(("[Content_Types].xml", "<Types/>"), ("_rels/.rels", rels), (part, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + xml)));
+        await Make().Handle(Msg(name, 100), User(), default);
+        Assert.Single(_h.Sent("sendDocument"));
+        using var zip = new ZipArchive(new MemoryStream(_cap.Sent!));
+        using var r = new StreamReader(zip.GetEntry(part)!.Open());
+        Assert.Contains("Şahar", r.ReadToEnd());
+    }
 }

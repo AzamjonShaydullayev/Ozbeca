@@ -78,10 +78,11 @@ internal sealed class FileHandler(BotApi api, Sender sender, Store store, Premiu
                 // E'lon qilingan Length haqiqiy chegara: ZipArchive oqimi shu hajmdan keyin ochishni to'xtatadi.
                 using var zip = ZipFile.OpenRead(input);
                 if (zip.Entries.Sum(e => e.Length) > maxUnzipped) { await Say(user.Id, Texts.FileBroken, ct); return; }
+                ScanXml(zip);
             }
             if (!DocumentConverter.Convert(input, output, user.Settings.ToOptions())) { await Say(user.Id, Texts.FileNoChange, ct); return; }
         }
-        catch (Exception e) when (e is InvalidDataException or XmlException or IOException) { await Say(user.Id, Texts.FileBroken, ct); return; }
+        catch (Exception e) when (e is InvalidDataException or XmlException or IOException or OutOfMemoryException) { await Say(user.Id, Texts.FileBroken, ct); return; }
         catch (NotSupportedException) { await Say(user.Id, Texts.FileUnsupported, ct); return; }
         finally { Gate.Release(); }
 
@@ -111,6 +112,29 @@ internal sealed class FileHandler(BotApi api, Sender sender, Store store, Premiu
             {
                 stripped = true;
                 fields.Remove("caption_entities");
+            }
+        }
+    }
+
+    internal const int MaxXmlDepth = 64;
+    internal const int MaxXmlElements = 1_000_000;
+
+    /// <summary>
+    /// Core XDocument bilan hammasini xotiraga oladi (DTD yoqilgan): oldin har .xml/.rels qismni oqim bilan tekshiramiz.
+    /// DTD, chuqurlik > MaxXmlDepth yoki jami element > MaxXmlElements — XmlException/InvalidDataException (darhol to'xtaydi).
+    /// </summary>
+    internal static void ScanXml(ZipArchive zip)
+    {
+        var settings = new XmlReaderSettings { DtdProcessing = DtdProcessing.Prohibit, XmlResolver = null };
+        long elements = 0;
+        foreach (var e in zip.Entries)
+        {
+            if (!e.FullName.EndsWith(".xml", StringComparison.OrdinalIgnoreCase) && !e.FullName.EndsWith(".rels", StringComparison.OrdinalIgnoreCase)) continue;
+            using var r = XmlReader.Create(e.Open(), settings);
+            while (r.Read())
+            {
+                if (r.NodeType != XmlNodeType.Element) continue;
+                if (r.Depth > MaxXmlDepth || ++elements > MaxXmlElements) throw new InvalidDataException("XML too deep or too large");
             }
         }
     }
