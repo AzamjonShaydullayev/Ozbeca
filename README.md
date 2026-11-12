@@ -206,7 +206,7 @@ Soat yonidagi <img src="docs/icon.png" width="16" alt="Ö"> belgisini yoki ish s
 
 Yangi versiya chiqsa, hech narsa qilish shart emas:
 
-1. Kompyuter internetga ulangan bo'lsa, dastur kuniga bir marta GitHub'dagi oxirgi versiyani tekshiradi.
+1. Kompyuter internetga ulangan bo'lsa, dastur har 3 soatda GitHub'dagi oxirgi versiyani tekshiradi.
 2. Yangisi bo'lsa — `Ozbeca.exe` ni yuklab oladi va uning hajmi, **SHA-256** xeshi (GitHub bergan), nomi hamda versiyasini tekshiradi. Bittasi mos kelmasa, fayl o'chiriladi.
 3. Kompyuterdan bir daqiqa foydalanmay turganingizda o'zini almashtiradi va **«Özbeça yangilandi»** degan xabar chiqadi. Sozlamalaringiz saqlanadi.
 
@@ -246,7 +246,7 @@ Manbalar: [OʻRQ-1184-son Qonun (21.10.2026)](https://lex.uz/uz/docs/8548754) �
 ## 🔒 Maxfiylik
 
 - Dastur **hech narsa yubormaydi**: yozganlaringiz, sozlamalaringiz va boshqa ma'lumot kompyuterdan chiqmaydi.
-- Internetga faqat **avtomatik yangilanish** uchun ulanadi: kuniga bir marta GitHub'dan oxirgi versiya raqamini o'qiydi, yangisi bo'lsa `Ozbeca.exe` ni yuklab oladi. Buni sozlamalarda o'chirsangiz, dastur internetga umuman ulanmaydi.
+- Internetga faqat **avtomatik yangilanish** uchun ulanadi: har 3 soatda GitHub'dan oxirgi versiya raqamini o'qiydi, yangisi bo'lsa `Ozbeca.exe` ni yuklab oladi. Buni sozlamalarda o'chirsangiz, dastur internetga umuman ulanmaydi.
 - Yozish paytida o'girish uchun dastur bosilgan tugmalarni ko'radi — **faqat joriy so'zni** bilish uchun. Xotirada eng ko'pi bitta qator turadi, **diskka yozilmaydi** va probel, Enter yoki sichqoncha bosilganda unutiladi.
 - Bu funksiyani o'chirsangiz, klaviatura kuzatilmaydi — faqat <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>O</kbd> qoladi.
 - Kodi to'liq ochiq: [`src/Ozbeca.App/AutoType.cs`](src/Ozbeca.App/AutoType.cs).

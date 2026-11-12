@@ -10,7 +10,7 @@ using Ozbeca.Core;
 namespace Ozbeca.App;
 
 /// <summary>
-/// Avtomatik yangilanish (sozlamalardan o'chiriladi). Kuniga bir marta GitHub'dagi oxirgi release tekshiriladi;
+/// Avtomatik yangilanish (sozlamalardan o'chiriladi). Har 3 soatda GitHub'dagi oxirgi release tekshiriladi;
 /// yangisi bo'lsa Ozbeca.exe yuklanadi va hajmi, SHA-256 xeshi (GitHub bergan), nomi va versiyasi tekshiriladi.
 /// O'rnatish — user kompyuterdan bir daqiqa foydalanmay turganda: yangi exe ishga tushiriladi va u mavjud
 /// Install.UpdateOlder yo'li bilan eski nusxani yopib, o'rniga o'tadi. Hech narsa yuborilmaydi.
@@ -21,7 +21,8 @@ internal sealed class Updater
     public static readonly string Dir = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Ozbeca", "update");
 
-    private static readonly TimeSpan CheckInterval = TimeSpan.FromDays(1);
+    // Kuniga 1 marta sekin edi: release'dan keyin user bir kun kutardi. 3 soat — GitHub'ning 60 so'rov/soat chegarasidan juda uzoq.
+    private static readonly TimeSpan CheckInterval = TimeSpan.FromHours(3);
     private static readonly TimeSpan RetryInterval = TimeSpan.FromHours(1); // internet yo'q yoki GitHub javob bermadi
     private const uint IdleMs = 60_000;
 
