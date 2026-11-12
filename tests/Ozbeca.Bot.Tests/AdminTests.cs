@@ -171,4 +171,22 @@ public class AdminTests
         Assert.Empty(h.Sent("copyMessage"));
         Assert.Null(h.Router.Admin.Current);
     }
+
+    [Fact]
+    public async Task Same_message_id_from_two_admins_both_broadcast()
+    {
+        using var h = new BotHarness();
+        h.Store.Touch(1);
+        var admin = new Ozbeca.Bot.Handlers.AdminHandler(h.Api, new Sender(h.Api), h.Store, h.Config with { Admins = new HashSet<long> { 98, 99 } });
+        foreach (var uid in new long[] { 99, 98 })
+        {
+            var cq = BotHarness.Json(new { id = "cb" + uid, from = new { id = uid, is_bot = false }, data = "bc:go:77",
+                message = new { message_id = 5, date = 1, chat = new { id = uid, type = "private" } } });
+            await admin.OnCallback(cq, h.Store.Touch(uid), CancellationToken.None);
+            await admin.Current!;
+        }
+        Assert.Contains(h.Sent("copyMessage"), b => b.Long("from_chat_id") == 99);
+        Assert.Contains(h.Sent("copyMessage"), b => b.Long("from_chat_id") == 98);
+        Assert.DoesNotContain(h.Sent("answerCallbackQuery"), b => b.Str("text") == Texts.BroadcastDone);
+    }
 }

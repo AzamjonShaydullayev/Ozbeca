@@ -13,7 +13,8 @@ internal sealed class AdminHandler(BotApi api, Sender sender, Store store, BotCo
     private readonly Broadcaster _broadcaster = new(api, store, TimeSpan.FromMilliseconds(40));   // ~25/s
     private readonly object _lock = new();
     private CancellationTokenSource? _cts;
-    private readonly HashSet<int> _started = [];   // allaqachon tarqatilgan manba xabarlar (kech bosilgan bc:go qayta tarqatmasin)
+    // allaqachon tarqatilgan manba xabarlar (kech bosilgan bc:go qayta tarqatmasin); message_id faqat chat ichida yagona
+    private readonly HashSet<(long ChatId, int MessageId)> _started = [];
 
     /// <summary>Oxirgi broadcast vazifasi. Testlar kutishi uchun.</summary>
     internal Task? Current { get; private set; }
@@ -82,7 +83,7 @@ internal sealed class AdminHandler(BotApi api, Sender sender, Store store, BotCo
         lock (_lock)
         {
             if (Current is { IsCompleted: false }) return StartResult.Busy;
-            if (!_started.Add(target)) return StartResult.AlreadySent;
+            if (!_started.Add((adminId, target))) return StartResult.AlreadySent;   // manba admin lichkasida
             var cts = _cts = new CancellationTokenSource();
             // poller token'i ataylab uzatilmaydi: broadcast per-user zanjirdan mustaqil, to'xtatish — bc:stop
             Current = Task.Run(() => RunBroadcast(adminId, target, cts.Token));
