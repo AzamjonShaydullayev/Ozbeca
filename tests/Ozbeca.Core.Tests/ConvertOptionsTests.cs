@@ -2,6 +2,9 @@ using Ozbeca.Core;
 
 namespace Ozbeca.Core.Tests;
 
+// Statik Transliterator.RestoreApostrophes ni o'zgartiradi: boshqa Core testlari bilan parallel ishlamasin.
+[CollectionDefinition("GlobalSettings", DisableParallelization = true)]
+[Collection("GlobalSettings")]
 public class ConvertOptionsTests
 {
     [Fact] public void Reverse_map_tracks_growth()
