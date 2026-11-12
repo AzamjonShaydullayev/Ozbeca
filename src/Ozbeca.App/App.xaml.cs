@@ -286,7 +286,31 @@ public partial class App : Application
         if (_rejected[w] < 2) return;
         _rejected.Remove(w);
         SetExceptions(Settings.Exceptions.Concat(new[] { w }).ToList());
-        Notice($"«{w}» endi o'girilmaydi", "Ikki marta qaytardingiz — o'girilmaydigan so'zlarga qo'shildi. Sozlamalardan olib tashlash mumkin.");
+        NoticeWhenIdle($"«{w}» endi o'girilmaydi", "Ikki marta qaytardingiz — o'girilmaydigan so'zlarga qo'shildi. Sozlamalardan olib tashlash mumkin.");
+    }
+
+    private (string Title, string Message)? _idleNotice;
+    private System.Windows.Threading.DispatcherTimer? _idleNoticeTimer;
+
+    /// <summary>
+    /// Yozish paytidagi bildirishnoma — user to'xtagach (1,5 s). Hook va oynalar bitta thread'da: oynani birinchi marta
+    /// chizish ~1 s olishi mumkin, shu payt tugmalar kutib qoladi (Sandbox E2E'da "kutish vaqti tugadi" bo'ldi).
+    /// </summary>
+    private void NoticeWhenIdle(string title, string message)
+    {
+        _idleNotice = (title, message);
+        if (_idleNoticeTimer == null)
+        {
+            _idleNoticeTimer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(500) };
+            _idleNoticeTimer.Tick += (_, _) =>
+            {
+                if (Updater.IdleFor() < 1500) return;
+                _idleNoticeTimer.Stop();
+                if (_idleNotice is var (t, m)) Notice(t, m);
+                _idleNotice = null;
+            };
+        }
+        _idleNoticeTimer.Start();
     }
 
     internal void SetExceptions(List<string> words)

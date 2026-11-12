@@ -156,7 +156,8 @@ internal sealed class Updater
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
     }
 
-    private static uint IdleFor()
+    /// <summary>Oxirgi klaviatura/sichqoncha harakatidan beri o'tgan ms.</summary>
+    internal static uint IdleFor()
     {
         var info = new LASTINPUTINFO { cbSize = (uint)Marshal.SizeOf<LASTINPUTINFO>() };
         return GetLastInputInfo(ref info) ? unchecked((uint)Environment.TickCount - info.dwTime) : 0;
