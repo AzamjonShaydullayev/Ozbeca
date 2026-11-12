@@ -112,10 +112,27 @@ function Get-ExpectedCode([string]$typed) {
     return $out.ToString()
 }
 
+# Dastur kabi (App.OnWordRejected): qaytarilib, shu holicha qoldirilgan so'z ikkinchi safar istisnoga qo'shiladi.
+# Holat butun sinov bo'yicha (dastur bitta jarayon) — Get-Expected jumlalar yozilgan tartibda chaqiriladi.
+$script:Rejected = @{}
+$script:Exceptions = [System.Collections.Generic.List[string]]::new()
+function Note-Rejected($tb) {
+    $r = $tb.TakeRejected()
+    if (-not $r) { return }
+    $w = $r.Trim([char[]]('"', "'", '(', ')', '[', ']', ',', '.', '!', '?', ':', ';', [char]0xAB, [char]0xBB, [char]0x201C, [char]0x201D))
+    if ($w.Length -lt 2 -or ($script:Exceptions | Where-Object { $_ -ieq $w })) { return }
+    $script:Rejected[$w] = 1 + [int]$script:Rejected[$w]
+    if ($script:Rejected[$w] -lt 2) { return }
+    $script:Rejected.Remove($w)
+    $script:Exceptions.Add($w)
+    [Ozbeca.Core.Transliterator]::SetExceptions($script:Exceptions)
+}
+
 function Get-Expected([string]$typed) {
     $tb = New-Object Ozbeca.Core.TokenBuffer
     $out = New-Object System.Text.StringBuilder
     foreach ($c in $typed.ToCharArray()) {
+        Note-Rejected $tb
         switch ($c) {
             ' ' {
                 $del = 0; $rep = ''
@@ -147,6 +164,7 @@ function Get-Expected([string]$typed) {
             }
         }
     }
+    Note-Rejected $tb
     return $out.ToString()
 }
 
