@@ -172,6 +172,48 @@ public class AdminTests
         Assert.Null(h.Router.Admin.Current);
     }
 
+    /// <summary>Telegram 400 bermasligi uchun: null qiymat yo'q, matn 1..4096, entity'lar matn ichida (UTF-16).</summary>
+    private static void AssertValidPayload(System.Text.Json.JsonElement b)
+    {
+        static void Walk(System.Text.Json.JsonElement e, string path)
+        {
+            Assert.True(e.ValueKind != System.Text.Json.JsonValueKind.Null, "null: " + path);
+            if (e.ValueKind == System.Text.Json.JsonValueKind.Object) foreach (var p in e.EnumerateObject()) Walk(p.Value, path + "." + p.Name);
+            if (e.ValueKind == System.Text.Json.JsonValueKind.Array) foreach (var x in e.EnumerateArray()) Walk(x, path + "[]");
+        }
+        Walk(b, "$");
+        var text = b.Str("text")!;
+        Assert.InRange(text.Length, 1, 4096);
+        if (b.TryGetProperty("entities", out var ents))
+            foreach (var en in ents.EnumerateArray())
+                Assert.InRange(en.GetProperty("offset").GetInt32() + en.GetProperty("length").GetInt32(), 1, text.Length);
+    }
+
+    [Fact]
+    public async Task Stat_payload_is_valid_for_telegram()
+    {
+        using var h = new BotHarness();
+        h.Store.AddUsage("text", 120); h.Store.AddUsage("file", 0); h.Store.AddUsage("inline", 6);
+        await h.Text("/stat", uid: 99, entities: Cmd0);
+        var stat = h.Sent().Last();
+        Assert.StartsWith(Texts.StatTitle, stat.Str("text"));
+        AssertValidPayload(stat);
+    }
+
+    [Fact]
+    public async Task Broadcast_final_edit_valid_and_falls_back_to_new_message()
+    {
+        using var h = new BotHarness();
+        h.Store.Touch(1);
+        h.Fake.Respond = (m, b) => m == "editMessageText" && b.Str("text")!.StartsWith(Texts.BroadcastDone)
+            ? "{\"ok\":false,\"error_code\":400,\"description\":\"Bad Request: message to edit not found\"}"
+            : FakeTelegram.DefaultResponse;
+        await h.Callback("bc:go:77", null, null, uid: 99);
+        await h.Router.Admin.Current!;
+        foreach (var b in h.Sent("editMessageText").Concat(h.Sent())) AssertValidPayload(b);
+        Assert.Contains(h.Sent(), b => b.Long("chat_id") == 99 && b.Str("text")!.StartsWith(Texts.BroadcastDone));
+    }
+
     [Fact]
     public async Task Same_message_id_from_two_admins_both_broadcast()
     {

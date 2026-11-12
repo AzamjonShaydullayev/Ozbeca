@@ -107,8 +107,8 @@ internal sealed class AdminHandler(BotApi api, Sender sender, Store store, BotCo
                 if (progressMsg is { } pm) await Edit(adminId, pm, Summary(Texts.BroadcastRunning, last), stopMarkup, default);
             var (sent, failed) = await run;
             var final = Summary(ct.IsCancellationRequested ? Texts.BroadcastStopped : Texts.BroadcastDone, (sent, failed, ids.Count - sent - failed));
-            if (progressMsg is { } m) await Edit(adminId, m, final, null, default);
-            else await Say(adminId, final, null, default);
+            // tahrir o'xshamasa (xabar o'chirilgan, 400) — yakun yangi xabar bilan, admin "Yuborilmoqda." da qolmasin
+            if (progressMsg is not { } m || !await Edit(adminId, m, final, null, default)) await Say(adminId, final, null, default);
         }
         catch (Exception e) { Log.Error($"broadcast: {e.GetType().Name}"); }
         finally
@@ -124,10 +124,10 @@ internal sealed class AdminHandler(BotApi api, Sender sender, Store store, BotCo
     private Task Say(long chatId, string text, object? markup, CancellationToken ct) =>
         sender.Send("sendMessage", new() { ["chat_id"] = chatId, ["text"] = text, ["reply_markup"] = markup }, ct);
 
-    private async Task Edit(long chatId, int messageId, string text, object? markup, CancellationToken ct)
+    private async Task<bool> Edit(long chatId, int messageId, string text, object? markup, CancellationToken ct)
     {
-        try { await sender.Send("editMessageText", new() { ["chat_id"] = chatId, ["message_id"] = messageId, ["text"] = text, ["reply_markup"] = markup }, ct); }
-        catch (Exception e) when (e is BotApiException or HttpRequestException or OperationCanceledException) { }   // "message is not modified", tarmoq xatosi — muhim emas
+        try { await sender.Send("editMessageText", new() { ["chat_id"] = chatId, ["message_id"] = messageId, ["text"] = text, ["reply_markup"] = markup }, ct); return true; }
+        catch (Exception e) when (e is BotApiException or HttpRequestException or OperationCanceledException) { return false; }   // "message is not modified", tarmoq xatosi
     }
 
     private sealed class Progress(Action<(int, int, int)> set) : IProgress<(int Sent, int Failed, int Left)>
