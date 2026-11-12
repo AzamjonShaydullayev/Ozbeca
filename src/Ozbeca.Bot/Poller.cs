@@ -15,6 +15,10 @@ public sealed class Poller(BotApi api, Router router)
     /// <summary>401 (token yaroqsiz) dan keyingi kutish.</summary>
     public TimeSpan AuthRetryDelay { get; init; } = TimeSpan.FromSeconds(60);
 
+    /// <summary>Shundan ko'p handler kutib tursa yangi getUpdates so'ralmaydi (backpressure). Testlarda kichik.</summary>
+    internal int MaxPending { get; init; } = DefaultMaxPending;
+    internal const int DefaultMaxPending = 500;
+
     private static readonly string[] UserKinds = ["message", "callback_query", "inline_query", "chosen_inline_result", "widget_query"];
     private readonly object _lock = new();
     private readonly Dictionary<long, Task> _tails = new();
@@ -63,6 +67,8 @@ public sealed class Poller(BotApi api, Router router)
         {
             while (!ct.IsCancellationRequested)
             {
+                // Backpressure: handler'lar ulgurmasa yangi update olmaymiz (Telegram ularni saqlab turadi).
+                while (running.Count > MaxPending) await Task.Delay(50, ct);
                 JsonElement updates;
                 try
                 {

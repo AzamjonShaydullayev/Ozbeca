@@ -102,4 +102,30 @@ public sealed class PollerTests
         await new Poller(h.Api, h.Router) { RetryDelay = TimeSpan.Zero, AuthRetryDelay = TimeSpan.FromHours(1) }.RunAsync(cts.Token);
         Assert.Equal(1, polls);
     }
+
+    [Fact]
+    public async Task No_new_getUpdates_while_pending_over_limit()
+    {
+        using var h = new BotHarness();
+        using var cts = new CancellationTokenSource();
+        using var release = new ManualResetEventSlim();
+        var polls = 0;
+        var batch = string.Join(",", Enumerable.Range(1, 5).Select(i => Upd(i, 100 + i, "Shahar")));
+        h.Fake.Respond = (method, _) =>
+        {
+            if (method == "sendMessage") { release.Wait(5000); return FakeTelegram.DefaultResponse; }
+            if (method != "getUpdates") return FakeTelegram.DefaultResponse;
+            if (Interlocked.Increment(ref polls) == 1) return "{\"ok\":true,\"result\":[" + batch + "]}";
+            cts.Cancel();
+            return "{\"ok\":true,\"result\":[]}";
+        };
+        var run = new Poller(h.Api, h.Router) { MaxPending = 2 }.RunAsync(cts.Token);
+        await Task.Delay(500);
+        var whileBlocked = Volatile.Read(ref polls);
+        release.Set();
+        await run;
+        Assert.Equal(1, whileBlocked);   // 5 handler kutmoqda (> 2): yangi getUpdates yo'q
+        Assert.Equal(2, polls);          // bo'shagach so'rov davom etdi
+        Assert.Equal(5, h.Sent().Count);
+    }
 }

@@ -23,6 +23,9 @@ internal sealed class FileHandler(BotApi api, Sender sender, Store store, Premiu
 
     private readonly ConcurrentDictionary<long, byte> _busy = new();
 
+    /// <summary>Gate'ni shuncha kutadi, keyin FileBusy (Poller uyasi cheksiz band bo'lmasin). Testlarda kichik.</summary>
+    internal TimeSpan GateTimeout { get; init; } = TimeSpan.FromSeconds(60);
+
     public async Task Handle(JsonElement message, UserRow user, CancellationToken ct)
     {
         var doc = message.Obj("document");
@@ -71,7 +74,8 @@ internal sealed class FileHandler(BotApi api, Sender sender, Store store, Premiu
         catch (Exception e) when (e is IOException or HttpRequestException || e is TaskCanceledException && !ct.IsCancellationRequested)
         { await Say(user.Id, Texts.FileBroken, ct); return; }
 
-        await Gate.WaitAsync(ct);   // MemoryMax: bir vaqtda bitta o'girish
+        // MemoryMax: bir vaqtda bitta o'girish; uzoq navbatda FileBusy (ish papkasini Handle tozalaydi)
+        if (!await Gate.WaitAsync(GateTimeout, ct)) { await Say(user.Id, Texts.FileBusy, ct); return; }
         try
         {
             if (DocumentConverter.OfficeExtensions.Contains(ext))

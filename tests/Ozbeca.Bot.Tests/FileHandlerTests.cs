@@ -230,6 +230,25 @@ public class FileHandlerTests : IDisposable
     }
 
     [Fact]
+    public async Task Gate_timeout_replies_busy_and_cleans_up()
+    {
+        Serve("g.txt", Encoding.UTF8.GetBytes("Shahar"));
+        FileHandler.Gate.Wait();
+        try
+        {
+            var api = new BotApi(_cap, _h.Config.Token);
+            var handler = new FileHandler(api, new Sender(api), _h.Store, PremiumEmoji.LoadEmbedded(false), _work)
+                { GateTimeout = TimeSpan.FromMilliseconds(200) };
+            await handler.Handle(Msg("g.txt", 6), User(), default).WaitAsync(TimeSpan.FromSeconds(5));
+            Assert.Equal(Texts.FileBusy, LastText());
+            Assert.Empty(_h.Sent("sendDocument"));
+            Assert.Empty(Directory.GetFileSystemEntries(_work));
+        }
+        finally { FileHandler.Gate.Release(); }
+        Assert.Equal(1, FileHandler.Gate.CurrentCount);   // olinmagan qulf qo'yib yuborilmadi
+    }
+
+    [Fact]
     public async Task Conversion_gate_serialises_conversions()
     {
         Serve("g.txt", Encoding.UTF8.GetBytes("Shahar"));
