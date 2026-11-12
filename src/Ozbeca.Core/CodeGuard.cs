@@ -56,9 +56,15 @@ public static class CodeGuard
     // O'Brien, O’Malley — o'zbekchada O' dan keyin kichik harf (O'zbekiston) yoki hammasi katta (O'ZBEK).
     private static readonly Regex IrishName = new(@"^O['’][A-Z][a-z]+$", RegexOptions.CultureInvariant);
 
+    // Bosh harfli sh/ch li ism, o'zbek lotinida bo'lmaydigan imlo bilan: Michelle, Charlie, Ashley, Schumacher, Deutsche.
+    // Richard, Chris, Bush, Manchester o'zbekchada ham shunday yoziladi — ular gap kontekstisiz ajralmaydi.
+    // sch(?![iy]) — tennischi, schyot o'zbekcha. bitg eval to'plamida: en 90.13 → 90.70%, uz/apostrofsiz o'zgarmadi.
+    private static readonly Regex ForeignName = new(
+        @"^(?=[A-Z][a-z]+$)(?=.*[sc]h).*(?:ee|oo|ck|ph|gh|ea|[Ss]ch(?![iy])|ey$|ie$|lle$)", RegexOptions.CultureInvariant);
+
     private static bool IsEnglishPart(string word)
     {
-        if (EnglishWords.Value.Contains(word) || Contraction.IsMatch(word)) return true;
+        if (EnglishWords.Value.Contains(word) || Contraction.IsMatch(word) || ForeignName.IsMatch(word)) return true;
         for (int i = 0; i < word.Length; i++)
         {
             char c = char.ToLowerInvariant(word[i]);

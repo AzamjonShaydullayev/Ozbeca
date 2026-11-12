@@ -88,6 +88,16 @@ public class CodeGuardTests
     [InlineData("O'Brien", true)]
     [InlineData("O'zbekiston", false)]
     [InlineData("O'ZBEKISTON", false)]
+    [InlineData("Michelle", true)]   // bosh harfli ism, o'zbekchada bo'lmaydigan imlo
+    [InlineData("Charlie", true)]
+    [InlineData("Ashley", true)]
+    [InlineData("Schumacher", true)]
+    [InlineData("Deutsche", true)]
+    [InlineData("Richard", false)]   // o'zbekchada ham Richard → Riçard
+    [InlineData("Tennischilarimiz", false)]
+    [InlineData("Schyot", false)]
+    [InlineData("Dushanbe", false)]
+    [InlineData("Shoshilmang", false)]
     [InlineData("", false)]
     public void EnglishWords(string token, bool expected)
     {
