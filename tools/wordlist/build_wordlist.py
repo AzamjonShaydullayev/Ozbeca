@@ -15,9 +15,13 @@ Manbalar (yuklab oling, repoga qo'shilmaydi):
   https://downloads.wortschatz-leipzig.de/corpora/uzb_wikipedia_2021_100K.tar.gz    (CC BY 4.0)
   https://raw.githubusercontent.com/first20hours/google-10000-english/master/google-10000-english-no-swears.txt
   https://raw.githubusercontent.com/uzbek-net/uz-hunspell/master/uz_UZ.dic
+  https://raw.githubusercontent.com/dtwinuz/bitg/main/crates/bitg-core/src/data/uz.tsv   (--lexicon, ixtiyoriy)
+      kirill matndan olingan so'z chastotasi (Leipzig CC BY 4.0, Common Voice CC0, Tatoeba CC BY 2.0 FR; bitg — MIT /
+      Apache-2.0). Kirillda ў/ғ alohida harf — tutuqsiz shakl haqiqiy so'zmi, shu aytadi. Lotin korpusida kam uchragan
+      qo'shimchali shakllarni beradi (bo'lishi, o'rtasida): o'zak + qo'shimcha tekshiruvi ham kirill chastotasi bilan.
 
 Ishlatish:
-  python build_wordlist.py OUT.txt EN10K.txt uz_UZ.dic SENTENCES1.txt [SENTENCES2.txt ...]
+  python build_wordlist.py OUT.txt EN10K.txt uz_UZ.dic SENTENCES1.txt [SENTENCES2.txt ...] [--lexicon uz.tsv]
 """
 import bisect
 import collections
@@ -29,6 +33,9 @@ MIN_FULL = 3      # tutuqli shakl korpusda kamida shuncha marta
 RATIO = 0.03      # toza tutuqsiz / tutuqli — bundan ko'p bo'lsa ikki ma'noli
 ABS = 6           # bundan kam toza uchrash — tasodifiy xato deb olinadi
 STEM_MIN = 30     # o'zak alohida so'z sifatida (tutuqli) kamida shuncha uchrasa bo'linish tekshiriladi
+LEX_MIN = 1.5     # --lexicon: kirill korpusida kamida ~3 marta (og'irlik log10(chastota)+1)
+LEX_STEM_GAP = 1.5  # tutuqsiz o'zak tutuqlisidan ~30 marta siyrak bo'lsa — o'zbekchada deyarli uchramaydi
+LEX_STEM_MIN = 2.0  # va kirillda 10 martadan kam uchragan tutuqsiz o'zak (bol, ism, qisqartma) — shovqin
 
 APOS = "'`’‘ʻʼ´′＇‛"
 TOK = re.compile(r"[A-Za-z" + re.escape(APOS) + r"]+")
@@ -186,8 +193,27 @@ def read_corpus(paths):
     return full, {k: c.most_common(1)[0][0] for k, c in forms.items()}, clean
 
 
+def read_lexicon(path):
+    """bitg uz.tsv: kirill matndan olingan eski lotin so'z → log10(chastota)+1 (0 — kirillda uchramaydi).
+    Kirillda ў/ғ alohida harf, shuning uchun tutuqsiz shakl (ot, qol) kirillda uchrasa — u haqiqiy so'z."""
+    lex = {}
+    for line in open(path, encoding="utf-8"):
+        if line.startswith("#"):
+            continue
+        cols = line.rstrip("\n").split("\t")
+        if len(cols) >= 2 and cols[1]:
+            lex[cols[0]] = float(cols[1])
+    return lex
+
+
 def main():
-    out_path, en_path, dic_path, *sentences = [a for a in sys.argv[1:] if a != "-v"]
+    args = [a for a in sys.argv[1:] if a != "-v"]
+    lex = {}
+    if "--lexicon" in args:
+        i = args.index("--lexicon")
+        lex = read_lexicon(args[i + 1])
+        del args[i:i + 2]
+    out_path, en_path, dic_path, *sentences = args
     full, form, clean = read_corpus(sentences)
     en = {w.strip() for w in open(en_path, encoding="utf-8") if w.strip()}
 
@@ -215,14 +241,17 @@ def main():
         pf = family(p, clean, clean_sorted, cls)
         return pf > ABS and pf > RATIO * family(p, full, full_sorted, cls)
 
-    def ambiguous(k, f, n):
-        """Tutuqsiz kalit boshqa haqiqiy so'z bo'la oladimi — sababi yoki None."""
+    def ambiguous(k, f, n, stems=True):
+        """Tutuqsiz kalit boshqa haqiqiy so'z bo'la oladimi — sababi yoki None.
+        stems=False: o'zak + qo'shimcha bo'linishi tekshirilmaydi (kirill korpusi buni o'zi aytadi)."""
         if k in en or k in ENGLISH_HOMOGRAPHS:
             return "inglizcha"
         if k in lemmas:
             return "hunspell lemma"
         if clean[k] > ABS and clean[k] > RATIO * n:
             return "korpus: o'zi"
+        if not stems:
+            return None
         for cut in range(max(2, last_mark(f) + 1), len(k) + 1):
             p, s = k[:cut], k[cut:]
             cls = classes(s) if s else {"N", "V"}
@@ -234,6 +263,25 @@ def main():
                 return "korpus: o'zak"
         return None
 
+    def lex_stem(k, f):
+        """Kirill korpusi bo'yicha o'zak tekshiruvi: boshliq + dan (bo'shliqdan emas), och + maydi (o'chmaydi emas).
+        Tutuqsiz o'zak kirillda o'z holicha uchrasa va tutuqli o'zakdan LEX_STEM_GAP dan kam siyrak bo'lsa — ikki ma'noli.
+        bol + ishi — bol kirillda kam (1.88), shuning uchun bo'lishi olinadi; ot + dim (3.04 / o't 4.09) — olinmaydi."""
+        stem_full, j = "", 0
+        for cut in range(1, len(k)):
+            while len(key(stem_full)) < cut:
+                stem_full += f[j]
+                j += 1
+            while j < len(f) and f[j] == "'":
+                stem_full += f[j]
+                j += 1
+            if cut <= last_mark(f) or not classes(k[cut:]):
+                continue
+            bare = lex.get(k[:cut], 0)
+            if bare >= LEX_STEM_MIN and bare >= lex.get(stem_full, 0) - LEX_STEM_GAP:
+                return "kirill: o'zak"
+        return None
+
     result, stats = [], collections.Counter()
     for k, n in full.items():
         f = form[k]
@@ -243,6 +291,30 @@ def main():
         if why:
             stats[why] += 1
             continue
+        result.append(f)
+
+    # Kirill korpusidagi shakllar (bitg uz.tsv): lotin korpusida kam uchragan qo'shimchali so'zlar (bo'lishi, o'rtasida).
+    # Tutuqsiz shakli kirillda ham uchrasa — ikki ma'noli, olinmaydi; qolganlari yuqoridagi tekshiruvlardan o'tadi.
+    keys = {key(f) for f in result}
+    by_key = collections.defaultdict(list)   # yog'i va yo'g'i — kaliti bir xil (yogi), qaysi biri ekani noma'lum
+    for f, weight in lex.items():
+        if weight > 0:
+            by_key[key(f)].append(weight)
+    for f, weight in lex.items():
+        k = key(f)
+        if k == f or k in keys or "'" in k or len(k) < 3 or weight < LEX_MIN or not re.fullmatch(r"[a-z']+", f):
+            continue
+        if lex.get(k, 0) > 0:
+            stats["kirill: tutuqsizi ham bor"] += 1
+            continue
+        if any(w != weight and w >= weight - LEX_STEM_GAP for w in by_key[k]) or by_key[k].count(weight) > 1:
+            stats["kirill: bir nechta shakl"] += 1
+            continue
+        why = ambiguous(k, f, max(MIN_FULL, round(10 ** (weight - 1))), stems=False) or lex_stem(k, f)
+        if why:
+            stats["kirill: " + why] += 1
+            continue
+        keys.add(k)
         result.append(f)
 
     # So'zlashuv shakllari (bo'madi, to'rimas, to'g'irlash) — korpusda deyarli yo'q, qoida bilan yasaladi va
@@ -268,6 +340,8 @@ def main():
     with open(out_path, "w", encoding="utf-8", newline="\n") as f:
         f.write("# Özbeça — tutuqsiz yozilgan o'/g' so'zlar (bir ma'noli). tools/wordlist/build_wordlist.py bilan yasalgan.\n")
         f.write("# Manba: Leipzig Corpora Collection (uzb_community_2017, uzb_wikipedia_2021_100K), CC BY 4.0.\n")
+        if lex:
+            f.write("# Kirill korpusi chastotasi: bitg uz.tsv (Leipzig CC BY 4.0, Common Voice CC0, Tatoeba CC BY 2.0 FR).\n")
         f.write("\n".join(result) + "\n")
     print(len(result), "so'z (shundan so'zlashuv:", len(added), ");", "chiqarildi:", dict(stats))
     if "-v" in sys.argv:

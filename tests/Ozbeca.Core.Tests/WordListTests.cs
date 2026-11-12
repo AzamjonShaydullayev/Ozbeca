@@ -42,6 +42,19 @@ public class WordListTests
     [InlineData("bodi bosa bop tori torisi")]
     public void LeavesAmbiguousColloquial(string input) => Assert.Equal(input, T(input));
 
+    // Kirill korpusidan (bitg uz.tsv): lotin korpusida kam uchragan qo'shimchali shakllar.
+    [Theory]
+    [InlineData("bolishi kerak", "bölişi kerak")]
+    [InlineData("shahar ortasida", "şahar örtasida")]
+    [InlineData("qishloq xojaligi", "qişloq xöjaligi")]
+    [InlineData("sozlariga", "sözlariga")]
+    public void FixesFormsFromCyrillicCorpus(string input, string expected) => Assert.Equal(expected, T(input));
+
+    // Tutuqsiz o'zagi ham haqiqiy so'z: boshliq (bo'shliq), och (o'ch), ot (o't), yog'i/yo'g'i — tegilmaydi.
+    [Theory]
+    [InlineData("boshliqdan ochmaydi otdim")]
+    public void LeavesAmbiguousStems(string input) => Assert.Equal(input.Replace("sh", "ş").Replace("ch", "ç"), T(input));
+
     // "o'z" olmoshi — "oz" (kam) bilan ikki ma'noli bo'lsa ham qo'shilgan (user qarori); "oz" o'zi tegilmaydi.
     [Theory]
     [InlineData("nima ozi", "nima özi")]

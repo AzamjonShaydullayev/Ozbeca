@@ -56,7 +56,7 @@
     <td width="33%" valign="top">
       <img src="docs/icons/dictionary.png" width="56" alt=""><br>
       <b>Tutuqsiz so'zlarni tuzatadi</b><br>
-      <sub><code>ozbek</code> → <code>özbek</code>, <code>togri</code> → <code>töğri</code>. Lug'atda ~9 400 so'z (<code>bomadi</code>, <code>torimas</code> kabi yozishma shakllari ham), ikki ma'noli so'zlarga tegmaydi.</sub>
+      <sub><code>ozbek</code> → <code>özbek</code>, <code>togri</code> → <code>töğri</code>. Lug'atda ~14 000 so'z (<code>bomadi</code>, <code>torimas</code> kabi yozishma shakllari ham), ikki ma'noli so'zlarga tegmaydi.</sub>
     </td>
     <td width="33%" valign="top">
       <img src="docs/icons/apps.png" width="56" alt=""><br>
@@ -389,7 +389,7 @@ dotnet build src/Ozbeca.App -c Release
 
 Natija: `src/Ozbeca.App/bin/Release/net48/Ozbeca.exe`. README rasmlari: `python tools/make_readme_art.py`.
 
-Tutuqsiz so'zlar lug'ati [Leipzig Corpora Collection](https://wortschatz.uni-leipzig.de/) (uzb_community_2017, uzb_wikipedia_2021_100K, CC BY 4.0) asosida `tools/wordlist/build_wordlist.py` bilan yasalgan (yozishmalardagi qisqargan shakllar — skriptdagi qoidalar bilan); ikki ma'noli so'zlarni ajratishda [uz-hunspell](https://github.com/uzbek-net/uz-hunspell) ishlatilgan.
+Tutuqsiz so'zlar lug'ati [Leipzig Corpora Collection](https://wortschatz.uni-leipzig.de/) (uzb_community_2017, uzb_wikipedia_2021_100K, CC BY 4.0) asosida `tools/wordlist/build_wordlist.py` bilan yasalgan (yozishmalardagi qisqargan shakllar — skriptdagi qoidalar bilan); ikki ma'noli so'zlarni ajratishda [uz-hunspell](https://github.com/uzbek-net/uz-hunspell) ishlatilgan. Qo'shimchali shakllar (`bolishi`, `ortasida`) va o'zak tekshiruvi — kirill matndan olingan chastota jadvali ([bitg](https://github.com/dtwinuz/bitg) `uz.tsv`: Leipzig CC BY 4.0, Mozilla Common Voice CC0, Tatoeba CC BY 2.0 FR).
 Inglizcha so'zlar ro'yxati — [SCOWL](http://wordlist.aspell.net/) (© 2000–2018 Kevin Atkinson va boshqalar, ruxsat beruvchi litsenziya); o'zbekcha bilan to'qnashuvlar [bitg](https://github.com/dtwinuz/bitg) (MIT / Apache-2.0) chastota jadvali bilan ajratilgan — `tools/wordlist/build_english.py`.
 
 <br>
