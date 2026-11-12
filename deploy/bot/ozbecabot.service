@@ -1,0 +1,25 @@
+[Unit]
+Description=Ozbeca Telegram bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=ozbeca
+WorkingDirectory=/www/wwwroot/azamjondev.uz/lichkali/ozbecabot
+EnvironmentFile=/www/wwwroot/azamjondev.uz/lichkali/ozbecabot/.env
+ExecStart=/www/wwwroot/azamjondev.uz/lichkali/ozbecabot/Ozbeca.Bot
+Restart=always
+RestartSec=5
+# Boshqa botlar birinchi: CPU 50% gacha, past ustuvorlik, RAM 300 MB, disk navbatida oxirgi.
+CPUQuota=50%
+Nice=10
+MemoryMax=300M
+IOWeight=20
+TasksMax=64
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths=/www/wwwroot/azamjondev.uz/lichkali/ozbecabot/data
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

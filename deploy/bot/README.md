@@ -1,33 +1,33 @@
 # Özbeça bot - serverga o'rnatish
 
-Bot Linux (x64) serverda bitta fayl sifatida ishlaydi (.NET o'rnatish shart emas). Log - `journalctl`.
+Bot Linux (x64) serverda bitta fayl sifatida ishlaydi (.NET o'rnatish shart emas, PHP botlarga aralashmaydi). Joyi:
+`/www/wwwroot/azamjondev.uz/lichkali/ozbecabot`, xizmat: `ozbecabot`, log: `journalctl -u ozbecabot`.
+
+Boshqa botlarni himoya qilish (`ozbecabot.service`): CPU ko'pi bilan 50%, `Nice=10`, RAM 300 MB, `IOWeight=20`.
+Port ochmaydi (long polling), nginx/aaPanel sozlamalariga tegmaydi. Papka `ozbeca:ozbeca 700` - nginx `.env` va `bot.db` ni
+bera olmaydi (403). **aaPanel'da `lichkali` papkasiga rekursiv huquq/egani o'zgartirmang** - `ozbecabot` ham o'zgarib, bot buziladi.
 
 ## 1. Yig'ish (Windows'da)
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File deploy/bot/publish.ps1   # yoki: pwsh deploy/bot/publish.ps1
+powershell -ExecutionPolicy Bypass -File deploy/bot/publish.ps1 -EnvFrom <lokal .env>   # -EnvFrom ixtiyoriy
 ```
 
-Natija: `publish/ozbeca-bot.zip` - ichida `Ozbeca.Bot`, `libe_sqlite3.so` (SQLite, alohida fayl), `.env.example` va `ozbeca-bot.service` (`.pdb` yo'q). Zip'ni serverga yuboring (`scp`).
+Natija: `publish/ozbecabot.zip` - `Ozbeca.Bot`, `libe_sqlite3.so`, `.env.example`, `ozbecabot.service`, `install.sh`
+(va `-EnvFrom` berilsa tayyor `.env`, unda token bor - zip'ni hech kimga bermang).
 
-## 2. Birinchi o'rnatish (serverda, root)
+## 2. O'rnatish va yangilash (serverda, root)
 
-`unzip` bo'lmasa: `apt install unzip`.
+Lokal bot shu token bilan ishlayotgan bo'lsa, avval uni to'xtating (bitta token ikki joyda ishlamaydi).
 
 ```bash
-useradd -r -s /usr/sbin/nologin ozbeca
-mkdir -p /opt/ozbeca-bot/data/work
-unzip ozbeca-bot.zip -d /opt/ozbeca-bot
-chmod +x /opt/ozbeca-bot/Ozbeca.Bot
-cp /opt/ozbeca-bot/.env.example /opt/ozbeca-bot/.env        # keyin to'ldiring: BOT_TOKEN va ADMIN_IDS
-chmod 600 /opt/ozbeca-bot/.env
-chown -R ozbeca:ozbeca /opt/ozbeca-bot
-cp /opt/ozbeca-bot/ozbeca-bot.service /etc/systemd/system/
-systemctl daemon-reload && systemctl enable --now ozbeca-bot
-journalctl -u ozbeca-bot -f
+rm -rf /root/ozbecabot-new && unzip -q /root/ozbecabot.zip -d /root/ozbecabot-new
+bash /root/ozbecabot-new/install.sh
 ```
 
-`.env` ni tahrirlang (`nano /opt/ozbeca-bot/.env`): `BOT_TOKEN` - BotFather bergan token, `ADMIN_IDS` - vergul bilan admin Telegram ID'lari. Token hech qayerga commit qilinmaydi.
+`install.sh` birinchi marta `ozbeca` user'ini, papkani, `.env` ni va xizmatni yaratadi; keyingi safar faqat fayllarni
+almashtiradi (eski fayl `*.old` bo'lib qoladi, `.env` va `bot.db` o'zgarmaydi). `.env` da token bo'sh bo'lsa:
+`nano /www/wwwroot/azamjondev.uz/lichkali/ozbecabot/.env`, keyin `systemctl start ozbecabot`.
 
 ## 3. BotFather sozlamalari
 
@@ -38,34 +38,19 @@ journalctl -u ozbeca-bot -f
 
 Buyruqlar (`/start`, `/sozlama`, `/oyin`, `/statistika`, `/harflar`, `/help`) bot ishga tushganda o'zi o'rnatadi. `WORK_DIR` fayl tizimi ildizi, `DB_PATH` katalogi yoki uning otasi bo'lsa bot ishga tushmaydi (ish papkasi startda tozalanadi).
 
-## 4. Yangilash
+## 4. Orqaga qaytarish
 
 ```bash
-systemctl stop ozbeca-bot
-cp /opt/ozbeca-bot/Ozbeca.Bot /opt/ozbeca-bot/Ozbeca.Bot.old     # orqaga qaytish uchun
-cp /opt/ozbeca-bot/libe_sqlite3.so /opt/ozbeca-bot/libe_sqlite3.so.old
-unzip -o ozbeca-bot.zip -d /opt/ozbeca-bot
-chmod +x /opt/ozbeca-bot/Ozbeca.Bot
-chown ozbeca:ozbeca /opt/ozbeca-bot/Ozbeca.Bot /opt/ozbeca-bot/libe_sqlite3.so
-systemctl start ozbeca-bot && journalctl -u ozbeca-bot -n 30
+cd /www/wwwroot/azamjondev.uz/lichkali/ozbecabot
+systemctl stop ozbecabot
+mv Ozbeca.Bot.old Ozbeca.Bot && mv libe_sqlite3.so.old libe_sqlite3.so
+systemctl start ozbecabot
 ```
-
-`ozbeca-bot.service` o'zgargan bo'lsa: `cp /opt/ozbeca-bot/ozbeca-bot.service /etc/systemd/system/ && systemctl daemon-reload`.
-
-## 5. Orqaga qaytarish
-
-```bash
-systemctl stop ozbeca-bot
-mv /opt/ozbeca-bot/Ozbeca.Bot.old /opt/ozbeca-bot/Ozbeca.Bot
-mv /opt/ozbeca-bot/libe_sqlite3.so.old /opt/ozbeca-bot/libe_sqlite3.so   # yangi versiyada o'zgargan bo'lishi mumkin - birga qaytariladi
-systemctl start ozbeca-bot
-```
-
-Ma'lumotlar bazasi (`/opt/ozbeca-bot/data/bot.db`) yangilashda o'zgarmaydi.
 
 ## Foydali
 
 ```bash
-systemctl status ozbeca-bot
-systemctl restart ozbeca-bot
+systemctl status ozbecabot
+journalctl -u ozbecabot -f
+systemctl show ozbecabot -p MemoryCurrent -p CPUUsageNSec
 ```
