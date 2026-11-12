@@ -31,7 +31,7 @@ public sealed class Sender(BotApi api)
         }
     }
 
-    private static bool IsDecorationError(string d) =>
+    internal static bool IsDecorationError(string d) =>
         d.Contains("emoji", StringComparison.OrdinalIgnoreCase) || d.Contains("style", StringComparison.OrdinalIgnoreCase);
 
     private static void Strip(JsonNode root)

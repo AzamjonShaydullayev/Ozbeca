@@ -1,6 +1,8 @@
 using System.Collections.Concurrent;
 using System.IO.Compression;
 using System.Text.Json;
+using System.Xml;
+using System.Net.Http;
 using Ozbeca.Bot.Api;
 using Ozbeca.Bot.Data;
 using Ozbeca.Bot.Ui;
@@ -13,8 +15,11 @@ namespace Ozbeca.Bot.Handlers;
 /// Fayl mazmuni va nomi logga yozilmaydi; ish papkasi har holda o'chiriladi.
 /// </summary>
 internal sealed class FileHandler(BotApi api, Sender sender, Store store, PremiumEmoji emoji, string workDir,
-    long maxBytes = 20_000_000, long maxUnzipped = 200_000_000)
+    long maxBytes = 20_000_000, long maxUnzipped = 30_000_000)
 {
+    /// <summary>Jarayon bo'yicha: bir vaqtda bitta o'girish (ConvertPackage barcha qismlarni xotiraga oladi).</summary>
+    internal static readonly SemaphoreSlim Gate = new(1, 1);
+
     private readonly ConcurrentDictionary<long, byte> _busy = new();
 
     public async Task Handle(JsonElement message, UserRow user, CancellationToken ct)
@@ -49,8 +54,10 @@ internal sealed class FileHandler(BotApi api, Sender sender, Store store, Premiu
         catch (BotApiException) { }   // bezak, o'girishga xalaqit bermaydi
 
         var safe = SafeName(rawName);
+        var ext = Path.GetExtension(safe).ToLowerInvariant();
         Directory.CreateDirectory(dir);
-        var input = Path.Combine(dir, safe);
+        var input = Path.Combine(dir, "in" + ext);   // diskdagi nom qisqa va ruxsat etilgan; foydalanuvchi nomi faqat javob nomi uchun
+        var output = Path.Combine(dir, "out" + ext);
         try
         {
             var info = await api.Call("getFile", new { file_id = fileId }, ct);
@@ -58,24 +65,28 @@ internal sealed class FileHandler(BotApi api, Sender sender, Store store, Premiu
             await using var fs = File.Create(input);
             await api.Download(remote, fs, maxBytes, ct);
         }
-        catch (BotApiException) { await Say(user.Id, Texts.FileTooBig, ct); return; }   // getFile 400: Telegram 20 MB dan kattani bermaydi
-        catch (InvalidDataException) { await Say(user.Id, Texts.FileTooBig, ct); return; }
+        catch (BotApiException e) { await Say(user.Id, e.Description.Contains("too big", StringComparison.OrdinalIgnoreCase) ? Texts.FileTooBig : Texts.FileBroken, ct); return; }
+        catch (InvalidDataException) { await Say(user.Id, Texts.FileTooBig, ct); return; }   // oqim maxBytes dan oshdi
+        catch (Exception e) when (e is IOException or HttpRequestException || e is TaskCanceledException && !ct.IsCancellationRequested)
+        { await Say(user.Id, Texts.FileBroken, ct); return; }
 
-        var output = DocumentConverter.OutputPath(input, reverse);
+        await Gate.WaitAsync(ct);   // MemoryMax: bir vaqtda bitta o'girish
         try
         {
-            if (DocumentConverter.OfficeExtensions.Contains(Path.GetExtension(input).ToLowerInvariant()))
+            if (DocumentConverter.OfficeExtensions.Contains(ext))
             {
-                // ponytail: Length — ZIP sarlavhasidagi e'lon qilingan hajm; haqiqiy oqim chegarasi yo'q. Kerak bo'lsa sanovchi oqim.
+                // E'lon qilingan Length haqiqiy chegara: ZipArchive oqimi shu hajmdan keyin ochishni to'xtatadi.
                 using var zip = ZipFile.OpenRead(input);
                 if (zip.Entries.Sum(e => e.Length) > maxUnzipped) { await Say(user.Id, Texts.FileBroken, ct); return; }
             }
             if (!DocumentConverter.Convert(input, output, user.Settings.ToOptions())) { await Say(user.Id, Texts.FileNoChange, ct); return; }
         }
-        catch (InvalidDataException) { await Say(user.Id, Texts.FileBroken, ct); return; }
+        catch (Exception e) when (e is InvalidDataException or XmlException or IOException) { await Say(user.Id, Texts.FileBroken, ct); return; }
         catch (NotSupportedException) { await Say(user.Id, Texts.FileUnsupported, ct); return; }
+        finally { Gate.Release(); }
 
-        await SendResult(user, output, Path.GetFileName(output), ct);
+        var replyName = Path.GetFileName(DocumentConverter.OutputPath(Path.Combine(dir, safe), reverse));
+        await SendResult(user, output, replyName, ct);
         store.AddUsage("file", 0);
         Log.Info($"file ok user={user.Id} bytes={size ?? -1}");
     }
@@ -86,19 +97,34 @@ internal sealed class FileHandler(BotApi api, Sender sender, Store store, Premiu
             .Text(" " + (user.Settings.Reverse ? Texts.FileDoneOld : Texts.FileDone)).Build();
         var fields = new Dictionary<string, string> { ["chat_id"] = user.Id.ToString(), ["caption"] = caption };
         if (ents.Count > 0) fields["caption_entities"] = JsonSerializer.Serialize(ents.Select(e => e.ToJson()), Json.Options);
+        bool retried429 = false, stripped = false;
         while (true)
         {
             await using var fs = File.OpenRead(path);
             try { await api.Upload("sendDocument", fields, "document", name, fs, ct); return; }
-            catch (BotApiException e) when (e.Code == 400 && fields.Remove("caption_entities")) { }   // premium emoji rad etildi — bezaksiz qayta
+            catch (BotApiException e) when (e.Code == 429 && !retried429)
+            {
+                retried429 = true;
+                await sender.Delay(TimeSpan.FromSeconds(Math.Clamp(e.RetryAfter ?? 1, 0, 30)), ct);
+            }
+            catch (BotApiException e) when (e.Code == 400 && !stripped && Sender.IsDecorationError(e.Description))
+            {
+                stripped = true;
+                fields.Remove("caption_entities");
+            }
         }
     }
 
-    private static string SafeName(string name)
+    /// <summary>Faqat javob nomi uchun: papka qismi olib tashlanadi, noto'g'ri belgilar "_", asos 80 belgigacha.</summary>
+    internal static string SafeName(string name)
     {
-        var n = Path.GetFileName(name.Replace('\\', '/'));
+        var n = Path.GetFileName(name.Replace((char)92, '/'));
         foreach (var c in Path.GetInvalidFileNameChars()) n = n.Replace(c, '_');
-        return n.Length == 0 || n.StartsWith('.') ? "file" + Path.GetExtension(n) : n;
+        var ext = Path.GetExtension(n);
+        var stem = Path.GetFileNameWithoutExtension(n).TrimStart('.');
+        if (stem.Length == 0) stem = "file";
+        if (stem.Length > 80) stem = stem[..80];
+        return stem + ext;
     }
 
     private Task Say(long chatId, string text, CancellationToken ct) =>

@@ -187,4 +187,76 @@ public class FileHandlerTests : IDisposable
         Assert.Equal(Texts.FileUnsupported, LastText());
         Assert.DoesNotContain(_h.Fake.Calls, c => c.Method == "getFile");
     }
+
+    [Fact]
+    public async Task Malformed_xml_reports_broken()
+    {
+        var ms = new MemoryStream();
+        using (var zip = new ZipArchive(ms, ZipArchiveMode.Create, true))
+        {
+            using (var s = zip.CreateEntry("[Content_Types].xml").Open()) s.Write(Encoding.UTF8.GetBytes("<Types/>"));
+            using var d = zip.CreateEntry("word/document.xml").Open();
+            d.Write(Encoding.UTF8.GetBytes("<w:document><w:t>Shahar"));
+        }
+        Serve("m.docx", ms.ToArray());
+        await Make().Handle(Msg("m.docx", 100), User(), default);
+        Assert.Equal(Texts.FileBroken, LastText());
+        Assert.Empty(Directory.GetFileSystemEntries(_work));
+    }
+
+    [Fact]
+    public async Task Very_long_cyrillic_name_works()
+    {
+        var name = new string('Ш', 120) + ".txt";   // 240 bayt
+        Serve("l.txt", Encoding.UTF8.GetBytes("Shahar"));
+        await Make().Handle(Msg(name, 6), User(), default);
+        var sent = _h.Sent("sendDocument").Single().GetProperty("document").GetString()!;
+        Assert.EndsWith(" (yangi alifbo).txt", sent);
+        Assert.True(Encoding.UTF8.GetByteCount(sent) < 255);
+    }
+
+    [Theory]
+    [InlineData("../../x.txt", "x (yangi alifbo).txt")]
+    [InlineData("..\\..\\x.txt", "x (yangi alifbo).txt")]
+    [InlineData(".txt", "file (yangi alifbo).txt")]
+    [InlineData("a<b>c|d.txt", "a_b_c_d (yangi alifbo).txt")]
+    public async Task Unsafe_names_stay_inside_workdir(string name, string expected)
+    {
+        Serve("s.txt", Encoding.UTF8.GetBytes("Shahar"));
+        await Make().Handle(Msg(name, 6), User(), default);
+        Assert.Equal("file:" + expected, _h.Sent("sendDocument").Single().GetProperty("document").GetString());
+        Assert.Empty(Directory.GetFileSystemEntries(_work));
+        Assert.False(File.Exists(Path.Combine(_work, "..", "x.txt")));
+    }
+
+    [Fact]
+    public async Task Conversion_gate_serialises_conversions()
+    {
+        Serve("g.txt", Encoding.UTF8.GetBytes("Shahar"));
+        FileHandler.Gate.Wait();
+        Task t;
+        try
+        {
+            t = Make().Handle(Msg("g.txt", 6), User(), default);
+            await Task.Delay(300);
+            Assert.False(t.IsCompleted);
+            Assert.Empty(_h.Sent("sendDocument"));
+        }
+        finally { FileHandler.Gate.Release(); }
+        await t;
+        Assert.Single(_h.Sent("sendDocument"));
+    }
+
+    [Fact]
+    public async Task Send_retries_once_on_429()
+    {
+        Serve("r.txt", Encoding.UTF8.GetBytes("Shahar"));
+        var n = 0;
+        var inner = _h.Fake.Respond!;
+        _h.Fake.RespondRaw = (m, b) => m == "sendDocument" && n++ == 0
+            ? (429, "{\"ok\":false,\"error_code\":429,\"description\":\"Too Many Requests\",\"parameters\":{\"retry_after\":0}}")
+            : (200, inner(m, b));
+        await Make().Handle(Msg("r.txt", 6), User(), default);
+        Assert.Equal(2, _h.Sent("sendDocument").Count);
+    }
 }
