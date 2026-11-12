@@ -47,6 +47,7 @@ public sealed class Router(BotApi api, Sender sender, Store store, PremiumEmoji 
         if (m.Obj("chat") is not { } chat || chat.Str("type") != "private") return;
         if (m.Obj("from") is not { } from || from.Long("id") is not { } userId) return;
         if (from.TryGetProperty("is_bot", out var bot) && bot.ValueKind == JsonValueKind.True) return;
+        if (m.Obj("via_bot") is not null) return;   // inline natija (o'zimizniki ham) — javob bermaymiz
         if (!ContentKeys.Any(k => m.TryGetProperty(k, out _))) return;
 
         if (!_flood.Allow(userId, out var notify))

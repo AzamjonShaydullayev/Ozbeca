@@ -18,6 +18,14 @@ public sealed class PrivateHandlerTests : IDisposable
         b.GetProperty("reply_markup").GetProperty("inline_keyboard")[0].EnumerateArray().ToList();
 
     [Fact]
+    public async Task Message_sent_via_inline_bot_is_ignored()
+    {
+        await _h.Msg(new() { ["text"] = "Şahar", ["via_bot"] = new { id = 777, is_bot = true, username = "ozbecauzbot" } });
+        Assert.Empty(_h.Fake.Calls);
+        Assert.Null(_h.Store.Get(1));
+    }
+
+    [Fact]
     public async Task Text_converted_with_quote_and_buttons()
     {
         await _h.Text("Shahar choy");
