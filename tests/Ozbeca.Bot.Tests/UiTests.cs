@@ -57,6 +57,9 @@ public class UiTests
         ["BroadcastDone"] = "Tarqatish tugadi.",
         ["BroadcastStopped"] = "Tarqatish to'xtatildi.",
         ["NotAdmin"] = "Bu buyruq faqat admin uchun.",
+        ["CmdStart"] = "Boshlash",
+        ["CmdSettings"] = "Sozlamalar",
+        ["CmdHelp"] = "Yordam",
         ["Flood"] = "Juda tez yozyapsiz. Biroz kuting.",
     };
 

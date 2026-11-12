@@ -26,6 +26,7 @@ notes/
 # --- Maxfiy: kalitlar, sertifikatlar, muhit o'zgaruvchilari ---
 .env
 .env.*
+!.env.example
 *.pfx
 *.p12
 *.snk

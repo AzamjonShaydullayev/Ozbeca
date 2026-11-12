@@ -4,6 +4,9 @@ namespace Ozbeca.Bot.Ui;
 public static class Texts
 {
     public const string Greeting = "Salom! Matn yuboring — yangi alifboga ögiraman.";
+    public const string CmdStart = "Boşlaş";
+    public const string CmdSettings = "Sozlamalar";
+    public const string CmdHelp = "Yordam";
     public const string Help =
         "Matn yuboring — yangi alifboga ögiraman. Faylni (Word, Excel, PowerPoint yoki matn) yuborsangiz, formatini saqlab ögiraman.\n" +
         "Teskari tugma yangi alifbodan eski alifboga qaytaradi. Boşqa çatda @ozbecauzbot deb yozsangiz ham işlayman.";
