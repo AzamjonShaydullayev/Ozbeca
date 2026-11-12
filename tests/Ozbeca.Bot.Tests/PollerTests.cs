@@ -43,7 +43,7 @@ public sealed class PollerTests
         Assert.Equal(2, h.Sent().Count);
         var polls2 = h.Sent("getUpdates");
         Assert.Equal(50, polls2[0].GetProperty("timeout").GetInt32());
-        Assert.Equal(5, polls2[0].GetProperty("allowed_updates").GetArrayLength());
+        Assert.Equal(4, polls2[0].GetProperty("allowed_updates").GetArrayLength());
         Assert.Equal(9, polls2[1].GetProperty("offset").GetInt64());
     }
 

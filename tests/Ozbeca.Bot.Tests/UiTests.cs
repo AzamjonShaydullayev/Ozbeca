@@ -8,7 +8,6 @@ public class UiTests
 {
     private static readonly Dictionary<string, string> OldSpelling = new()
     {
-        ["Greeting"] = "Salom! Matn yuboring — yangi alifboga o'giraman.",
         ["Help"] = "Matn yuboring — yangi alifboga o'giraman. Faylni (Word, Excel, PowerPoint yoki matn) yuborsangiz, formatini saqlab o'giraman.\nTeskari tugma yangi alifbodan eski alifboga qaytaradi. Boshqa chatda @ozbecauzbot deb yozsangiz ham ishlayman.",
         ["NewHeader"] = "Yangi alifboda:",
         ["OldHeader"] = "Eski alifboda:",
@@ -70,11 +69,25 @@ public class UiTests
         ["CmdStats"] = "Mening statistikam",
         ["CmdLetters"] = "Yangi alifbo harflari",
         ["FileHelp"] = "Faylni shu chatga yuboring — formatini saqlab o'giraman: Word (.docx), Excel (.xlsx), PowerPoint (.pptx) yoki matn (.txt, .csv, .srt, .md). 20 MB gacha.\nYo'nalish sozlamadan olinadi: eskidan yangiga yoki yangidan eskiga.",
-        ["CardHint"] = "Karta ko'rinmasa, Telegram'ni yangilang.",
-        ["CapSettings"] = "Sozlama. Yo'nalish: {0}.",
-        ["CapLetters"] = "Yangi alifbo harflari. Harfni bosing — nusxa olinadi.",
-        ["CapGame"] = "Harfni top. Seriya: {0}, rekord: {1}.",
-        ["CapStats"] = "Bugun {0} belgi o'girildi.",
+        ["LettersHint"] = "Harfni bosing — nusxa olinadi.",
+        ["GreetHello"] = "Assalomu alaykum",
+        ["GreetIntro"] = "Men matnni yangi o'zbek alifbosiga o'giraman — tez, aniq va bepul.",
+        ["GreetText"] = "Matn yuboring — darhol yangi alifboda qaytaraman.",
+        ["GreetFile"] = "Fayl yuboring (Word, Excel, PowerPoint, matn) — formatini saqlab o'giraman.",
+        ["GreetReverse"] = "«Teskari» tugmasi yangi alifbodan eskisiga qaytaradi.",
+        ["GreetInline"] = "Boshqa chatlarda: @ozbecauzbot va matn.",
+        ["GreetGo"] = "Boshlash uchun biror matn yuboring",
+        ["BackButton"] = "Orqaga",
+        ["SetDirection"] = "Yo'nalish",
+        ["GameTitle"] = "Harfni top",
+        ["GameAsk"] = "Qaysi harf tushib qolgan?",
+        ["GameAsk2"] = "Ikki harfni tartib bilan tanlang.",
+        ["GameTimer"] = "10 soniya ichida javob bering!",
+        ["GameStreak"] = "Seriya",
+        ["GameBest"] = "Rekord",
+        ["GameRight"] = "To'g'ri!",
+        ["GameWrong"] = "Javob",
+        ["GameTimeout"] = "Vaqt tugadi",
     };
 
     [Fact]

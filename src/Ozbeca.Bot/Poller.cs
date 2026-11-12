@@ -7,7 +7,7 @@ namespace Ozbeca.Bot;
 /// <summary>getUpdates long polling. Har update alohida Task'da (bir vaqtda 16 tagacha); xato siklni to'xtatmaydi.</summary>
 public sealed class Poller(BotApi api, Router router)
 {
-    private static readonly string[] Allowed = ["message", "callback_query", "inline_query", "chosen_inline_result", "widget_query"];
+    private static readonly string[] Allowed = ["message", "callback_query", "inline_query", "chosen_inline_result"];
 
     /// <summary>getUpdates tarmoq xatosidan keyingi kutish (testlarda nol).</summary>
     public TimeSpan RetryDelay { get; init; } = TimeSpan.FromSeconds(5);
@@ -19,7 +19,7 @@ public sealed class Poller(BotApi api, Router router)
     internal int MaxPending { get; init; } = DefaultMaxPending;
     internal const int DefaultMaxPending = 500;
 
-    private static readonly string[] UserKinds = ["message", "callback_query", "inline_query", "chosen_inline_result", "widget_query"];
+    private static readonly string[] UserKinds = ["message", "callback_query", "inline_query", "chosen_inline_result"];
     private readonly object _lock = new();
     private readonly Dictionary<long, Task> _tails = new();
 

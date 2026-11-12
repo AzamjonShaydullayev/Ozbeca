@@ -4,18 +4,17 @@ using Ozbeca.Bot.Api;
 using Ozbeca.Bot.Data;
 using Ozbeca.Bot.Text;
 using Ozbeca.Bot.Ui;
-using Ozbeca.Bot.Widget;
 
 namespace Ozbeca.Bot.Handlers;
 
 /// <summary>Lichkadagi matn oqimi: buyruqlar, matn/caption o'girish, "Teskari" tugmasi. Foydalanuvchi matni saqlanmaydi.</summary>
-internal sealed class PrivateHandler(BotApi api, Sender sender, Store store, PremiumEmoji emoji, CardSender card)
+internal sealed class PrivateHandler(BotApi api, Sender sender, Store store, PremiumEmoji emoji, MenuHandler menu)
 {
     private const int MaxPart = 4000;      // Telegram chegarasi 4096; sarlavhaga joy qoladi
     private const int ExpandableOver = 500;
-    private const int CopyMax = 256;
+    private const int CopyMax = 256;   // Telegram copy_text chegarasi — uzunroq natijada Nusxa tugmasi yo'q
 
-    internal CardSender Card => card;
+    internal MenuHandler Menu => menu;
 
     public async Task Handle(JsonElement msg, UserRow user, CancellationToken ct)
     {
@@ -23,7 +22,7 @@ internal sealed class PrivateHandler(BotApi api, Sender sender, Store store, Pre
         var text = msg.Str("text");
         var entities = Entity.Parse(Prop(msg, text != null ? "entities" : "caption_entities"));
         // buyruq: faqat 0-o'rinda bot_command entity bo'lsa ("/ salom" yoki yo'l matni o'giriladi)
-        if (text != null && entities.Any(e => e.Type == "bot_command" && e.Offset == 0)) { await Command(chatId, user, text, ct); return; }
+        if (text != null && entities.Any(e => e.Type == "bot_command" && e.Offset == 0)) { await Command(chatId, user, text, msg.Obj("from")?.Str("first_name"), ct); return; }
         text ??= msg.Str("caption");
         if (string.IsNullOrEmpty(text)) { await Say(chatId, Texts.SendText, ct: ct); return; }
 
@@ -34,39 +33,22 @@ internal sealed class PrivateHandler(BotApi api, Sender sender, Store store, Pre
         }
     }
 
-    private async Task Command(long chatId, UserRow user, string text, CancellationToken ct)
+    private async Task Command(long chatId, UserRow user, string text, string? name, CancellationToken ct)
     {
         var parts = text.Split([' ', '\n'], 2, StringSplitOptions.RemoveEmptyEntries);
         var cmd = parts[0].Split('@')[0].ToLowerInvariant();
         switch (cmd)
         {
-            case "/start" or "/menu":   // parametr (parts[1], masalan "inline") ahamiyatsiz
-                var (t, e) = new MessageBuilder(emoji, user.Id).Emoji("greeting").Text(" " + Texts.Greeting).Build();
-                await Say(chatId, t, e, Menu, ct);
-                break;
-            case "/sozlama": await card.Send('s', chatId, user, ct); break;
-            case "/oyin": await card.Send('g', chatId, user, ct); break;
-            case "/harflar": await card.Send('h', chatId, user, ct); break;
-            case "/statistika": await card.Send('t', chatId, user, ct); break;
+            case "/start" or "/menu": await menu.Send('0', chatId, user, name, ct); break;   // parametr (masalan "inline") ahamiyatsiz
+            case "/sozlama": await menu.Send('s', chatId, user, name, ct); break;
+            case "/oyin": await menu.Send('g', chatId, user, name, ct); break;
+            case "/harflar": await menu.Send('h', chatId, user, name, ct); break;
+            case "/statistika": await menu.Send('t', chatId, user, name, ct); break;
             default:   // /help va noma'lum buyruqlar
                 await Say(chatId, Texts.Help, ct: ct);
                 break;
         }
     }
-
-    private static readonly object Menu = Buttons.Markup(
-        [Buttons.Callback("⚙️ " + Texts.MenuSettings, "m:s"), Buttons.Callback("🔤 " + Texts.MenuLetters, "m:h")],
-        [Buttons.Callback("🎮 " + Texts.MenuGame, "m:g"), Buttons.Callback("📊 " + Texts.MenuStats, "m:t")],
-        [Buttons.Callback("📄 " + Texts.MenuFile, "m:f"), Buttons.Callback("❓ " + Texts.MenuHelp, "m:y")]);
-
-    /// <summary>Menyu tugmalari (m:*). answerCallbackQuery'ni Router beradi. Noma'lum qiymat — hech narsa.</summary>
-    public Task OnMenu(string data, UserRow user, CancellationToken ct) => data switch
-    {
-        "m:s" or "m:h" or "m:g" or "m:t" => card.Send(data[2], user.Id, user, ct),
-        "m:f" => Say(user.Id, Texts.FileHelp, ct: ct),
-        "m:y" => Say(user.Id, Texts.Help, ct: ct),
-        _ => Task.CompletedTask,
-    };
 
     /// <summary>"Teskari" tugmasi: xabardagi blockquote'ni qarama-qarshi yo'nalishda o'girib yangi xabar yuboradi. Matn saqlanmaydi.</summary>
     public async Task OnReverse(JsonElement cq, UserRow user, CancellationToken ct)

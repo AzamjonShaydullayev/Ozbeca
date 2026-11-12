@@ -3,7 +3,6 @@ using Ozbeca.Bot.Api;
 using Ozbeca.Bot.Data;
 using Ozbeca.Bot.Handlers;
 using Ozbeca.Bot.Ui;
-using Ozbeca.Bot.Widget;
 
 namespace Ozbeca.Bot;
 
@@ -14,11 +13,10 @@ public sealed class Router(BotApi api, Sender sender, Store store, PremiumEmoji 
 {
     internal BotConfig Config => cfg;   // TASK10: admin ID'lari uchun
 
-    private readonly PrivateHandler _private = new(api, sender, store, emoji, new CardSender(sender, store));
+    private readonly PrivateHandler _private = new(api, sender, store, emoji, new MenuHandler(sender, store, emoji));
     private readonly InlineHandler _inline = new(sender, store);   // TASK9
     internal AdminHandler Admin { get; } = new(api, sender, store, cfg);   // TASK10
     private readonly FileHandler _file = new(api, sender, store, emoji, cfg.WorkDir);   // TASK7
-    private WidgetHandler? _widget;   // TASK8: _private.Card bilan (chat_data xotirasi umumiy); holatsiz, dangasa yaratiladi
     private readonly FloodGuard _flood = new();
 
     // Mazmunli xabar turlari; ro'yxatda yo'q (xizmat xabarlari: pinned_message, ...) e'tiborsiz.
@@ -31,7 +29,6 @@ public sealed class Router(BotApi api, Sender sender, Store store, PremiumEmoji 
         else if (update.Obj("callback_query") is { } callback) await OnCallback(callback, ct);
         else if (update.Obj("inline_query") is { } inline) await OnInlineQuery(inline, ct);
         else if (update.Obj("chosen_inline_result") is { } chosen) await OnChosenInline(chosen, ct);
-        else if (update.Obj("widget_query") is { } widget) await OnWidgetQuery(widget, ct);
         // edited_message va boshqalar e'tiborsiz
     }
 
@@ -71,8 +68,8 @@ public sealed class Router(BotApi api, Sender sender, Store store, PremiumEmoji 
         var data = cq.Str("data") ?? "";
 
         if (data.StartsWith("rev:", StringComparison.Ordinal)) { await AnswerCallback(cq, ct); await _private.OnReverse(cq, user, ct); }
-        else if (data.StartsWith("set:", StringComparison.Ordinal)) await _private.Card.OnCallback(cq, user, ct);   // TASK8: handler o'zi answerCallbackQuery qiladi
-        else if (data.StartsWith("m:", StringComparison.Ordinal)) { await AnswerCallback(cq, ct); await _private.OnMenu(data, user, ct); }   // /start menyusi
+        else if (data.StartsWith("m:", StringComparison.Ordinal) || data.StartsWith("set:", StringComparison.Ordinal)
+                 || data.StartsWith("g:", StringComparison.Ordinal)) await _private.Menu.OnCallback(cq, user, ct);   // menyu, sozlama, o'yin — o'zi javob beradi
         else if (data.StartsWith("bc:", StringComparison.Ordinal)) await Admin.OnCallback(cq, user, ct);   // TASK10
         else await AnswerCallback(cq, ct);   // noma'lum — shunchaki javob
     }
@@ -84,7 +81,6 @@ public sealed class Router(BotApi api, Sender sender, Store store, PremiumEmoji 
     }
 
     private Task OnChosenInline(JsonElement c, CancellationToken ct) => _inline.HandleChosen(c);      // TASK9
-    private Task OnWidgetQuery(JsonElement q, CancellationToken ct) => (_widget ??= new(sender, store, _private.Card)).Handle(q, ct);    // TASK8
 
     private async Task AnswerCallback(JsonElement cq, CancellationToken ct)
     {

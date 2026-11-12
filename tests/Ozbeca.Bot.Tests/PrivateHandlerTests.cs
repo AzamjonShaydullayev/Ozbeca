@@ -135,7 +135,7 @@ public sealed class PrivateHandlerTests : IDisposable
         await _h.Text("/help@ozbecauzbot", entities: Cmd(17));
         await _h.Text("/nimadir", entities: Cmd(8));
         var s = _h.Sent();
-        Assert.Contains(Texts.Greeting, TextOf(s[0]));
+        Assert.Contains(Texts.GreetHello, TextOf(s[0]));
         Assert.Equal(Texts.Help, TextOf(s[1]));
         Assert.Equal(Texts.Help, TextOf(s[2]));
     }

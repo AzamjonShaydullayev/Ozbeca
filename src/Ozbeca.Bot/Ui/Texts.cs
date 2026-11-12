@@ -3,7 +3,6 @@ namespace Ozbeca.Bot.Ui;
 /// <summary>Botning barcha matnlari — yangi alifboda (ö ğ ş ç, ʼ U+02BC).</summary>
 public static class Texts
 {
-    public const string Greeting = "Salom! Matn yuboring — yangi alifboga ögiraman.";
     public const string CmdStart = "Boşlaş";
     public const string CmdSettings = "Sozlamalar";
     public const string CmdHelp = "Yordam";
@@ -76,9 +75,27 @@ public static class Texts
     public const string FileHelp =
         "Faylni şu çatga yuboring — formatini saqlab ögiraman: Word (.docx), Excel (.xlsx), PowerPoint (.pptx) yoki matn (.txt, .csv, .srt, .md). 20 MB gaça.\n" +
         "Yönaliş sozlamadan olinadi: eskidan yangiga yoki yangidan eskiga.";
-    public const string CardHint = "Karta körinmasa, Telegramʼni yangilang.";
-    public const string CapSettings = "Sozlama. Yönaliş: {0}.";
-    public const string CapLetters = "Yangi alifbo harflari. Harfni bosing — nusxa olinadi.";
-    public const string CapGame = "Harfni top. Seriya: {0}, rekord: {1}.";
-    public const string CapStats = "Bugun {0} belgi ögirildi.";
+    public const string LettersHint = "Harfni bosing — nusxa olinadi.";
+
+    // salomlaşuv
+    public const string GreetHello = "Assalomu alaykum";
+    public const string GreetIntro = "Men matnni yangi özbek alifbosiga ögiraman — tez, aniq va bepul.";
+    public const string GreetText = "Matn yuboring — darhol yangi alifboda qaytaraman.";
+    public const string GreetFile = "Fayl yuboring (Word, Excel, PowerPoint, matn) — formatini saqlab ögiraman.";
+    public const string GreetReverse = "«Teskari» tugmasi yangi alifbodan eskisiga qaytaradi.";
+    public const string GreetInline = "Boşqa çatlarda: @ozbecauzbot va matn.";
+    public const string GreetGo = "Boşlaş uçun biror matn yuboring";
+    public const string BackButton = "Orqaga";
+    public const string SetDirection = "Yönaliş";
+
+    // öyin
+    public const string GameTitle = "Harfni top";
+    public const string GameAsk = "Qaysi harf tuşib qolgan?";
+    public const string GameAsk2 = "Ikki harfni tartib bilan tanlang.";
+    public const string GameTimer = "10 soniya içida javob bering!";
+    public const string GameStreak = "Seriya";
+    public const string GameBest = "Rekord";
+    public const string GameRight = "Töğri!";
+    public const string GameWrong = "Javob";
+    public const string GameTimeout = "Vaqt tugadi";
 }
