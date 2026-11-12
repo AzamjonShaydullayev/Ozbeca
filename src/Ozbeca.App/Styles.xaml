@@ -130,6 +130,7 @@
     <!-- Toggle (CheckBox) — o'ngda kalit, chapda matn -->
     <Style x:Key="Toggle" TargetType="CheckBox">
         <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Foreground" Value="{DynamicResource Fg}" /> <!-- standart CheckBox uslubi qora beradi -->
         <Setter Property="FocusVisualStyle" Value="{x:Null}" />
         <Setter Property="Template">
             <Setter.Value>
@@ -200,6 +201,7 @@
     -->
     <Style x:Key="Tile" TargetType="CheckBox">
         <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Foreground" Value="{DynamicResource Fg}" /> <!-- standart CheckBox uslubi qora beradi -->
         <Setter Property="FocusVisualStyle" Value="{x:Null}" />
         <Setter Property="Margin" Value="5" />
         <Setter Property="Template">
@@ -283,6 +285,7 @@
     <!-- Chip (CheckBox): ixcham tanlov — doira ichida ✓ va matn -->
     <Style x:Key="Chip" TargetType="CheckBox">
         <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Foreground" Value="{DynamicResource Fg}" /> <!-- standart CheckBox uslubi qora beradi -->
         <Setter Property="FocusVisualStyle" Value="{x:Null}" />
         <Setter Property="Margin" Value="4" />
         <Setter Property="Template">
