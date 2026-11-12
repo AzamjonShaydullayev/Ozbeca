@@ -66,6 +66,17 @@
                                 </Border>
                             </StackPanel>
                         </Border>
+
+                        <!-- Avtomatik yangilanish -->
+                        <Border Style="{StaticResource Glass}" Margin="0,10,0,0">
+                            <CheckBox x:Name="AutoUpdateToggle" Style="{StaticResource Toggle}" Click="AutoUpdateToggle_Click"
+                                      AutomationProperties.Name="Avtomatik yangilanish">
+                                <StackPanel>
+                                    <TextBlock Text="Avtomatik yangilanish" Style="{StaticResource RowTitle}" />
+                                    <TextBlock Text="Yangi versiya internetdan o'zi o'rnatiladi" Style="{StaticResource RowHint}" />
+                                </StackPanel>
+                            </CheckBox>
+                        </Border>
                     </StackPanel>
 
                     <Grid DockPanel.Dock="Bottom" VerticalAlignment="Bottom" Margin="2,18,0,0">

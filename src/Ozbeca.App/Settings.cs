@@ -36,6 +36,12 @@ internal sealed class Settings
     /// <summary>Ctrl+V bilan qo'yilgan matnni o'girish. Standart — yoqilgan.</summary>
     [DataMember] public bool PasteConvert { get; set; } = true;
 
+    /// <summary>Yangi versiyani GitHub'dan o'zi yuklab o'rnatish (user qarori, 2026-11-12). Standart — yoqilgan.</summary>
+    [DataMember] public bool AutoUpdate { get; set; } = true;
+
+    // DateTime emas: DataContractJsonSerializer MinValue'ni UTC+5 da yozolmaydi.
+    [DataMember] public long LastUpdateCheckUtcTicks { get; set; }
+
     // DataContract konstruktorni chaqirmaydi — faylda yo'q maydonlar standart qiymatda qolsin.
     [OnDeserializing]
     private void SetDefaults(StreamingContext _)
@@ -51,6 +57,7 @@ internal sealed class Settings
         Exceptions = new();
         PauseConvert = true;
         PasteConvert = true;
+        AutoUpdate = true;
     }
 
     /// <summary>settings.json hali yo'q — birinchi ishga tushirish (o'rnatish oynasi ko'rsatiladi).</summary>

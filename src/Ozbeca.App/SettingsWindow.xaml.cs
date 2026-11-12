@@ -26,6 +26,7 @@ public partial class SettingsWindow : Window
         ApostropheToggle.IsChecked = app.Settings.RestoreApostrophes;
         AutostartToggle.IsChecked = Autostart.IsEnabled;
         PasteToggle.IsChecked = app.Settings.PasteConvert;
+        AutoUpdateToggle.IsChecked = app.Settings.AutoUpdate;
         PauseToggle.IsChecked = app.Settings.PauseConvert;
         ReverseHint.Text = "Kirill matn ham o'giriladi.\nTeskari (ö → o'): " + string.Join("+", HotkeyService.Caps(app.Settings.ReverseHotkey));
         ShowExceptionsSummary();
@@ -137,6 +138,7 @@ public partial class SettingsWindow : Window
         UpdateStatus();
     }
 
+    private void AutoUpdateToggle_Click(object sender, RoutedEventArgs e) => _app.SetAutoUpdate(AutoUpdateToggle.IsChecked == true);
     private void PasteToggle_Click(object sender, RoutedEventArgs e) => _app.SetPasteConvert(PasteToggle.IsChecked == true);
     private void PauseToggle_Click(object sender, RoutedEventArgs e) => _app.SetPauseConvert(PauseToggle.IsChecked == true);
 

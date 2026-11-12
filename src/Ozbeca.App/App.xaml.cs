@@ -17,6 +17,7 @@ public partial class App : Application
     private WinForms.NotifyIcon _tray = null!;
     private WinForms.ToolStripMenuItem _enabledItem = null!, _autostartItem = null!, _autoTypeItem = null!;
     private AutoType _autoType = null!;
+    private Updater _updater = null!;
     private ToastWindow? _toast;
     private NoticeWindow? _notice;
     private SettingsWindow? _settingsWindow;
@@ -92,6 +93,7 @@ public partial class App : Application
 
         CreateTray();
         ApplyAutoType();
+        _updater = new Updater(() => Settings);
         // Kompyuter uyqudan yoki qulfdan chiqqanda hook jim o'chib qolgan bo'lishi mumkin: tizim band paytda hook
         // vaqtida javob bermasa, Windows uni ogohlantirmasdan olib tashlaydi. Qayta o'rnatamiz.
         Microsoft.Win32.SystemEvents.PowerModeChanged += (_, ev) =>
@@ -251,6 +253,14 @@ public partial class App : Application
         Settings.Save();
         _autoType.SetAllowedApps(apps.Select(a => a.Process));
         Log.Write("Avto-o'girish dasturlari: " + (apps.Count == 0 ? "hammasi" : string.Join(", ", apps.Select(a => a.Process))));
+    }
+
+    internal void SetAutoUpdate(bool on)
+    {
+        Settings.AutoUpdate = on;
+        if (on) _updater.CheckSoon();
+        Settings.Save();
+        Log.Write("Avtomatik yangilanish: " + (on ? "yoqildi" : "o'chirildi"));
     }
 
     internal void SetPauseConvert(bool on)

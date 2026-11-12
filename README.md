@@ -14,7 +14,7 @@
 </p>
 
 <p align="center">
-  <sub>Bepul&nbsp;&nbsp;·&nbsp;&nbsp;ochiq kod&nbsp;&nbsp;·&nbsp;&nbsp;internetga ulanmaydi&nbsp;&nbsp;·&nbsp;&nbsp;admin huquqi shart emas&nbsp;&nbsp;·&nbsp;&nbsp;<a href="https://github.com/AzamjonShaydullayev/Ozbeca/releases">barcha versiyalar</a></sub>
+  <sub>Bepul&nbsp;&nbsp;·&nbsp;&nbsp;ochiq kod&nbsp;&nbsp;·&nbsp;&nbsp;o'zi yangilanadi&nbsp;&nbsp;·&nbsp;&nbsp;admin huquqi shart emas&nbsp;&nbsp;·&nbsp;&nbsp;<a href="https://github.com/AzamjonShaydullayev/Ozbeca/releases">barcha versiyalar</a></sub>
 </p>
 
 <br>
@@ -90,7 +90,7 @@
     <td valign="top">
       <img src="docs/icons/privacy.png" width="56" alt=""><br>
       <b>Maxfiy</b><br>
-      <sub>Internetga ulanmaydi, yozganlaringizni saqlamaydi, hech narsa yubormaydi.</sub>
+      <sub>Yozganlaringizni saqlamaydi va hech qayerga yubormaydi. Internetdan faqat yangi versiyani oladi.</sub>
     </td>
     <td valign="top">
       <img src="docs/icons/light.png" width="56" alt=""><br>
@@ -116,7 +116,7 @@
 >
 > Bu Windows'ning **SmartScreen** himoyasi. U raqamli imzosi yo'q (imzo har yili pullik) va hali kam yuklab olingan har qanday dasturda chiqadi — virus borligini anglatmaydi.
 >
-> Özbeça kodi to'liq ochiq, internetga ulanmaydi, administrator huquqi so'ramaydi va yozganlaringizni saqlamaydi ([Maxfiylik](#-maxfiylik)). Xohlasangiz, faylni [VirusTotal](https://www.virustotal.com/) da 70 dan ortiq antivirus bilan tekshiring.
+> Özbeça kodi to'liq ochiq, hech narsa yubormaydi, administrator huquqi so'ramaydi va yozganlaringizni saqlamaydi ([Maxfiylik](#-maxfiylik)). Xohlasangiz, faylni [VirusTotal](https://www.virustotal.com/) da 70 dan ortiq antivirus bilan tekshiring.
 > </details>
 
 **3. «Boshlash» ni bosing.** Hammasi oldindan belgilangan:
@@ -130,7 +130,7 @@
 | **Avtomatik ishga tushish** | Kompyuter yoqilganda jim kutib turadi |
 | **Ish stolida yorliq** · **Start menyusi** | Özbeça'ni topish oson bo'ladi |
 
-Tayyor. Dastur soat yonida <img src="docs/icon.png" width="16" alt="Ö"> **Ö** belgisi bo'lib turadi (ko'rinmasa — **^** tugmasini bosing). Eski versiya o'rnatilgan bo'lsa, u o'zi yangilanadi, sozlamalaringiz saqlanadi.
+Tayyor. Dastur soat yonida <img src="docs/icon.png" width="16" alt="Ö"> **Ö** belgisi bo'lib turadi (ko'rinmasa — **^** tugmasini bosing). Eski versiya o'rnatilgan bo'lsa, u o'zi yangilanadi, sozlamalaringiz saqlanadi. Keyingi versiyalar esa [o'zi yuklab o'rnatiladi](#-avtomatik-yangilanish).
 
 <br>
 
@@ -149,7 +149,7 @@ Hech narsa qilish shart emas — odatdagidek yozing:
 
 - So'z o'zgarishini istamasangiz — darhol <kbd>Backspace</kbd>: so'z yozganingizdek qaytadi (`çess` → `chess`) va qayta o'girilmaydi.
 - Ko'p uchraydigan inglizcha so'zlar (`check`, `should`, `school`, `which`…) yozish paytida o'zgarmaydi.
-- Ism, brend yoki login o'zgarmasin desangiz — sozlamalarda **O'girilmaydigan so'zlar** ga qo'shing.
+- Ism, brend yoki login o'zgarmasin desangiz — sozlamalarda **O'girilmaydigan so'zlar** ga qo'shing. Bir so'zni ikki marta <kbd>Backspace</kbd> bilan qaytarsangiz, u o'zi qo'shiladi.
 - Vaqtincha o'chirish: <img src="docs/icon.png" width="14" alt="Ö"> belgisi ustida o'ng tugma → **Yozish paytida o'girish**.
 
 ### ⚡ Tayyor matnni o'girish
@@ -192,7 +192,8 @@ Soat yonidagi <img src="docs/icon.png" width="16" alt="Ö"> belgisini yoki ish s
 | **Windows bilan** | Kompyuter yoqilganda ishga tushadi |
 | **Ctrl+V da** | Qo'yilayotgan matnni ham o'giradi (parol maydoni va Excel kataklariga tegilmaydi) |
 | **Pauzada** | 1 soniya to'xtasangiz, probel bosilmasa ham so'z o'giriladi |
-| **O'girilmaydigan so'zlar** | Ismlar, brendlar, loginlar — har qatorga bittadan. Ular hech qachon o'zgarmaydi |
+| **O'girilmaydigan so'zlar** | Ismlar, brendlar, loginlar. Ular hech qachon o'zgarmaydi. Bir so'zni ikki marta <kbd>Backspace</kbd> bilan qaytarsangiz, o'zi shu ro'yxatga qo'shiladi |
+| **Avtomatik yangilanish** | Yangi versiya chiqsa, internet bo'lganda o'zi yuklab o'rnatiladi. Standart yoqiq |
 | **Qaysi dasturlarda** | Yozish paytida o'girish faqat tanlangan dasturlarda ishlaydi |
 
 ### Qaysi dasturlarda ishlasin
@@ -200,6 +201,16 @@ Soat yonidagi <img src="docs/icon.png" width="16" alt="Ö"> belgisini yoki ish s
 **Tanlash** ni bosing — kompyuterdagi hamma dasturlar (Store ilovalari ham) ikonkasi bilan chiqadi. Belgilaganlaringizda o'giradi, qolganlarida tegmaydi. Hech narsa belgilanmasa — hamma joyda ishlaydi.
 
 <p align="center"><img src="docs/apps.png" width="760" alt="Dasturlarni tanlash oynasi"></p>
+
+### 🔄 Avtomatik yangilanish
+
+Yangi versiya chiqsa, hech narsa qilish shart emas:
+
+1. Kompyuter internetga ulangan bo'lsa, dastur kuniga bir marta GitHub'dagi oxirgi versiyani tekshiradi.
+2. Yangisi bo'lsa — `Ozbeca.exe` ni yuklab oladi va uning hajmi, **SHA-256** xeshi (GitHub bergan), nomi hamda versiyasini tekshiradi. Bittasi mos kelmasa, fayl o'chiriladi.
+3. Kompyuterdan bir daqiqa foydalanmay turganingizda o'zini almashtiradi va **«Özbeça yangilandi»** degan xabar chiqadi. Sozlamalaringiz saqlanadi.
+
+Faqat o'rnatilgan nusxa yangilanadi (o'rnatish oynasida **Kompyuterga o'rnatish** belgilangan bo'lsa). O'chirish: sozlamalarda chapdagi **Avtomatik yangilanish**.
 
 <br>
 
@@ -233,7 +244,8 @@ Manbalar: [OʻRQ-1184-son Qonun (21.10.2026)](https://lex.uz/uz/docs/8548754) �
 
 ## 🔒 Maxfiylik
 
-- Dastur **internetga umuman ulanmaydi** va hech narsa yubormaydi.
+- Dastur **hech narsa yubormaydi**: yozganlaringiz, sozlamalaringiz va boshqa ma'lumot kompyuterdan chiqmaydi.
+- Internetga faqat **avtomatik yangilanish** uchun ulanadi: kuniga bir marta GitHub'dan oxirgi versiya raqamini o'qiydi, yangisi bo'lsa `Ozbeca.exe` ni yuklab oladi. Buni sozlamalarda o'chirsangiz, dastur internetga umuman ulanmaydi.
 - Yozish paytida o'girish uchun dastur bosilgan tugmalarni ko'radi — **faqat joriy so'zni** bilish uchun. Xotirada eng ko'pi bitta qator turadi, **diskka yozilmaydi** va probel, Enter yoki sichqoncha bosilganda unutiladi.
 - Bu funksiyani o'chirsangiz, klaviatura kuzatilmaydi — faqat <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>O</kbd> qoladi.
 - Kodi to'liq ochiq: [`src/Ozbeca.App/AutoType.cs`](src/Ozbeca.App/AutoType.cs).
@@ -297,7 +309,7 @@ Bu tugmalarni boshqa dastur egallagan. Sozlamalarda **O'zgartirish** ni bosing v
 <summary><b>Antivirus ogohlantirdi</b></summary>
 <br>
 
-Yozish paytida o'girish Windows'ning klaviatura hook'idan foydalanadi — ba'zi antiviruslar bunday dasturlarni ehtiyotdan belgilaydi. Dastur internetga ulanmaydi va yozganlaringizni saqlamaydi, kodi ochiq. Xohlasangiz, bu funksiyani o'chirib qo'yishingiz mumkin.
+Yozish paytida o'girish Windows'ning klaviatura hook'idan foydalanadi — ba'zi antiviruslar bunday dasturlarni ehtiyotdan belgilaydi. Dastur yozganlaringizni saqlamaydi va hech qayerga yubormaydi, kodi ochiq. Xohlasangiz, bu funksiyani o'chirib qo'yishingiz mumkin.
 </details>
 
 <details>
