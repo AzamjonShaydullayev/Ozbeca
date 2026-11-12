@@ -19,6 +19,7 @@ public static class Texts
     public const string FileBroken = "Faylni öqiy olmadim. Fayl buzilgan bölişi mumkin.";
     public const string FileNoChange = "Faylda ögiradigan narsa yöq.";
     public const string FileDone = "Tayyor! Fayl yangi alifboda.";
+    public const string FileDoneOld = "Tayyor! Fayl eski alifboda.";
 
     public const string CardCaption = "Özbeça — yangi alifbo";
     public const string CopyButton = "Nusxa";

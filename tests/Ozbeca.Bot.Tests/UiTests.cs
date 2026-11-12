@@ -20,6 +20,7 @@ public class UiTests
         ["FileBroken"] = "Faylni o'qiy olmadim. Fayl buzilgan bo'lishi mumkin.",
         ["FileNoChange"] = "Faylda o'giradigan narsa yo'q.",
         ["FileDone"] = "Tayyor! Fayl yangi alifboda.",
+        ["FileDoneOld"] = "Tayyor! Fayl eski alifboda.",
         ["CardCaption"] = "O'zbecha — yangi alifbo",
         ["CopyButton"] = "Nusxa",
         ["ReverseButton"] = "Teskari",
